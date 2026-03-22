@@ -323,7 +323,7 @@ h4 { font-size: var(--font-size-lg); font-weight: 600; }
 .fab {
   position: fixed;
   bottom: calc(var(--nav-height) + var(--safe-bottom) + var(--space-md));
-  right: var(--space-md);
+  left: calc(50% + min(50%, 240px) - var(--space-md) - 58px);
   width: 58px;
   height: 58px;
   background: var(--accent);

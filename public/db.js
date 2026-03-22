@@ -53,7 +53,9 @@ export async function getSubjects(uid) {
   const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   return data.sort((a, b) => {
     if (a.order !== b.order) return (a.order || 0) - (b.order || 0);
-    return (a.createdAt?.toMillis() || 0) - (b.createdAt?.toMillis() || 0);
+    const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : Date.now();
+    const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : Date.now();
+    return tA - tB;
   });
 }
 
@@ -87,7 +89,9 @@ export async function getTopics(uid, subjectId = null) {
   const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   return data.sort((a, b) => {
     if (a.order !== b.order) return (a.order || 0) - (b.order || 0);
-    return (a.createdAt?.toMillis() || 0) - (b.createdAt?.toMillis() || 0);
+    const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : Date.now();
+    const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : Date.now();
+    return tA - tB;
   });
 }
 
@@ -143,7 +147,11 @@ export async function getTasks(uid, filters = {}) {
   const q = query(collection(db, "tasks"), ...constraints);
   const snap = await getDocs(q);
   const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  return data.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+  return data.sort((a, b) => {
+    const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : Date.now();
+    const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : Date.now();
+    return tB - tA; // desc
+  });
 }
 
 export async function updateTask(id, data) {
