@@ -17,16 +17,17 @@ import { getMessaging, isSupported } from "https://www.gstatic.com/firebasejs/10
 
 // ─── Replace these values with your actual Firebase project config ───────────
 const firebaseConfig = {
-  apiKey: "REPLACE_WITH_YOUR_API_KEY",
-  authDomain: "REPLACE_WITH_YOUR_AUTH_DOMAIN",
-  projectId: "REPLACE_WITH_YOUR_PROJECT_ID",
-  storageBucket: "REPLACE_WITH_YOUR_STORAGE_BUCKET",
-  messagingSenderId: "REPLACE_WITH_YOUR_MESSAGING_SENDER_ID",
-  appId: "REPLACE_WITH_YOUR_APP_ID",
+  apiKey: "AIzaSyCwKJw72RXUzvvBLdxI3WlfCoWvFPmvv3Y",
+  authDomain: "student-planner-95ed4.firebaseapp.com",
+  projectId: "student-planner-95ed4",
+  storageBucket: "student-planner-95ed4.firebasestorage.app",
+  messagingSenderId: "224841353755",
+  appId: "1:224841353755:web:0defe4eccd9a222a9646be",
+  measurementId: "G-GK068Y52DV"
 };
 
 // VAPID public key for Web Push (FCM)
-export const VAPID_KEY = "REPLACE_WITH_YOUR_VAPID_KEY";
+export const VAPID_KEY = "BMzrmWa2Z1MhacOyQOh--xfHnUNYjOmVPHZqd9ajR-e9PsOz2j6QkC7FX-XHYg4uOKZ7I-AGY2-IdRoc9-sF1pM";
 
 // ─── Initialize Firebase ──────────────────────────────────────────────────────
 const app = initializeApp(firebaseConfig);

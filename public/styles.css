@@ -276,6 +276,22 @@ h4 { font-size: var(--font-size-lg); font-weight: 600; }
   color: #fff;
 }
 
+.btn-google {
+  background: #fff;
+  color: #444;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+.btn-google:hover {
+  background: #f8f8f8;
+  border-color: #ccc;
+}
+.btn-google-icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 10px;
+}
+
 .btn-sm {
   padding: 8px 16px;
   font-size: var(--font-size-sm);
@@ -798,6 +814,27 @@ h4 { font-size: var(--font-size-lg); font-weight: 600; }
   justify-content: center;
   padding: var(--space-xl) var(--space-md);
   background: radial-gradient(ellipse at top, rgba(108, 99, 255, 0.15) 0%, transparent 60%);
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: var(--space-md) 0;
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border);
+}
+
+.auth-divider span {
+  padding: 0 10px;
 }
 
 .auth-card {

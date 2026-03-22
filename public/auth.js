@@ -9,9 +9,43 @@ import {
   sendPasswordResetEmail,
   updateProfile,
   onAuthStateChanged as _onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { auth, db } from "./firebase-config.js";
 import { doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ── Google Sign In ─────────────────────────────────────────────────────────────
+export async function logInWithGoogle() {
+  const provider = new GoogleAuthProvider();
+  const credential = await signInWithPopup(auth, provider);
+  const user = credential.user;
+
+  // Check if profile exists; if not, create it
+  const profileRef = doc(db, "users", user.uid);
+  const profileSnap = await getDoc(profileRef);
+
+  if (!profileSnap.exists()) {
+    await setDoc(profileRef, {
+      uid: user.uid,
+      displayName: user.displayName || "Student",
+      email: user.email,
+      photoURL: user.photoURL || null,
+      theme: "dark",
+      weekStartDay: "monday",
+      notificationEnabled: false,
+      reminderSettings: {
+        defaultMinutesBefore: 30,
+      },
+      studyGoals: "",
+      subjectsGrouped: true,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  return user;
+}
 
 // ── Sign up with email/password ───────────────────────────────────────────────
 export async function signUp(email, password, displayName) {

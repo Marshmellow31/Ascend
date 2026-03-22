@@ -2,7 +2,7 @@
 // app.js — Main router, auth watcher, global state
 // ============================================================
 
-import { onAuthStateChanged, logOut, signUp, logIn, resetPassword } from "./auth.js";
+import { onAuthStateChanged, logOut, signUp, logIn, resetPassword, logInWithGoogle } from "./auth.js";
 import { getUserProfile, updateUserProfile } from "./db.js";
 import { renderDashboard } from "./pages/dashboard.js";
 import { renderSubjects } from "./pages/subjects.js";
@@ -122,6 +122,19 @@ function initAuthForms() {
       msgEl.classList.remove("hidden");
     }
   });
+
+  // ── Google Sign In ────────────────────────────────────────
+  const handleGoogleAuth = async () => {
+    try {
+      await logInWithGoogle();
+    } catch (err) {
+      console.error("Google Auth Error:", err);
+      // For now just alert or log; app.js logic handles onAuthStateChanged
+    }
+  };
+
+  $("btn-google-login")?.addEventListener("click", handleGoogleAuth);
+  $("btn-google-signup")?.addEventListener("click", handleGoogleAuth);
 
   // ── Navigation between auth screens ──────────────────────
   const show = (id) => {
