@@ -143,7 +143,8 @@ async function updateDashboardState(uid, profile, isFirstLoad = false) {
   const ctx = document.getElementById("dash-chart");
   const chartData = buildWeeklyLine(analyticsData);
   if (dashboardChart) {
-    dashboardChart.data = chartData;
+    dashboardChart.data.labels = chartData.labels;
+    dashboardChart.data.datasets[0].data = chartData.datasets[0].data;
     dashboardChart.update();
   } else if (ctx && window.Chart) {
     dashboardChart = new Chart(ctx, {
@@ -263,7 +264,7 @@ export function buildTaskCard(task, uid, onUpdate) {
 export function chartBaseOptions(title = "") {
   return {
     responsive: true,
-    maintainAspectRatio: false,
+    maintainAspectRatio: true,
     plugins: {
       legend: { display: false },
       tooltip: {
