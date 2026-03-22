@@ -115,7 +115,8 @@ function initAuthForms() {
     btn.textContent = "Signing in…";
     btn.disabled = true;
     try {
-      await logIn($("login-email").value.trim(), $("login-password").value);
+      const user = await logIn($("login-email").value.trim(), $("login-password").value);
+      await handleUserAuth(user);
     } catch (err) {
       errEl.textContent = friendlyError(err.code);
       errEl.classList.remove("hidden");
@@ -133,11 +134,12 @@ function initAuthForms() {
     btn.textContent = "Creating…";
     btn.disabled = true;
     try {
-      await signUp(
+      const user = await signUp(
         $("signup-email").value.trim(),
         $("signup-password").value,
         $("signup-name").value.trim() || "Student"
       );
+      await handleUserAuth(user);
     } catch (err) {
       errEl.textContent = friendlyError(err.code);
       errEl.classList.remove("hidden");
@@ -165,7 +167,8 @@ function initAuthForms() {
   // ── Google Sign In ────────────────────────────────────────
   const handleGoogleAuth = async () => {
     try {
-      await logInWithGoogle();
+      const user = await logInWithGoogle();
+      await handleUserAuth(user);
     } catch (err) {
       console.error("Google Auth Error:", err);
       // For now just alert or log; app.js logic handles onAuthStateChanged
@@ -284,6 +287,32 @@ function friendlyError(code) {
   return map[code] || `Error: ${code}`;
 }
 
+async function handleUserAuth(user) {
+  state.user = user;
+
+  // Load profile
+  const profile = await getUserProfile(user.uid);
+  state.profile = profile;
+
+  // Apply saved theme
+  applyTheme(profile?.theme || "dark");
+
+  // Show app
+  showAppPage();
+  initBottomNav();
+  initFab();
+  initForegroundMessages();
+
+  // Check for action shortcut in URL
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("action") === "add-task") {
+    const { openTaskModal } = await import("./pages/tasks.js");
+    openTaskModal(user.uid, profile, () => navigate("tasks"));
+  }
+
+  await navigate("dashboard");
+}
+
 // ── Entry point ───────────────────────────────────────────────────────────────
 function main() {
   initLanding();
@@ -292,29 +321,7 @@ function main() {
 
   onAuthStateChanged(async (user) => {
     if (user) {
-      state.user = user;
-
-      // Load profile
-      const profile = await getUserProfile(user.uid);
-      state.profile = profile;
-
-      // Apply saved theme
-      applyTheme(profile?.theme || "dark");
-
-      // Show app
-      showAppPage();
-      initBottomNav();
-      initFab();
-      initForegroundMessages();
-
-      // Check for action shortcut in URL
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("action") === "add-task") {
-        const { openTaskModal } = await import("./pages/tasks.js");
-        openTaskModal(user.uid, profile, () => navigate("tasks"));
-      }
-
-      await navigate("dashboard");
+      await handleUserAuth(user);
     } else {
       state.user = null;
       state.profile = null;
