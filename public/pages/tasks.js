@@ -130,32 +130,37 @@ function buildFullTaskCard(task, uid, onUpdate) {
   card.className = `task-card priority-${priority}${isDone ? " completed" : ""}`;
   card.style.marginBottom = "10px";
   card.innerHTML = `
-    <button class="task-check${isDone ? " done" : ""}" title="${isDone ? "Reopen" : "Complete"}">
-      ${isDone ? '<i data-lucide="check" style="width:14px;height:14px"></i>' : ""}
-    </button>
-    <div class="task-body">
-      <div class="task-title">${escHtml(task.title)}</div>
+    <div class="task-body" style="flex:1;">
+      <div class="task-title" style="word-break:break-word;">${escHtml(task.title)}</div>
       ${task.description ? `<div class="text-muted text-sm" style="margin:2px 0 4px">${escHtml(task.description)}</div>` : ""}
-      <div class="task-meta">
+      <div class="task-meta" style="margin-top:4px;">
         <span class="badge badge-${priority}">${priority}</span>
         ${due ? `<span class="task-due${isOverdue ? " overdue" : ""}" style="display:inline-flex;align-items:center;gap:4px"><i data-lucide="calendar" style="width:12px;height:12px"></i> ${formatDate(due)}</span>` : ""}
         ${task.reminderTime ? `<span style="display:inline-flex;align-items:center;gap:4px"><i data-lucide="bell" style="width:12px;height:12px"></i> Reminder set</span>` : ""}
       </div>
     </div>
-    <div class="task-actions">
-      <button class="btn-icon btn-edit ripple" style="width:34px;height:34px" title="Edit"><i data-lucide="pencil" style="width:16px;height:16px"></i></button>
-      <button class="btn-icon btn-del ripple" style="width:34px;height:34px" title="Delete"><i data-lucide="trash-2" style="width:16px;height:16px"></i></button>
+    <div class="task-actions" style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+      <button class="btn btn-sm ${isDone ? "btn-secondary" : "btn-primary"} btn-check ripple" style="min-width:85px; justify-content:center; padding: 6px 12px;">
+        <i data-lucide="${isDone ? "rotate-ccw" : "check"}" style="width:14px;height:14px;margin-right:4px;"></i> ${isDone ? "Undo" : "Done"}
+      </button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-sm btn-secondary btn-edit ripple" style="padding: 6px 12px;" aria-label="Edit">
+          <i data-lucide="pencil" style="width:14px;height:14px"></i>
+        </button>
+        <button class="btn btn-sm btn-danger btn-del ripple" style="padding: 6px 12px;" aria-label="Delete">
+          <i data-lucide="trash-2" style="width:14px;height:14px"></i>
+        </button>
+      </div>
     </div>
   `;
 
-  card.querySelector(".task-check").addEventListener("click", async (e) => {
+  card.querySelector(".btn-check").addEventListener("click", async (e) => {
     e.stopPropagation();
     try {
       if (isDone) {
         await reopenTask(task.id);
         showSnackbar("Task reopened", "info");
       } else {
-        // Add completion animation
         card.classList.add("task-completing");
         await completeTask(task.id);
         showSnackbar("Task completed! 🎉", "success");

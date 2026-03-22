@@ -8,7 +8,14 @@ import { getSubjects } from "../db.js";
 import { navigate } from "../app.js";
 import { showSnackbar } from "../snackbar.js";
 
+let dashboardChart = null;
+
 export async function renderDashboard(container, uid, profile) {
+  if (dashboardChart) {
+    dashboardChart.destroy();
+    dashboardChart = null;
+  }
+
   container.innerHTML = `
     <div class="page-header">
       <div>
@@ -17,80 +24,36 @@ export async function renderDashboard(container, uid, profile) {
       </div>
     </div>
     <div id="dash-loading" class="animate-pulse text-muted text-sm mb-md">Loading your day…</div>
-    <div id="dash-content" class="hidden"></div>
+    <div id="dash-content" class="hidden">
+      <!-- Quick Add Task -->
+      <div class="quick-add-container mb-md">
+        <div class="quick-add-input-wrapper">
+          <input type="text" id="quick-add-input" class="form-input" placeholder="Quick add task (Press Enter)..." style="border-radius:24px;padding-right:48px;" />
+          <button id="quick-add-btn" class="quick-add-submit" aria-label="Add task"><i data-lucide="arrow-right" style="width:20px;height:20px"></i></button>
+        </div>
+      </div>
+
+      <div class="stats-row mb-md" id="dash-stats"></div>
+
+      <!-- Weekly chart -->
+      <div class="chart-container mb-md stagger-item" style="animation-delay:160ms">
+        <div class="chart-title">This Week's Progress</div>
+        <canvas id="dash-chart" height="140"></canvas>
+      </div>
+
+      <!-- Today's tasks -->
+      <div class="section-header mb-sm">
+        <div class="section-title">Today's Tasks</div>
+        <button class="btn btn-sm btn-ghost ripple" id="btn-see-all-tasks">See all</button>
+      </div>
+      <div id="today-tasks-list"></div>
+
+      <!-- Subject summary -->
+      <div id="dash-subjects-section"></div>
+    </div>
   `;
 
-  let subjects = [], analyticsData = null;
-  try {
-    subjects = await getSubjects(uid);
-    analyticsData = await computeAnalytics(uid, profile?.weekStartDay || "monday", subjects);
-  } catch (err) {
-    showSnackbar("Failed to load dashboard data", "error");
-    console.error("Dashboard load error:", err);
-    return;
-  }
-
-  const el = document.getElementById("dash-loading");
-  if (el) el.remove();
-  const content = document.getElementById("dash-content");
-  if (!content) return;
-  content.classList.remove("hidden");
-
-  // ── Stat cards ──────────────────────────────────────────────
-  content.innerHTML = `
-    <!-- Quick Add Task -->
-    <div class="quick-add-container mb-md">
-      <div class="quick-add-input-wrapper">
-        <input type="text" id="quick-add-input" class="form-input" placeholder="Quick add task (Press Enter)..." style="border-radius:24px;padding-right:48px;" />
-        <button id="quick-add-btn" class="quick-add-submit" aria-label="Add task"><i data-lucide="arrow-right" style="width:20px;height:20px"></i></button>
-      </div>
-    </div>
-
-    <div class="stats-row mb-md">
-      <div class="stat-card stagger-item" style="animation-delay:0ms">
-        <div class="stat-number">${analyticsData.completed}</div>
-        <div class="stat-label">Done this week</div>
-      </div>
-      <div class="stat-card stagger-item" style="animation-delay:40ms">
-        <div class="stat-number">${analyticsData.completionRate}%</div>
-        <div class="stat-label">Completion rate</div>
-      </div>
-      <div class="stat-card stagger-item" style="animation-delay:80ms">
-        <div class="stat-number">${analyticsData.streak}</div>
-        <div class="stat-label">Day streak <i data-lucide="flame" style="width:14px;height:14px;display:inline-block;vertical-align:middle;color:#ff9f43"></i></div>
-      </div>
-      <div class="stat-card stagger-item" style="animation-delay:120ms">
-        <div class="stat-number" style="${analyticsData.overdue > 0 ? 'color:var(--error)' : ''}">${analyticsData.overdue}</div>
-        <div class="stat-label">Overdue</div>
-      </div>
-    </div>
-
-    <!-- Weekly chart -->
-    <div class="chart-container mb-md stagger-item" style="animation-delay:160ms">
-      <div class="chart-title">This Week's Progress</div>
-      <canvas id="dash-chart" height="140"></canvas>
-    </div>
-
-    <!-- Today's tasks -->
-    <div class="section-header mb-sm">
-      <div class="section-title">Today's Tasks</div>
-      <button class="btn btn-sm btn-ghost ripple" id="btn-see-all-tasks">See all</button>
-    </div>
-    <div id="today-tasks-list"></div>
-
-    <!-- Subject summary -->
-    ${subjects.length > 0 ? `
-    <div class="section-header mb-sm" style="margin-top:var(--space-md)">
-      <div class="section-title">Subjects</div>
-      <button class="btn btn-sm btn-ghost ripple" id="btn-see-subjects">Manage</button>
-    </div>
-    <div class="subjects-grid" id="subject-summary-grid"></div>
-    ` : ""}
-  `;
-
-  // Wire up "See all" and subject manage
   document.getElementById("btn-see-all-tasks")?.addEventListener("click", () => navigate("tasks"));
-  document.getElementById("btn-see-subjects")?.addEventListener("click", () => navigate("subjects"));
 
   // ── Quick Add Task ───────────────────────────────────────────
   const quickAddInput = document.getElementById("quick-add-input");
@@ -102,9 +65,8 @@ export async function renderDashboard(container, uid, profile) {
     quickAddInput.disabled = true;
     quickAddBtn.disabled = true;
     
-    // Default to today if saving from dashboard quick-add
     const today = new Date();
-    today.setHours(12, 0, 0, 0); // Noon today
+    today.setHours(12, 0, 0, 0); // Noon
 
     try {
       const { createTask } = await import("../db.js");
@@ -114,7 +76,13 @@ export async function renderDashboard(container, uid, profile) {
         dueDate: today.toISOString(),
       });
       showSnackbar("Task added to Today", "success");
-      renderDashboard(container, uid, profile); // Reload dashboard
+      quickAddInput.value = "";
+      quickAddInput.disabled = false;
+      quickAddBtn.disabled = false;
+      quickAddInput.focus();
+      
+      // Update dynamically
+      await updateDashboardState(uid, profile);
     } catch (err) {
       showSnackbar("Failed to add task", "error");
       quickAddInput.disabled = false;
@@ -128,57 +96,121 @@ export async function renderDashboard(container, uid, profile) {
   });
   quickAddBtn?.addEventListener("click", submitQuickAdd);
 
-  // ── Render today tasks ───────────────────────────────────────
-  const todayList = document.getElementById("today-tasks-list");
-  if (analyticsData.todayTasks.length === 0) {
-    todayList.innerHTML = `
-      <div class="empty-state stagger-item" style="padding:var(--space-xl);animation-delay:200ms">
-        <div class="empty-icon"><i data-lucide="sparkles"></i></div>
-        <div class="empty-title">All clear today!</div>
-        <div class="empty-desc">No tasks due today. Add one above.</div>
-      </div>`;
-  } else {
-    analyticsData.todayTasks.forEach((task, index) => {
-      const card = buildTaskCard(task, uid, () => renderDashboard(container, uid, profile));
-      card.classList.add("stagger-item");
-      card.style.animationDelay = `${200 + (index * 40)}ms`;
-      todayList.appendChild(card);
-    });
+  // Fetch initial data
+  await updateDashboardState(uid, profile, true);
+
+  const el = document.getElementById("dash-loading");
+  if (el) el.remove();
+  const content = document.getElementById("dash-content");
+  if (content) content.classList.remove("hidden");
+}
+
+async function updateDashboardState(uid, profile, isFirstLoad = false) {
+  let subjects = [], analyticsData = null;
+  try {
+    subjects = await getSubjects(uid);
+    analyticsData = await computeAnalytics(uid, profile?.weekStartDay || "monday", subjects);
+  } catch (err) {
+    showSnackbar("Failed to load dashboard data", "error");
+    console.error("Dashboard load error:", err);
+    return;
   }
 
-  // ── Subject summary ──────────────────────────────────────────
-  const subGrid = document.getElementById("subject-summary-grid");
-  if (subGrid && subjects.length > 0) {
-    const subjectMap = {};
-    analyticsData.subjectBreakdown.forEach((s) => { subjectMap[s.id] = s; });
-
-    subjects.slice(0, 4).forEach((sub, index) => {
-      const data = subjectMap[sub.id] || { total: 0, completed: 0, rate: 0 };
-      const card = document.createElement("div");
-      card.className = "subject-card stagger-item";
-      card.style.setProperty("--subject-color", sub.color);
-      card.style.animationDelay = `${250 + (index * 40)}ms`;
-      card.innerHTML = `
-        <div class="subject-name">${escHtml(sub.name)}</div>
-        <div class="subject-stats">${data.completed}/${data.total} tasks</div>
-        <div class="progress-bar"><div class="progress-fill" style="width:${data.rate}%"></div></div>
-      `;
-      card.addEventListener("click", () => navigate("topics", { subjectId: sub.id, subjectName: sub.name }));
-      subGrid.appendChild(card);
-    });
+  // 1. Stats
+  const statsEl = document.getElementById("dash-stats");
+  if (statsEl) {
+    statsEl.innerHTML = `
+      <div class="stat-card ${isFirstLoad ? 'stagger-item' : ''}" style="animation-delay:0ms">
+        <div class="stat-number">${analyticsData.completed}</div>
+        <div class="stat-label">Done this week</div>
+      </div>
+      <div class="stat-card ${isFirstLoad ? 'stagger-item' : ''}" style="animation-delay:40ms">
+        <div class="stat-number">${analyticsData.completionRate}%</div>
+        <div class="stat-label">Completion rate</div>
+      </div>
+      <div class="stat-card ${isFirstLoad ? 'stagger-item' : ''}" style="animation-delay:80ms">
+        <div class="stat-number">${analyticsData.streak}</div>
+        <div class="stat-label">Day streak <i data-lucide="flame" style="width:14px;height:14px;display:inline-block;vertical-align:middle;color:#ff9f43"></i></div>
+      </div>
+      <div class="stat-card ${isFirstLoad ? 'stagger-item' : ''}" style="animation-delay:120ms">
+        <div class="stat-number" style="${analyticsData.overdue > 0 ? 'color:var(--error)' : ''}">${analyticsData.overdue}</div>
+        <div class="stat-label">Overdue</div>
+      </div>
+    `;
   }
 
-  // ── Weekly chart ─────────────────────────────────────────────
+  // 2. Chart Component Update
   const ctx = document.getElementById("dash-chart");
-  if (ctx && window.Chart) {
-    const { buildWeeklyLine } = await import("../analytics.js");
-    new Chart(ctx, {
+  const chartData = buildWeeklyLine(analyticsData);
+  if (dashboardChart) {
+    dashboardChart.data = chartData;
+    dashboardChart.update();
+  } else if (ctx && window.Chart) {
+    dashboardChart = new Chart(ctx, {
       type: "line",
-      data: buildWeeklyLine(analyticsData),
+      data: chartData,
       options: chartBaseOptions("Tasks Completed"),
     });
   }
+
+  // 3. Today Tasks
+  const todayList = document.getElementById("today-tasks-list");
+  if (todayList) {
+    todayList.innerHTML = "";
+    if (analyticsData.todayTasks.length === 0) {
+      todayList.innerHTML = `
+        <div class="empty-state ${isFirstLoad ? 'stagger-item' : ''}" style="padding:var(--space-xl);animation-delay:200ms">
+          <div class="empty-icon"><i data-lucide="sparkles"></i></div>
+          <div class="empty-title">All clear today!</div>
+          <div class="empty-desc">No tasks due today. Add one above.</div>
+        </div>`;
+    } else {
+      analyticsData.todayTasks.forEach((task, index) => {
+        const card = buildTaskCard(task, uid, () => updateDashboardState(uid, profile));
+        if (isFirstLoad) {
+          card.classList.add("stagger-item");
+          card.style.animationDelay = `${200 + (index * 40)}ms`;
+        }
+        todayList.appendChild(card);
+      });
+    }
+  }
+
+  // 4. Subjects Summary
+  const subSection = document.getElementById("dash-subjects-section");
+  if (subSection) {
+    if (subjects.length > 0) {
+      const subjectMap = {};
+      analyticsData.subjectBreakdown.forEach((s) => { subjectMap[s.id] = s; });
+      let html = `
+        <div class="section-header mb-sm" style="margin-top:var(--space-md)">
+          <div class="section-title">Subjects</div>
+          <button class="btn btn-sm btn-ghost ripple" id="btn-see-subjects">Manage</button>
+        </div>
+        <div class="subjects-grid" id="subject-summary-grid">
+      `;
+      subjects.slice(0, 4).forEach((sub, index) => {
+        const data = subjectMap[sub.id] || { total: 0, completed: 0, rate: 0 };
+        html += `
+          <div class="subject-card ${isFirstLoad ? 'stagger-item' : ''}" style="--subject-color:${sub.color}; animation-delay:${250 + (index * 40)}ms" onclick="window._navTopic('${sub.id}', '${escHtml(sub.name)}')">
+            <div class="subject-name">${escHtml(sub.name)}</div>
+            <div class="subject-stats">${data.completed}/${data.total} tasks</div>
+            <div class="progress-bar"><div class="progress-fill" style="width:${data.rate}%"></div></div>
+          </div>
+        `;
+      });
+      html += `</div>`;
+      subSection.innerHTML = html;
+      document.getElementById("btn-see-subjects")?.addEventListener("click", () => navigate("subjects"));
+    } else {
+      subSection.innerHTML = "";
+    }
+  }
+
+  if (window.lucide) window.lucide.createIcons();
 }
+
+window._navTopic = (id, name) => navigate("topics", { subjectId: id, subjectName: name });
 
 // ── Build task card DOM element ───────────────────────────────
 export function buildTaskCard(task, uid, onUpdate) {
@@ -189,23 +221,26 @@ export function buildTaskCard(task, uid, onUpdate) {
   const isOverdue = due && due < new Date() && !isDone;
 
   card.className = `task-card priority-${priority}${isDone ? " completed" : ""}`;
+  // Use explicit button controls for deletion and completion
   card.innerHTML = `
-    <button class="task-check${isDone ? " done" : ""}" title="${isDone ? "Reopen" : "Mark complete"}">
-      ${isDone ? '<i data-lucide="check" style="width:14px;height:14px"></i>' : ""}
-    </button>
-    <div class="task-body">
-      <div class="task-title">${escHtml(task.title)}</div>
-      <div class="task-meta">
+    <div class="task-body" style="flex:1;">
+      <div class="task-title" style="word-break:break-word;">${escHtml(task.title)}</div>
+      <div class="task-meta" style="margin-top:4px;">
         <span class="badge badge-${priority}">${priority}</span>
         ${due ? `<span class="task-due${isOverdue ? " overdue" : ""}" style="display:inline-flex;align-items:center;gap:4px"><i data-lucide="calendar" style="width:12px;height:12px"></i> ${formatDate(due)}</span>` : ""}
       </div>
     </div>
-    <div class="task-actions">
-      <button class="btn-icon ripple" style="width:34px;height:34px" title="Delete"><i data-lucide="trash-2" style="width:16px;height:16px"></i></button>
+    <div class="task-actions" style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+      <button class="btn btn-sm ${isDone ? "btn-secondary" : "btn-primary"} task-check-btn" style="min-width:80px; justify-content:center; padding: 6px 12px;">
+        <i data-lucide="${isDone ? "rotate-ccw" : "check"}" style="width:14px;height:14px;margin-right:4px;"></i> ${isDone ? "Undo" : "Done"}
+      </button>
+      <button class="btn btn-sm btn-danger task-delete-btn" style="padding: 6px 12px;" aria-label="Delete">
+        <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+      </button>
     </div>
   `;
 
-  card.querySelector(".task-check").addEventListener("click", async (e) => {
+  card.querySelector(".task-check-btn").addEventListener("click", async (e) => {
     e.stopPropagation();
     const { completeTask, reopenTask } = await import("../db.js");
     if (isDone) await reopenTask(task.id);
@@ -213,7 +248,7 @@ export function buildTaskCard(task, uid, onUpdate) {
     onUpdate();
   });
 
-  card.querySelector(".btn-icon").addEventListener("click", async (e) => {
+  card.querySelector(".task-delete-btn").addEventListener("click", async (e) => {
     e.stopPropagation();
     if (!confirm(`Delete "${task.title}"?`)) return;
     const { deleteTask } = await import("../db.js");
@@ -228,7 +263,7 @@ export function buildTaskCard(task, uid, onUpdate) {
 export function chartBaseOptions(title = "") {
   return {
     responsive: true,
-    maintainAspectRatio: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
       tooltip: {
