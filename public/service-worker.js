@@ -2,7 +2,7 @@
 // service-worker.js  — StudyFlow PWA Service Worker
 // ============================================================
 
-const CACHE_NAME = "studyflow-v3";
+const CACHE_NAME = "studyflow-v4";
 const SHELL_ASSETS = [
   "/",
   "/index.html",
@@ -13,6 +13,12 @@ const SHELL_ASSETS = [
   "/analytics.js",
   "/snackbar.js",
   "/notifications.js",
+  "/firebase-config.js",
+  "/pages/dashboard.js",
+  "/pages/settings.js",
+  "/pages/subjects.js",
+  "/pages/tasks.js",
+  "/pages/topics.js",
   "/manifest.json",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
@@ -46,11 +52,9 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
 
   // Let Firebase API calls and external CDN requests go straight to the network
+  // Let Firestore websocket calls go straight to the network
   if (
     url.hostname.includes("firestore.googleapis.com") ||
-    url.hostname.includes("firebase") ||
-    url.hostname.includes("gstatic.com") ||
-    url.hostname.includes("googleapis.com") ||
     request.method !== "GET"
   ) {
     return; // let browser handle it
@@ -69,12 +73,14 @@ self.addEventListener("fetch", (event) => {
     caches.match(request).then((cached) => {
       if (cached) return cached;
       return fetch(request).then((response) => {
-        if (!response || response.status !== 200 || response.type !== "basic") {
+        if (!response || response.status !== 200) {
           return response;
         }
         const cloned = response.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(request, cloned));
         return response;
+      }).catch(() => {
+        // Ignored, offline fallback handled by Firestore DB offline persistence
       });
     })
   );
