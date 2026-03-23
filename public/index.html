@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="description" content="Your Day — your personal student planner. Manage subjects, topics, tasks, and track your weekly progress." />
+  <meta name="description" content="Plan smarter. Grow daily. Your personal companion for productivity and growth." />
   <title>Your Day — Student Planner</title>
 
   <!-- PWA Meta Tags -->
   <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#0a0a0a" />
+  <meta name="theme-color" content="#000000" />
   <meta name="mobile-web-app-capable" content="yes" />
 
   <!-- iOS Safari PWA Tags -->
@@ -33,6 +33,28 @@
 
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- ── Splash caption + icon (runs immediately) ── -->
+  <script>
+    (function initSplash() {
+      const h = new Date().getHours();
+      const svgs = {
+        moon: `<svg class="splash-svg-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M38 14 C24 16 16 26 18 38 C20 50 32 56 44 52 C34 52 26 44 26 32 C26 20 34 14 38 14 Z" stroke="#aaaaaa" stroke-width="1.8" stroke-linejoin="round" fill="none"/></svg>`,
+        sunrise: `<svg class="splash-svg-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><line x1="8" y1="44" x2="56" y2="44" stroke="#3a3a3a" stroke-width="1.5" stroke-linecap="round"/><path d="M18 44 A14 14 0 0 1 46 44" stroke="#cccccc" stroke-width="2" stroke-linecap="round" fill="none"/><line x1="32" y1="24" x2="32" y2="18" stroke="#999999" stroke-width="1.5" stroke-linecap="round"/><line x1="21" y1="28" x2="17" y2="24" stroke="#666666" stroke-width="1.5" stroke-linecap="round"/><line x1="43" y1="28" x2="47" y2="24" stroke="#666666" stroke-width="1.5" stroke-linecap="round"/><line x1="15" y1="37" x2="10" y2="36" stroke="#3a3a3a" stroke-width="1.5" stroke-linecap="round"/><line x1="49" y1="37" x2="54" y2="36" stroke="#3a3a3a" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+        sun: `<svg class="splash-svg-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="11" stroke="#cccccc" stroke-width="2" fill="none"/><line x1="32" y1="8" x2="32" y2="13" stroke="#888888" stroke-width="1.5" stroke-linecap="round"/><line x1="32" y1="51" x2="32" y2="56" stroke="#888888" stroke-width="1.5" stroke-linecap="round"/><line x1="8" y1="32" x2="13" y2="32" stroke="#888888" stroke-width="1.5" stroke-linecap="round"/><line x1="51" y1="32" x2="56" y2="32" stroke="#888888" stroke-width="1.5" stroke-linecap="round"/><line x1="15" y1="15" x2="19" y2="19" stroke="#555555" stroke-width="1.5" stroke-linecap="round"/><line x1="45" y1="45" x2="49" y2="49" stroke="#555555" stroke-width="1.5" stroke-linecap="round"/><line x1="49" y1="15" x2="45" y2="19" stroke="#555555" stroke-width="1.5" stroke-linecap="round"/><line x1="19" y1="45" x2="15" y2="49" stroke="#555555" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+        sunset: `<svg class="splash-svg-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><line x1="8" y1="36" x2="56" y2="36" stroke="#3a3a3a" stroke-width="1.5" stroke-linecap="round"/><path d="M18 36 A14 14 0 0 0 46 36" stroke="#cccccc" stroke-width="2" stroke-linecap="round" fill="none"/><line x1="32" y1="52" x2="32" y2="46" stroke="#999999" stroke-width="1.5" stroke-linecap="round"/><line x1="21" y1="48" x2="17" y2="52" stroke="#666666" stroke-width="1.5" stroke-linecap="round"/><line x1="43" y1="48" x2="47" y2="52" stroke="#666666" stroke-width="1.5" stroke-linecap="round"/><line x1="15" y1="30" x2="10" y2="29" stroke="#3a3a3a" stroke-width="1.5" stroke-linecap="round"/><line x1="49" y1="30" x2="54" y2="29" stroke="#3a3a3a" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+      };
+      const iconKey = h < 5 || h >= 20 ? "moon" : h < 8 ? "sunrise" : h < 17 ? "sun" : "sunset";
+      const captions = h < 5 ? [ "Rest well. Tomorrow belongs to the prepared.", "The night is quiet. So is focus.", "Even in silence, growth continues." ] : h < 9 ? [ "Morning clarity is a superpower. Use it.", "The early hours don't lie. Make them count.", "Sunrise. A blank slate. Go.", "What you do before 9am shapes your day." ] : h < 12 ? [ "Your best thinking happens now. Protect it.", "Mid-morning momentum. Keep it going.", "Focused mornings build great outcomes." ] : h < 14 ? [ "Midday check-in: are you on track?", "Refuel. Refocus. Finish strong.", "Half the day remains. More than enough." ] : h < 17 ? [ "Afternoons are for execution. Ship something.", "The grind is just discipline in disguise.", "Progress over perfection — always." ] : h < 20 ? [ "Evenings are for reflection and preparation.", "What did you do today that future you will thank you for?", "Wind down, but don't coast." ] : [ "Late nights belong to the dedicated.", "While others sleep, the focused prepare.", "End the day intentionally. You earned it." ];
+      const caption = captions[Math.floor(Math.random() * captions.length)];
+      document.addEventListener("DOMContentLoaded", () => {
+        const iconEl = document.getElementById("splash-icon");
+        const capEl = document.getElementById("splash-caption");
+        if (iconEl) iconEl.innerHTML = svgs[iconKey];
+        if (capEl) capEl.textContent = caption;
+      });
+    })();
+  </script>
 </head>
 <body>
 

@@ -158,10 +158,10 @@ function renderTaskList(uid) {
   }
 
   listEl.innerHTML = tasks.map(t => `
-    <div class="task-card" style="position:relative; background:#121212; border:1px solid #1E1E1E; padding:14px 16px; margin-bottom:10px; border-radius:12px; display:flex; justify-content:space-between; align-items:center; transition:all 0.2s;">
+    <div class="task-card" style="position:relative; background:#121212; border:1px solid #1E1E1E; padding:14px 16px; margin-bottom:10px; border-radius:12px; display:flex; flex-direction:row; justify-content:space-between; align-items:center; transition:all 0.2s;">
       <div style="position:absolute; left:-1px; top:-1px; bottom:-1px; width:4px; background:var(--priority-${t.priority.toLowerCase()}); border-top-left-radius:12px; border-bottom-left-radius:12px;"></div>
       
-      <div style="margin-left:6px; display:flex; flex-direction:column; gap:4px;">
+      <div style="margin-left:6px; display:flex; flex-direction:column; gap:4px; flex:1; text-align:left;">
         <div style="font-weight:600; color:#F5F5F5; font-size:15px; display:flex; align-items:center; gap:8px;">
           ${escHtml(t.title)} 
           <span class="priority-label ${t.priority.toLowerCase()}" style="font-size:10px; padding:2px 6px;">${t.priority}</span>
@@ -172,7 +172,7 @@ function renderTaskList(uid) {
         </div>
       </div>
       
-      <button class="btn btn-sm btn-ghost btn-del-sched-task" data-id="${t.id}" style="padding:6px; color:#A1A1A1; border:1px solid transparent; flex-shrink:0;" onmouseover="this.style.color='#F87171'; this.style.background='rgba(248,113,113,0.1)'" onmouseout="this.style.color='#A1A1A1'; this.style.background='transparent'">
+      <button class="btn btn-sm btn-ghost btn-del-sched-task" data-id="${t.id}" style="padding:6px; margin-left:12px; color:#A1A1A1; border:1px solid transparent; flex-shrink:0;" onmouseover="this.style.color='#F87171'; this.style.background='rgba(248,113,113,0.1)'" onmouseout="this.style.color='#A1A1A1'; this.style.background='transparent'">
         <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
       </button>
     </div>

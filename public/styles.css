@@ -7,7 +7,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
 
 /* ── CSS Custom Properties (Design Tokens) ─────────────────── */
-/* ── CSS Custom Properties (Design Tokens) ─────────────────── */
 :root {
   /* Brand accents — Desaturated grey scale */
   --accent: #8A8A8A;
@@ -17,7 +16,7 @@
 
   /* Surfaces — Premium Black Theme */
   --bg-base: #000000;
-  --bg-elevated: #0f0f0f;
+  --bg-elevated: #0a0a0a;
   --bg-card: rgba(255, 255, 255, 0.02);
   --bg-card-hover: rgba(255, 255, 255, 0.04);
   --bg-input: rgba(255, 255, 255, 0.02);
@@ -131,7 +130,7 @@ html {
 body {
   font-family: var(--font-family);
   font-size: var(--font-size-base);
-  background-color: #0a0a0a;
+  background-color: var(--bg-base);
   color: var(--text-primary);
   line-height: 1.5;
   min-height: 100%;

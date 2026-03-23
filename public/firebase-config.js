@@ -10,8 +10,9 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
-  getFirestore,
-  enableIndexedDbPersistence,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getMessaging, isSupported } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
 
@@ -33,15 +34,12 @@ export const VAPID_KEY = "BMzrmWa2Z1MhacOyQOh--xfHnUNYjOmVPHZqd9ajR-e9PsOz2j6QkC
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
-export const db = getFirestore(app);
 
-// Enable offline persistence (cache for service worker shell)
-enableIndexedDbPersistence(db).catch((err) => {
-  if (err.code === "failed-precondition") {
-    console.warn("Firestore persistence: multiple tabs open.");
-  } else if (err.code === "unimplemented") {
-    console.warn("Firestore persistence: not supported in this browser.");
-  }
+// Modern way to enable offline persistence (v10.3+)
+export const db = initializeFirestore(app, {
+  cache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager()
+  })
 });
 
 // Messaging — only available in browsers that support it (iOS 16.4+ when installed)
