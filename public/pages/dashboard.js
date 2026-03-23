@@ -26,11 +26,10 @@ export async function renderDashboard(container, uid, profile) {
   }, 60000);
 
   container.innerHTML = `
-    <div class="page-header">
-      <div>
-        <div class="text-muted text-sm">${getGreeting()}</div>
-        <h1 class="page-title" style="font-size:var(--font-size-2xl)">${profile?.displayName || "Student"}</h1>
-      </div>
+    <div class="premium-header">
+      <div class="premium-greeting">${getGreeting()}</div>
+      <h1 class="premium-name">${profile?.displayName || "Student"}</h1>
+      <div class="premium-subtitle">${getSubtitle()}</div>
     </div>
     <div id="dash-loading" class="animate-pulse text-muted text-sm mb-md">Loading your day…</div>
     <div id="dash-content" class="hidden">
@@ -372,9 +371,19 @@ export function chartBaseOptions(title = "") {
 // ── Helpers ───────────────────────────────────────────────────
 function getGreeting() {
   const h = new Date().getHours();
-  if (h < 12) return "Good morning,";
-  if (h < 17) return "Good afternoon,";
-  return "Good evening,";
+  if (h >= 5 && h < 12) return "Good morning,";
+  if (h >= 12 && h < 17) return "Good afternoon,";
+  if (h >= 17 && h < 22) return "Good evening,";
+  return "Still working late?";
+}
+
+function getSubtitle() {
+  const subtitles = [
+    "Let’s make today productive.",
+    "Stay consistent. You’re improving.",
+    "One step closer today."
+  ];
+  return subtitles[Math.floor(Math.random() * subtitles.length)];
 }
 
 export function escHtml(str = "") {

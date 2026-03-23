@@ -7,8 +7,6 @@ import { navigate } from "../app.js";
 import { escHtml } from "./dashboard.js";
 import { showSnackbar, showConfirmDialog } from "../snackbar.js";
 
-const COLORS = ["#7C6FA8", "#B85A5A", "#C6A85B", "#5FA87A", "#5A8DB8", "#A87C6F", "#6FA8A8", "#A88A6F"];
-
 export async function renderSubjects(container, uid, profile) {
   container.innerHTML = `
     <div class="page-header">
@@ -58,7 +56,6 @@ async function loadSubjects(container, uid, profile) {
 
       const card = document.createElement("div");
       card.className = "subject-card clickable stagger-item";
-      card.style.setProperty("--subject-color", sub.color);
       card.style.animationDelay = `${index * 60}ms`;
       card.innerHTML = `
         <div class="flex justify-between items-start">
@@ -122,10 +119,8 @@ async function loadSubjects(container, uid, profile) {
   }
 }
 
-// ── Subject Modal ─────────────────────────────────────────────
 async function openSubjectModal(uid, existing, onSave) {
   const isEdit = !!existing;
-  const selectedColor = existing?.color || COLORS[0];
 
   // Fetch existing subjects for duplicate check
   let existingSubjects = [];
@@ -144,10 +139,6 @@ async function openSubjectModal(uid, existing, onSave) {
         <input class="form-input" id="sub-name-input" value="${escHtml(existing?.name || "")}" placeholder="e.g. Mathematics" />
       </div>
       <div id="sub-modal-err" class="form-error hidden"></div>
-      <div class="form-group">
-        <label class="form-label">Color</label>
-        <div class="color-row" id="color-row"></div>
-      </div>
       <div class="modal-actions">
         <button class="btn btn-secondary ripple" id="sub-cancel">Cancel</button>
         <button class="btn btn-primary ripple" id="sub-save">
@@ -157,22 +148,6 @@ async function openSubjectModal(uid, existing, onSave) {
       </div>
     </div>
   `;
-
-  // Color swatches
-  const row = backdrop.querySelector("#color-row");
-  let pickedColor = selectedColor;
-  COLORS.forEach((c) => {
-    const sw = document.createElement("button");
-    sw.className = "color-swatch" + (c === selectedColor ? " selected" : "");
-    sw.style.background = c;
-    sw.title = c;
-    sw.addEventListener("click", () => {
-      row.querySelectorAll(".color-swatch").forEach((s) => s.classList.remove("selected"));
-      sw.classList.add("selected");
-      pickedColor = c;
-    });
-    row.appendChild(sw);
-  });
 
   backdrop.querySelector("#sub-cancel").addEventListener("click", () => backdrop.remove());
   backdrop.addEventListener("click", (e) => { if (e.target === backdrop) backdrop.remove(); });
@@ -210,10 +185,10 @@ async function openSubjectModal(uid, existing, onSave) {
 
     try {
       if (isEdit) {
-        await updateSubject(existing.id, { name, color: pickedColor });
+        await updateSubject(existing.id, { name });
         showSnackbar("Subject updated!", "success");
       } else {
-        await createSubject(uid, { name, color: pickedColor });
+        await createSubject(uid, { name });
         showSnackbar(`"${name}" created!`, "success");
       }
       backdrop.remove();
