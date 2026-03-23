@@ -820,8 +820,8 @@ h4 { font-size: var(--font-size-lg); font-weight: 600; }
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
-  padding: 16px 16px 24px 16px; /* Added inner padding for safe area / responsive */
-  margin: 0 -16px var(--space-md) -16px; /* Bleed to edges on mobile, allowing glow to spread */
+  padding: 4px 16px 20px 16px;
+  margin: 0 -16px var(--space-md) -16px;
   border-radius: var(--border-radius-sm);
   z-index: 1;
 }
@@ -992,7 +992,7 @@ h4 { font-size: var(--font-size-lg); font-weight: 600; }
 
 .landing-hero {
   background: radial-gradient(ellipse at top, rgba(255, 255, 255, 0.04) 0%, transparent 65%);
-  padding: var(--space-2xl) var(--space-md) var(--space-xl);
+  padding: calc(env(safe-area-inset-top, 0px) + var(--space-xl)) var(--space-md) var(--space-xl);
   text-align: center;
 }
 
