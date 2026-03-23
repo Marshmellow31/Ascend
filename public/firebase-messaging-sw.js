@@ -4,9 +4,13 @@ importScripts("https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-com
 // We keep this minimal because we only need it to receive background push messages.
 // The actual config is passed implicitly by Vercel/Firebase, or we can use generic messaging.
 firebase.initializeApp({
-  // Since we only receive messages here, providing just the projectId and messagingSenderId usually works for Web Push.
+  apiKey: "AIzaSyCwKJw72RXUzvvBLdxI3WlfCoWvFPmvv3Y",
+  authDomain: "student-planner-95ed4.firebaseapp.com",
   projectId: "student-planner-95ed4",
-  messagingSenderId: "224841353755", // Updated to real sender ID
+  storageBucket: "student-planner-95ed4.firebasestorage.app",
+  messagingSenderId: "224841353755",
+  appId: "1:224841353755:web:0defe4eccd9a222a9646be",
+  measurementId: "G-GK068Y52DV"
 });
 
 const messaging = firebase.messaging();
