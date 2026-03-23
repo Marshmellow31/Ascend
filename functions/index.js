@@ -81,7 +81,7 @@ exports.scheduledReminders = onSchedule("every 5 minutes", async () => {
 
             const message = {
               notification: {
-                title: "⏰ Task Reminder: StudyFlow",
+                title: "⏰ Task Reminder: Your Day",
                 body: `"${task.title}" is due ${due}`,
               },
               data: {

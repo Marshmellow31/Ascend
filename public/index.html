@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="description" content="StudyFlow — your personal student planner. Manage subjects, topics, tasks, and track your weekly progress." />
-  <title>StudyFlow — Student Planner</title>
+  <meta name="description" content="Your Day — your personal student planner. Manage subjects, topics, tasks, and track your weekly progress." />
+  <title>Your Day — Student Planner</title>
 
   <!-- PWA Meta Tags -->
   <link rel="manifest" href="/manifest.json" />
@@ -14,10 +14,11 @@
   <!-- iOS Safari PWA Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="StudyFlow" />
-  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-  <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png" />
-  <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png" />
+  <meta name="apple-mobile-web-app-title" content="Your Day" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png" />
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
@@ -35,6 +36,23 @@
 </head>
 <body>
 
+<!-- ── SPLASH / LOADER ────────────────────────────────── -->
+<div id="app-splash">
+  <div class="splash-inner">
+    <div class="splash-logo-ring">
+      <div class="splash-ring"></div>
+      <div id="splash-icon"></div>
+    </div>
+    <div class="splash-title">Your Day</div>
+    <div class="splash-caption" id="splash-caption"></div>
+    <div class="splash-loading">
+      <span class="splash-dot"></span>
+      <span class="splash-dot"></span>
+      <span class="splash-dot"></span>
+    </div>
+  </div>
+</div>
+
 <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
 <!--  APP ROOT                                    -->
 <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
@@ -43,9 +61,8 @@
   <!-- ── LANDING PAGE ────────────────────────────── -->
   <div id="page-landing" class="landing hidden">
     <div class="landing-hero">
-      <div class="landing-logo"><i data-lucide="book-open" style="width:48px;height:48px;color:var(--accent)"></i></div>
-      <h1 class="landing-title">StudyFlow</h1>
-      <p class="landing-subtitle">Your personal academic planner — subjects, topics, tasks &amp; reminders, all in one place.</p>
+      <h1 class="landing-title">Your Day</h1>
+      <p class="landing-subtitle">Plan smarter. Grow daily. Stay on top of everything that matters.</p>
       <div class="landing-cta">
         <button class="btn btn-primary btn-full ripple" id="btn-get-started">Get Started Free</button>
         <button class="btn btn-secondary btn-full ripple" id="btn-landing-login">I already have an account</button>
@@ -54,33 +71,33 @@
 
     <div class="features-grid" style="padding:0 var(--space-md) var(--space-md)">
       <div class="feature-card">
-        <div class="feature-icon"><i data-lucide="target"></i></div>
-        <div class="feature-title">Task Manager</div>
-        <div class="feature-desc">Set priorities, due dates and reminders</div>
+        <div class="feature-icon"><i data-lucide="sparkles"></i></div>
+        <div class="feature-title">AI Scheduler</div>
+        <div class="feature-desc">Auto-plan tasks into your free time slots</div>
       </div>
       <div class="feature-card">
-        <div class="feature-icon"><i data-lucide="bar-chart-3"></i></div>
-        <div class="feature-title">Progress Charts</div>
-        <div class="feature-desc">Weekly analytics at a glance</div>
+        <div class="feature-icon"><i data-lucide="trending-up"></i></div>
+        <div class="feature-title">Personal Growth</div>
+        <div class="feature-desc">Track goals, habits & daily progress</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i data-lucide="book-open"></i></div>
+        <div class="feature-title">Subject Tracker</div>
+        <div class="feature-desc">Manage courses, topics & completion</div>
       </div>
       <div class="feature-card">
         <div class="feature-icon"><i data-lucide="bell"></i></div>
         <div class="feature-title">Smart Reminders</div>
-        <div class="feature-desc">Push notifications via Firebase</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon"><i data-lucide="smartphone"></i></div>
-        <div class="feature-title">PWA on iPhone</div>
-        <div class="feature-desc">Add to Home Screen for offline use</div>
+        <div class="feature-desc">Push notifications for deadlines</div>
       </div>
     </div>
 
     <div class="install-banner" style="margin:0 var(--space-md) var(--space-xl)">
-      <div class="install-banner-title">📲 Add to iPhone Home Screen</div>
-      <div class="install-step"><span>1.</span><span>Open this page in <strong>Safari</strong></span></div>
+      <div class="install-banner-title">📲 Install on your iPhone</div>
+      <div class="install-step"><span>1.</span><span>Open in <strong>Safari</strong></span></div>
       <div class="install-step"><span>2.</span><span>Tap the <strong>Share</strong> icon (↑)</span></div>
       <div class="install-step"><span>3.</span><span>Tap <strong>"Add to Home Screen"</strong></span></div>
-      <div class="install-step"><span>4.</span><span>Tap <strong>Add</strong> — that's it! 🎉</span></div>
+      <div class="install-step"><span>4.</span><span>Tap <strong>Add</strong> — done! 🎉</span></div>
     </div>
   </div>
 
@@ -90,9 +107,8 @@
     <div id="auth-login" class="auth-page">
       <div class="auth-card">
         <button class="auth-close auth-close-btn" aria-label="Close" title="Close"><i data-lucide="x" style="width:20px;height:20px"></i></button>
-        <div class="auth-logo"><i data-lucide="book-open" style="width:40px;height:40px;color:var(--accent)"></i></div>
         <h2 class="auth-title">Welcome back</h2>
-        <p class="auth-subtitle">Sign in to your StudyFlow account</p>
+        <p class="auth-subtitle">Sign in to your Your Day account</p>
         <form id="form-login" novalidate>
           <div class="form-group">
             <label class="form-label" for="login-email">Email</label>
@@ -125,7 +141,7 @@
         <button class="auth-close auth-close-btn" aria-label="Close" title="Close"><i data-lucide="x" style="width:20px;height:20px"></i></button>
         <div class="auth-logo"><i data-lucide="user-plus" style="width:40px;height:40px;color:var(--accent)"></i></div>
         <h2 class="auth-title">Create account</h2>
-        <p class="auth-subtitle">Start your StudyFlow journey</p>
+        <p class="auth-subtitle">Start your Your Day journey</p>
         <form id="form-signup" novalidate>
           <div class="form-group">
             <label class="form-label" for="signup-name">Display Name</label>
@@ -192,7 +208,7 @@
     <div class="drawer-overlay hidden" id="drawer-overlay"></div>
     <nav class="side-drawer" id="side-drawer">
       <div class="drawer-header">
-        <div class="drawer-logo"><i data-lucide="book-open"></i> StudyFlow</div>
+        <div class="drawer-logo">Your Day</div>
         <button class="drawer-close btn btn-ghost btn-sm" id="btn-close-drawer" aria-label="Close Menu"><i data-lucide="x"></i></button>
       </div>
       <div class="drawer-links">

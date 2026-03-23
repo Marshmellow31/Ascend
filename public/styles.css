@@ -1,5 +1,5 @@
 /* ============================================================
-   styles.css — StudyFlow Design System
+   styles.css — Your Day Design System
    Mobile-first, dark mode default, iOS PWA optimised
    ============================================================ */
 
@@ -84,7 +84,7 @@
   --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.6);
   --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.8);
-  --shadow-accent: 0 8px 24px rgba(108, 99, 255, 0.25);
+  --shadow-accent: 0 8px 24px rgba(255, 255, 255, 0.06);
 
   /* Bottom nav height */
   --nav-height: 64px;
@@ -162,7 +162,7 @@ h4 { font-size: var(--font-size-lg); font-weight: 600; }
 
 .page-content {
   padding: var(--space-md);
-  padding-top: calc(env(safe-area-inset-top, 24px) + var(--space-md));
+  padding-top: calc(env(safe-area-inset-top, 0px) + 60px);
   padding-bottom: calc(var(--safe-bottom) + var(--space-xl));
   flex: 1;
 }
@@ -170,7 +170,7 @@ h4 { font-size: var(--font-size-lg); font-weight: 600; }
 /* ── Side Drawer & Hamburger Menu ──────────────────────────── */
 .menu-toggle {
   position: fixed;
-  top: calc(env(safe-area-inset-top, 24px) + 12px);
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
   left: var(--space-md);
   z-index: 150;
   width: 44px;
@@ -209,7 +209,7 @@ h4 { font-size: var(--font-size-lg); font-weight: 600; }
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-lg);
-  padding-top: env(safe-area-inset-top, 24px);
+  padding-top: max(env(safe-area-inset-top, 0px), 12px);
 }
 .side-drawer.open {
   transform: translateX(0);
@@ -932,10 +932,10 @@ h4 { font-size: var(--font-size-lg); font-weight: 600; }
 }
 
 .filter-chip.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-  box-shadow: var(--shadow-accent);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  box-shadow: none;
 }
 
 /* ── Chart Container ───────────────────────────────────────── */
@@ -958,8 +958,8 @@ h4 { font-size: var(--font-size-lg); font-weight: 600; }
 
 /* ── Streak Banner ─────────────────────────────────────────── */
 .streak-banner {
-  background: linear-gradient(135deg, rgba(108, 99, 255, 0.15), rgba(167, 139, 250, 0.1));
-  border: 1px solid var(--border-active);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--border-radius);
   padding: var(--space-md);
   display: flex;
@@ -991,7 +991,7 @@ h4 { font-size: var(--font-size-lg); font-weight: 600; }
 }
 
 .landing-hero {
-  background: radial-gradient(ellipse at top, rgba(108, 99, 255, 0.25) 0%, transparent 60%);
+  background: radial-gradient(ellipse at top, rgba(255, 255, 255, 0.04) 0%, transparent 65%);
   padding: var(--space-2xl) var(--space-md) var(--space-xl);
   text-align: center;
 }
@@ -1005,12 +1005,14 @@ h4 { font-size: var(--font-size-lg); font-weight: 600; }
 .landing-title {
   font-size: var(--font-size-hero);
   font-weight: 800;
-  background: linear-gradient(135deg, #fff 0%, var(--accent-light) 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #888888 60%, #ffffff 100%);
+  background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   line-height: 1.1;
   margin-bottom: var(--space-md);
+  animation: text-shimmer 5s linear infinite;
 }
 
 .landing-subtitle {
@@ -1050,8 +1052,8 @@ h4 { font-size: var(--font-size-lg); font-weight: 600; }
 /* Install banner */
 .install-banner {
   margin: 0 var(--space-md) var(--space-xl);
-  background: linear-gradient(135deg, rgba(108, 99, 255, 0.12), rgba(167, 139, 250, 0.08));
-  border: 1px solid var(--border-active);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--border-radius);
   padding: var(--space-md);
 }
@@ -1067,7 +1069,7 @@ h4 { font-size: var(--font-size-lg); font-weight: 600; }
   align-items: center;
   justify-content: center;
   padding: var(--space-xl) var(--space-md);
-  background: radial-gradient(ellipse at top, rgba(108, 99, 255, 0.15) 0%, transparent 60%);
+  background: radial-gradient(ellipse at top, rgba(255, 255, 255, 0.03) 0%, transparent 60%);
 }
 
 .auth-divider {
@@ -1421,10 +1423,7 @@ h4 { font-size: var(--font-size-lg); font-weight: 600; }
   .install-prompt { display: none !important; }
 }
 
-/* hide browser chrome on iOS standalone */
-@supports (-webkit-touch-callout: none) {
-  body { padding-top: env(safe-area-inset-top); }
-}
+/* iOS standalone — safe area handled per-element, no body offset needed */
 
 /* ══════════════════════════════════════════════════════════════
    🎓 BTECH JOURNEY BANNER
@@ -1504,6 +1503,179 @@ h4 { font-size: var(--font-size-lg); font-weight: 600; }
   color: #9CA3AF;
   letter-spacing: 0.5px;
   text-transform: uppercase;
+}
+
+/* ── App Splash Screen ──────────────────────────────────────── */
+#app-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.5s ease, visibility 0.5s;
+}
+#app-splash.splash-hide {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.splash-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  animation: splash-fade-in 0.6s ease;
+}
+
+@keyframes splash-fade-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.splash-logo-ring {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.splash-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: rgba(255,255,255,0.6);
+  border-right-color: rgba(255,255,255,0.2);
+  animation: splash-spin 1.2s linear infinite;
+}
+
+@keyframes splash-spin {
+  to { transform: rotate(360deg); }
+}
+
+.splash-svg-icon {
+  width: 56px;
+  height: 56px;
+}
+
+.splash-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #ffffff 0%, #888888 60%, #ffffff 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: text-shimmer 3s linear infinite;
+}
+
+.splash-caption {
+  font-size: 13px;
+  color: #505050;
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: 0.2px;
+  text-align: center;
+  max-width: 220px;
+  line-height: 1.6;
+  animation: splash-fade-in 1s 0.3s ease both;
+}
+
+/* Three-dot loading indicator */
+.splash-loading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.splash-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #3a3a3a;
+  animation: dot-pulse 1.4s ease-in-out infinite;
+}
+.splash-dot:nth-child(2) { animation-delay: 0.2s; }
+.splash-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dot-pulse {
+  0%, 80%, 100% { background: #2a2a2a; transform: scale(0.8); }
+  40%            { background: #888888; transform: scale(1.2); }
+}
+
+/* ── Landing Page Entrance Animation ───────────────────────── */
+.landing-animate-in .landing-hero {
+  animation: landing-rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.landing-animate-in .features-grid {
+  animation: landing-rise 0.7s 0.1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.landing-animate-in .install-banner {
+  animation: landing-rise 0.7s 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes landing-rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── CTA Button Click Animation ─────────────────────────────── */
+.btn-cta-pressed {
+  animation: cta-press 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes cta-press {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(0.95); }
+  100% { transform: scale(1); opacity: 0.6; }
+}
+
+/* ── Page slide-out on CTA click ─────────────────────────────── */
+.page-exit {
+  animation: page-slide-out 0.35s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+@keyframes page-slide-out {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-20px); }
+}
+
+/* ── Auth page slide-in ──────────────────────────────────────── */
+.auth-slide-in {
+  animation: auth-enter 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes auth-enter {
+  from { opacity: 0; transform: translateY(32px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Auth page slide-out (reverse — used when closing back to landing) ── */
+.auth-slide-out {
+  animation: auth-exit 0.3s cubic-bezier(0.4, 0, 1, 1) both;
+  pointer-events: none;
+}
+
+@keyframes auth-exit {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(32px) scale(0.97); }
+}
+
+/* ── Landing page re-enter (from below, reverse of page-exit) ── */
+.page-enter {
+  animation: page-slide-in 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes page-slide-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 

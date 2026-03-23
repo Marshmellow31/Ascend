@@ -1,6 +1,6 @@
 {
-  "name": "StudyFlow",
-  "short_name": "StudyFlow",
+  "name": "Your Day",
+  "short_name": "Your Day",
   "description": "Your personal student planner — manage subjects, topics, tasks, and track your weekly progress.",
   "start_url": "/",
   "display": "standalone",

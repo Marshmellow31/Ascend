@@ -13,6 +13,7 @@
     "deploy:all": "firebase deploy --only firestore:rules,functions && vercel --prod"
   },
   "devDependencies": {
+    "sharp": "^0.34.5",
     "vite": "^7.3.1",
     "vite-plugin-pwa": "^1.2.0"
   },

@@ -81,7 +81,7 @@ module.exports = async function handler(req, res) {
 
           const message = {
             notification: {
-              title: "⏰ Task Reminder: StudyFlow",
+              title: "⏰ Task Reminder: Your Day",
               body: `"${task.title}" is due ${dueStr}`,
             },
             data: { taskId: task.id, type: "reminder" },

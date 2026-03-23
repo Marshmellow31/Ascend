@@ -114,7 +114,7 @@ export async function renderSettings(container, uid, profile, state) {
     </div>
 
     <div class="text-center text-muted text-sm" style="margin:var(--space-xl) 0 var(--space-md)">
-      StudyFlow v1.0.0 · Built with Firebase + Vercel
+      Your Day v1.0.0 · Built with Firebase + Vercel
     </div>
     <div id="settings-msg" class="form-error hidden" style="text-align:center;margin-bottom:var(--space-md)"></div>
     <button class="btn btn-primary btn-full" id="btn-save-settings">Save Changes</button>
@@ -180,7 +180,7 @@ export async function renderSettings(container, uid, profile, state) {
   document.getElementById("btn-logout")?.addEventListener("click", async () => {
     const confirmed = await showConfirmDialog(
       "Sign Out",
-      "Are you sure you want to sign out of StudyFlow?",
+      "Are you sure you want to sign out of Your Day?",
       "Sign Out",
       true
     );

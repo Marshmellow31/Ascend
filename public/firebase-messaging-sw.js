@@ -18,7 +18,7 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log("[firebase-messaging-sw.js] Received background message ", payload);
   
-  const notificationTitle = payload.notification?.title || "StudyFlow Reminder";
+  const notificationTitle = payload.notification?.title || "Your Day Reminder";
   const notificationOptions = {
     body: payload.notification?.body || "You have a task due soon.",
     icon: "/icons/icon-192x192.png",
