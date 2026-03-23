@@ -116,6 +116,7 @@
   margin: 0;
   padding: 0;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 html {
@@ -158,6 +159,7 @@ h4 { font-size: var(--font-size-lg); font-weight: 600; }
 
 .page-content {
   padding: var(--space-md);
+  padding-top: calc(env(safe-area-inset-top, 24px) + var(--space-md));
   padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + var(--space-md));
   flex: 1;
 }

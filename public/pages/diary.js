@@ -105,7 +105,17 @@ export async function renderDiary(container, uid) {
     });
 
     calEl.querySelectorAll(".diary-cal-day").forEach((el) => {
+      const isFuture = el.dataset.key > todayKey();
+      if (isFuture) {
+        el.style.opacity = "0.3";
+        el.style.cursor = "not-allowed";
+      }
+
       el.addEventListener("click", () => {
+        if (isFuture) {
+          import("../snackbar.js").then(m => m.showSnackbar("Cannot edit future dates", "error"));
+          return;
+        }
         selectedDate = el.dataset.key;
         renderMiniCal();
         loadEntry(selectedDate);
