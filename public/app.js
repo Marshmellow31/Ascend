@@ -74,13 +74,16 @@ export async function navigate(page, params = {}) {
   content.classList.remove("fadeSlideUp");
   void content.offsetWidth;
   content.classList.add("fadeSlideUp");
+  
+  // Toggle FAB visibility
+  const fab = $("fab-add-task");
+  if (fab) {
+    const hideFabPages = ["subjects", "personalDevelopment", "settings", "analytics", "scheduler"];
+    fab.classList.toggle("hidden", hideFabPages.includes(page));
+  }
 
   switch (page) {
     case "dashboard":  await renderDashboard(content, uid, profile); break;
-    case "schedule":
-      const { renderSchedule } = await import("./pages/schedule.js");
-      await renderSchedule(content, uid, profile);
-      break;
     case "subjects":   await renderSubjects(content, uid, profile); break;
     case "topics":     await renderTopics(content, uid, params.subjectId || state.selectedSubjectId, params.subjectName || state.selectedSubjectName); break;
     case "tasks":      await renderTasks(content, uid, profile); break;
@@ -181,6 +184,21 @@ function main() {
   initLanding(showAuthPage);
   initAuthForms(handleUserAuth, showLanding);
   initInstallPrompt();
+  
+  // Register Service Worker for PWA
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      // In dev mode, VitePWA may serve sw.js at the root or as /dev-sw.js?dev-sw
+      // By using /sw.js, we target the production-ready path which VitePWA handles
+      navigator.serviceWorker.register('/sw.js', { scope: '/' })
+        .then(reg => {
+          console.log('SW registered:', reg);
+        })
+        .catch(err => {
+          console.log('SW registration failed:', err);
+        });
+    });
+  }
 
   onAuthStateChanged(async (user) => {
     if (user) await handleUserAuth(user);

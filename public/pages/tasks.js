@@ -346,48 +346,55 @@ export async function openTaskModal(uid, profile, onSave, existing = null) {
   subjSel.addEventListener("change", filterTopics);
   filterTopics();
 
-  backdrop.querySelector("#task-cancel").addEventListener("click", () => backdrop.remove());
-  backdrop.addEventListener("click", (e) => { if (e.target === backdrop) backdrop.remove(); });
-
-  backdrop.querySelector("#task-save").addEventListener("click", async () => {
-    const title = backdrop.querySelector("#task-title").value.trim();
-    const errEl = backdrop.querySelector("#task-modal-err");
-    const saveBtn = backdrop.querySelector("#task-save");
-    const saveText = backdrop.querySelector("#task-save-text");
-    const saveSpinner = backdrop.querySelector("#task-save-spinner");
-
-    if (!title) {
-      errEl.textContent = "Task title is required.";
-      errEl.classList.remove("hidden");
-      return;
-    }
-
-    errEl.classList.add("hidden");
-    saveBtn.disabled = true;
-    saveText.textContent = isEdit ? "Saving…" : "Creating…";
-    saveSpinner.classList.remove("hidden");
-
-    const data = {
-      title,
-      description: backdrop.querySelector("#task-desc").value.trim(),
-      subjectId:  backdrop.querySelector("#task-subject").value  || null,
-      topicId:    backdrop.querySelector("#task-topic").value    || null,
-      priority:   backdrop.querySelector("#task-priority").value || "medium",
-      dueDate:    backdrop.querySelector("#task-due").value      || null,
-      reminderTime: backdrop.querySelector("#task-reminder").value || null,
+    const closeModal = () => {
+      backdrop.classList.add("modal-exit");
+      setTimeout(() => {
+        backdrop.remove();
+      }, 200);
     };
 
-    try {
-      if (isEdit) {
-        await updateTask(existing.id, data);
-        showSnackbar("Task updated!", "success");
-      } else {
-        await createTask(uid, data);
-        showSnackbar("Task created!", "success");
+    backdrop.querySelector("#task-cancel").addEventListener("click", closeModal);
+    backdrop.addEventListener("click", (e) => { if (e.target === backdrop) closeModal(); });
+
+    backdrop.querySelector("#task-save").addEventListener("click", async () => {
+      const title = backdrop.querySelector("#task-title").value.trim();
+      const errEl = backdrop.querySelector("#task-modal-err");
+      const saveBtn = backdrop.querySelector("#task-save");
+      const saveText = backdrop.querySelector("#task-save-text");
+      const saveSpinner = backdrop.querySelector("#task-save-spinner");
+
+      if (!title) {
+        errEl.textContent = "Task title is required.";
+        errEl.classList.remove("hidden");
+        return;
       }
-      backdrop.remove();
-      onSave();
-    } catch (e) {
+
+      errEl.classList.add("hidden");
+      saveBtn.disabled = true;
+      saveText.textContent = isEdit ? "Saving…" : "Creating…";
+      saveSpinner.classList.remove("hidden");
+
+      const data = {
+        title,
+        description: backdrop.querySelector("#task-desc").value.trim(),
+        subjectId:  backdrop.querySelector("#task-subject").value  || null,
+        topicId:    backdrop.querySelector("#task-topic").value    || null,
+        priority:   backdrop.querySelector("#task-priority").value || "medium",
+        dueDate:    backdrop.querySelector("#task-due").value      || null,
+        reminderTime: backdrop.querySelector("#task-reminder").value || null,
+      };
+
+      try {
+        if (isEdit) {
+          await updateTask(existing.id, data);
+          showSnackbar("Task updated!", "success");
+        } else {
+          await createTask(uid, data);
+          showSnackbar("Task created!", "success");
+        }
+        closeModal();
+        onSave();
+      } catch (e) {
       saveBtn.disabled = false;
       saveText.textContent = isEdit ? "Save" : "Create Task";
       saveSpinner.classList.add("hidden");

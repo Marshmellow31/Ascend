@@ -51,12 +51,6 @@ export async function renderSettings(container, uid, profile, state) {
           <option value="sunday" ${p.weekStartDay==="sunday"?"selected":""}>Sunday</option>
         </select>
       </div>
-        <div class="flex items-center gap-sm w-full justify-between">
-          <span class="settings-item-icon"><i data-lucide="target" style="width:18px;height:18px"></i></span>
-          <span class="settings-item-label" style="flex:1">Study Goal</span>
-        </div>
-        <input class="form-input" id="input-goals" style="font-size:13px" placeholder="e.g. Study 3 hours daily" value="${escHtml(p.studyGoals||"")}" />
-      </div>
     </div>
 
     <!-- Notifications -->
@@ -146,12 +140,11 @@ export async function renderSettings(container, uid, profile, state) {
   // ── Save settings ─────────────────────────────────────────────
   document.getElementById("btn-save-settings")?.addEventListener("click", async () => {
     const weekStartDay = document.getElementById("sel-week-start")?.value || "monday";
-    const studyGoals   = document.getElementById("input-goals")?.value?.trim() || "";
     const btechName    = document.getElementById("input-btech-name")?.value?.trim() || "";
     const btechStart   = document.getElementById("input-btech-start")?.value || "";
     const btechEnd     = document.getElementById("input-btech-end")?.value || "";
-    await updateUserProfile(uid, { weekStartDay, studyGoals, btechName, btechStart, btechEnd });
-    state.profile = { ...state.profile, weekStartDay, studyGoals, btechName, btechStart, btechEnd };
+    await updateUserProfile(uid, { weekStartDay, btechName, btechStart, btechEnd });
+    state.profile = { ...state.profile, weekStartDay, btechName, btechStart, btechEnd };
     const msg = document.getElementById("settings-msg");
     if (msg) {
       msg.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px"><i data-lucide="check" style="width:16px;height:16px"></i> Settings saved!</span>`;

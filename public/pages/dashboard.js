@@ -206,13 +206,13 @@ async function updateDashboardState(uid, profile, isFirstLoad = false) {
         let borderGlow = "";
 
         if (task._state === "curr") {
-          badgeStyle = "background: #1B1B1B; color: #F5F5F5; border: 1px solid #333333; animation: pulse 2s infinite;";
+          badgeStyle = "background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-active); animation: pulse 2s infinite;";
           stateLabel = "HAPPENING NOW";
-          borderGlow = "border: 1px solid #4A4A4A; box-shadow: 0 0 16px rgba(255,255,255,0.05);";
+          borderGlow = "border: 1px solid var(--border-active); box-shadow: 0 0 16px rgba(var(--text-primary-rgb), 0.05);";
         } else if (task._state === "prev") {
           stateLabel = "COMPLETED";
         } else if (task._state === "next") {
-          badgeStyle = "background: #111111; color: #A1A1A1; border: 1px solid #262626;";
+          badgeStyle = "background: var(--bg-base); color: var(--text-muted); border: 1px solid var(--border);";
           stateLabel = "UPCOMING";
         }
 
@@ -354,16 +354,16 @@ export function chartBaseOptions(title = "") {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: "#1a1a2e",
-        titleColor: "#f0f0ff",
-        bodyColor: "#a0a0c0",
-        borderColor: "rgba(108,99,255,0.3)",
+        backgroundColor: "var(--bg-elevated)",
+        titleColor: "var(--text-primary)",
+        bodyColor: "var(--text-secondary)",
+        borderColor: "var(--border)",
         borderWidth: 1,
       },
     },
     scales: {
-      x: { grid: { color: "rgba(255,255,255,0.05)" }, ticks: { color: "#5a5a80" } },
-      y: { grid: { color: "rgba(255,255,255,0.05)" }, ticks: { color: "#5a5a80", stepSize: 1 }, beginAtZero: true },
+      x: { grid: { color: "var(--border-subtle)" }, ticks: { color: "var(--text-muted)" } },
+      y: { grid: { color: "var(--border-subtle)" }, ticks: { color: "var(--text-muted)", stepSize: 1 }, beginAtZero: true },
     },
   };
 }

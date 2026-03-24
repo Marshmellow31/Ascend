@@ -17,7 +17,11 @@ export default defineConfig({
         skipWaiting: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json}']
       },
-      manifest: false // Use the existing manifest.json in public/
+      manifest: false, // Use the existing manifest.json in public/
+      devOptions: {
+        enabled: true,
+        type: 'module'
+      }
     })
   ]
 });

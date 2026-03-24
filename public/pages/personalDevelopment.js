@@ -61,7 +61,7 @@ export async function renderPersonalDevelopment(container, uid, profile) {
       .pd-page-title {
         font-size: 22px;
         font-weight: 800;
-        color: #F5F5F5;
+        color: var(--text-primary);
       }
       .pd-subtitle {
         font-size: 13px;
@@ -72,8 +72,8 @@ export async function renderPersonalDevelopment(container, uid, profile) {
 
       /* ── Goal Cards ── */
       .goal-card {
-        background: #121212;
-        border: 1px solid #1F1F1F;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border);
         border-radius: 20px;
         padding: 18px;
         margin-bottom: 14px;
@@ -81,7 +81,7 @@ export async function renderPersonalDevelopment(container, uid, profile) {
         overflow: hidden;
         transition: all 0.22s ease;
       }
-      .goal-card:hover { background: #161616; border-color: #2A2A2A; transform: translateY(-1px); }
+      .goal-card:hover { background: var(--bg-card-hover); border-color: var(--border-active); transform: translateY(-1px); }
       .goal-card.completed-card { opacity: 0.65; }
 
       .goal-card-accent {
@@ -99,7 +99,7 @@ export async function renderPersonalDevelopment(container, uid, profile) {
       .goal-card-title {
         font-size: 16px;
         font-weight: 700;
-        color: #F5F5F5;
+        color: var(--text-primary);
         line-height: 1.3;
         flex: 1;
         margin-right: 8px;
@@ -114,18 +114,18 @@ export async function renderPersonalDevelopment(container, uid, profile) {
         width: 32px;
         height: 32px;
         border-radius: 50%;
-        background: #1E1E1E;
-        border: 1px solid #2A2A2A;
+        background: var(--bg-base);
+        border: 1px solid var(--border);
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        color: #A1A1A1;
+        color: var(--text-muted);
         transition: all 0.18s;
         flex-shrink: 0;
       }
-      .goal-icon-btn:hover { background: #262626; color: #F5F5F5; border-color: #3A3A3A; }
-      .goal-icon-btn.danger:hover { background: #3A1515; color: #F87171; border-color: #5A2020; }
+      .goal-icon-btn:hover { background: var(--bg-card-hover); color: var(--text-primary); border-color: var(--border-active); }
+      .goal-icon-btn.danger:hover { background: rgba(var(--text-primary-rgb), 0.05); color: var(--error); border-color: var(--error); }
 
       .goal-category-row {
         display: flex;
@@ -157,9 +157,9 @@ export async function renderPersonalDevelopment(container, uid, profile) {
         letter-spacing: 0.4px;
         text-transform: uppercase;
       }
-      .goal-status-active   { background: rgba(80, 255, 120, 0.03); color: #cccccc; border: 1px solid rgba(80, 255, 120, 0.2); }
-      .goal-status-paused   { background: rgba(255, 255, 255, 0.02);  color: #cccccc; border: 1px solid rgba(255, 255, 255, 0.08); }
-      .goal-status-completed{ background: rgba(255, 255, 255, 0.05);  color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.15); }
+      .goal-status-active   { background: rgba(var(--text-primary-rgb), 0.03); color: var(--text-secondary); border: 1px solid var(--border); }
+      .goal-status-paused   { background: var(--bg-card-subtle);  color: var(--text-muted); border: 1px solid var(--border-subtle); }
+      .goal-status-completed{ background: var(--bg-card-hover);  color: var(--text-primary); border: 1px solid var(--border-active); }
 
       /* ── Progress ── */
       .goal-progress-wrap { margin-bottom: 14px; }
@@ -173,7 +173,7 @@ export async function renderPersonalDevelopment(container, uid, profile) {
       .goal-progress-bar {
         width: 100%;
         height: 5px;
-        background: #1E1E1E;
+        background: var(--bg-card-subtle);
         border-radius: 999px;
         overflow: hidden;
       }
@@ -187,7 +187,7 @@ export async function renderPersonalDevelopment(container, uid, profile) {
       .goal-stats-row {
         display: flex;
         gap: 0;
-        border: 1px solid #222;
+        border: 1px solid var(--border-subtle);
         border-radius: 12px;
         overflow: hidden;
         margin-bottom: 14px;
@@ -202,7 +202,7 @@ export async function renderPersonalDevelopment(container, uid, profile) {
       .goal-stat-val {
         font-size: 16px;
         font-weight: 700;
-        color: #F5F5F5;
+        color: var(--text-primary);
         line-height: 1;
         margin-bottom: 3px;
       }
@@ -219,7 +219,7 @@ export async function renderPersonalDevelopment(container, uid, profile) {
         align-items: center;
         justify-content: space-between;
         padding: 10px 14px;
-        background: #0E0E0E;
+        background: var(--bg-card-subtle);
         border-radius: 10px;
         margin-bottom: 10px;
       }
@@ -240,7 +240,7 @@ export async function renderPersonalDevelopment(container, uid, profile) {
       .toggle-slider {
         position: absolute;
         inset: 0;
-        background: #2A2A2A;
+        background: var(--border-active);
         border-radius: 999px;
         cursor: pointer;
         transition: background 0.2s;
@@ -250,7 +250,7 @@ export async function renderPersonalDevelopment(container, uid, profile) {
         position: absolute;
         width: 16px; height: 16px;
         left: 3px; top: 3px;
-        background: #6B6B6B;
+        background: var(--bg-base);
         border-radius: 50%;
         transition: transform 0.2s, background 0.2s;
       }
@@ -267,8 +267,8 @@ export async function renderPersonalDevelopment(container, uid, profile) {
         gap: 6px;
         padding: 7px 14px;
         border-radius: 8px;
-        background: #161616;
-        border: 1px solid #2A2A2A;
+        background: var(--bg-base);
+        border: 1px solid var(--border);
         color: var(--text-secondary);
         font-size: 12px;
         font-weight: 600;
@@ -285,15 +285,15 @@ export async function renderPersonalDevelopment(container, uid, profile) {
         align-items: center;
         gap: 10px;
         padding: 10px 14px;
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.08);
+        background: var(--bg-card-subtle);
+        border: 1px solid var(--border-subtle);
         border-radius: 10px;
         margin-bottom: 10px;
       }
       .completion-banner-text {
         font-size: 13px;
         font-weight: 600;
-        color: #ffffff;
+        color: var(--text-primary);
       }
 
       /* ── Today Tasks Section ── */
@@ -310,8 +310,8 @@ export async function renderPersonalDevelopment(container, uid, profile) {
         align-items: center;
         gap: 10px;
         padding: 12px 14px;
-        background: #0E0E0E;
-        border: 1px solid #1E1E1E;
+        background: var(--bg-card-subtle);
+        border: 1px solid var(--border-subtle);
         border-radius: 12px;
         margin-bottom: 8px;
         transition: all 0.18s;
@@ -325,7 +325,7 @@ export async function renderPersonalDevelopment(container, uid, profile) {
       .goal-task-title {
         flex: 1;
         font-size: 14px;
-        color: #E5E5E5;
+        color: var(--text-primary);
         font-weight: 500;
       }
       .goal-task-meta {
@@ -654,7 +654,7 @@ function renderGoalCardHTML(goal) {
       <div class="goal-progress-wrap">
         <div class="goal-progress-label">
           <span>${goal.totalProgress || 0} / ${goal.totalTarget} ${esc(goal.unit)}</span>
-          <span style="font-weight:700; color:#F5F5F5;">${pct}%</span>
+          <span style="font-weight:700; color:var(--text-primary);">${pct}%</span>
         </div>
         <div class="goal-progress-bar">
           <div class="goal-progress-fill" style="width:${pct}%; background:${meta.color};"></div>

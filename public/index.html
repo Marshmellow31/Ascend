@@ -216,10 +216,12 @@
   <!-- ── MAIN APP ────────────────────────────────── -->
   <div id="page-app" class="hidden">
 
-    <!-- Hamburger Menu Button -->
-    <button class="menu-toggle btn btn-icon ripple" id="btn-menu-toggle" aria-label="Open Menu">
-      <i data-lucide="menu"></i>
-    </button>
+    <!-- Fixed Top Header -->
+    <header class="app-header">
+      <button class="menu-toggle btn btn-icon ripple" id="btn-menu-toggle" aria-label="Open Menu">
+        <i data-lucide="menu"></i>
+      </button>
+    </header>
 
     <!-- Page Content -->
     <div class="app-container">
@@ -236,9 +238,6 @@
       <div class="drawer-links">
         <button class="drawer-item active ripple" data-page="dashboard">
           <i data-lucide="layout-dashboard"></i> Dashboard
-        </button>
-        <button class="drawer-item ripple" data-page="schedule">
-          <i data-lucide="calendar"></i> Schedule
         </button>
         <button class="drawer-item ripple" data-page="subjects">
           <i data-lucide="book"></i> Subjects

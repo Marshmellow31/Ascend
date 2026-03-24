@@ -47,7 +47,7 @@ export async function renderSchedulerTab(container, uid, profile) {
           <h3 style="color:#F87171; margin-bottom:12px;"><i data-lucide="shield-alert" style="width:20px;height:20px;display:inline-block;vertical-align:middle;"></i> Database Permissions Missing</h3>
           <p style="color:var(--text-secondary); margin-bottom:12px; font-size:14px;">Your Firebase database doesn't have permission to use the new Scheduler features yet.</p>
           <p style="color:var(--text-secondary); font-size:14px;">Please deploy the updated <code>firestore.rules</code> file by running this in your terminal:</p>
-          <pre style="background:#1A1A1A; padding:12px; border-radius:8px; margin-top:12px; color:#F5F5F5; font-size:13px; font-family:monospace; overflow-x:auto;">npm run deploy:rules</pre>
+          <pre style="background:var(--bg-tertiary); padding:12px; border-radius:8px; margin-top:12px; color:var(--text-primary); font-size:13px; font-family:monospace; overflow-x:auto;">npm run deploy:rules</pre>
         </div>
       `;
       if (window.lucide) window.lucide.createIcons();
@@ -74,11 +74,11 @@ export async function renderSchedulerTab(container, uid, profile) {
       </div>
       <div id="scheduler-task-list"></div>
       
-      <div style="margin-top:var(--space-lg); display:flex; gap:12px;">
-        <button class="btn btn-secondary ripple" id="btn-manage-blocks" style="flex:1;">
-          <i data-lucide="clock" style="width:16px;height:16px;margin-right:6px;"></i> Time Blocks
+      <div style="margin-top:var(--space-lg); display:flex; flex-direction:column; gap:12px;">
+        <button class="btn btn-secondary ripple" id="btn-manage-blocks" style="width:100%;">
+          <i data-lucide="clock" style="width:16px;height:16px;margin-right:6px;"></i> Edit Schedule
         </button>
-        <button class="btn btn-primary ripple" id="btn-generate-plan" style="flex:2; background:#1A1A1A; border:1px solid #333;">
+        <button class="btn btn-primary ripple" id="btn-generate-plan" style="width:100%;">
           <i data-lucide="sparkles" style="width:16px;height:16px;margin-right:6px;"></i> Generate Plan
         </button>
       </div>
@@ -158,11 +158,11 @@ function renderTaskList(uid) {
   }
 
   listEl.innerHTML = tasks.map(t => `
-    <div class="task-card" style="position:relative; background:#121212; border:1px solid #1E1E1E; padding:14px 16px; margin-bottom:10px; border-radius:12px; display:flex; flex-direction:row; justify-content:space-between; align-items:center; transition:all 0.2s;">
+    <div class="task-card" style="position:relative; background:var(--bg-tertiary); border:1px solid var(--border); padding:14px 16px; margin-bottom:10px; border-radius:12px; display:flex; flex-direction:row; justify-content:space-between; align-items:center; transition:all 0.2s;">
       <div style="position:absolute; left:-1px; top:-1px; bottom:-1px; width:4px; background:var(--priority-${(t.priority || 'medium').toLowerCase()}); border-top-left-radius:12px; border-bottom-left-radius:12px;"></div>
       
       <div style="margin-left:6px; display:flex; flex-direction:column; gap:4px; flex:1; text-align:left;">
-        <div style="font-weight:600; color:#F5F5F5; font-size:15px; display:flex; align-items:center; gap:8px;">
+        <div style="font-weight:600; color:var(--text-primary); font-size:15px; display:flex; align-items:center; gap:8px;">
           ${escHtml(t.title)} 
           <span class="priority-label ${(t.priority || 'medium').toLowerCase()}" style="font-size:10px; padding:2px 6px;">${t.priority || 'Medium'}</span>
         </div>
@@ -172,7 +172,7 @@ function renderTaskList(uid) {
         </div>
       </div>
       
-      <button class="btn btn-sm btn-ghost btn-del-sched-task" data-id="${t.id}" style="padding:6px; margin-left:12px; color:#A1A1A1; border:1px solid transparent; flex-shrink:0;" onmouseover="this.style.color='#F87171'; this.style.background='rgba(248,113,113,0.1)'" onmouseout="this.style.color='#A1A1A1'; this.style.background='transparent'">
+      <button class="btn btn-sm btn-ghost btn-del-sched-task" data-id="${t.id}" style="padding:6px; margin-left:12px; color:var(--text-muted); border:1px solid transparent; flex-shrink:0;" onmouseover="this.style.color='var(--error)'; this.style.background='var(--bg-card)'" onmouseout="this.style.color='var(--text-muted)'; this.style.background='transparent'">
         <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
       </button>
     </div>
@@ -200,7 +200,7 @@ function renderPlanView() {
     return;
   }
 
-  let html = `<h2 class="page-title" style="margin-bottom:var(--space-md); font-size:18px;">Your Generated Plan</h2>`;
+  let html = `<h2 class="page-title" style="margin-top:var(--space-2xl); margin-bottom:var(--space-md); font-size:18px;">Your Generated Plan</h2>`;
 
   // Show Unscheduled if any
   if (unscheduled && unscheduled.length > 0) {
@@ -211,9 +211,9 @@ function renderPlanView() {
         </h4>
         <div style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">These could not fit into your available study blocks. Consider freeing up more time or extending deadlines.</div>
         ${unscheduled.map(t => `
-          <div style="padding:8px 12px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,80,80,0.2); border-radius:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-            <div style="font-weight:600; color:#ffffff; font-size:14px;">${escHtml(t.title)}</div>
-            <div style="font-size:12px; color:#ff8888; font-weight:600;">Missed ${t.remainingTimeUnscheduled}m</div>
+          <div style="padding:8px 12px; background:var(--bg-card); border:1px solid var(--border); border-radius:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-weight:600; color:var(--text-primary); font-size:14px;">${escHtml(t.title)}</div>
+            <div style="font-size:12px; color:var(--error); font-weight:600;">Missed ${t.remainingTimeUnscheduled}m</div>
           </div>
         `).join("")}
       </div>
@@ -233,8 +233,8 @@ function renderPlanView() {
           </h4>
           <div style="display:flex; flex-direction:column; gap:8px;">
             ${dayPlan.map(block => `
-              <div style="display:flex; flex-direction:column; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-left:3px solid var(--priority-${(block.priority || 'medium').toLowerCase()}); padding:12px; border-radius:12px;">
-                <div style="font-weight:600; color:#ffffff; font-size:14px;">${escHtml(block.taskTitle)}</div>
+              <div style="display:flex; flex-direction:column; background:var(--bg-card); border:1px solid var(--border-subtle); border-left:3px solid var(--priority-${(block.priority || 'medium').toLowerCase()}); padding:12px; border-radius:12px;">
+                <div style="font-weight:600; color:var(--text-primary); font-size:14px;">${escHtml(block.taskTitle)}</div>
                 <div style="font-size:12px; color:var(--text-muted); margin-top:4px; display:flex; gap:12px; align-items:center;">
                   <span style="display:flex; align-items:center; gap:4px;"><i data-lucide="clock" style="width:12px;height:12px;"></i> ${block.startTime} - ${block.endTime} (${block.timeSpent}m)</span>
                   <span style="display:flex; align-items:center; gap:4px;"><i data-lucide="map-pin" style="width:12px;height:12px;"></i> ${escHtml(block.blockTitle)}</span>
@@ -355,50 +355,61 @@ function openWeeklyTimetableModal(uid, currentSchedule, onUpdate) {
   const backdrop = document.createElement("div");
   backdrop.className = "modal-backdrop centered";
 
-  function renderModal() {
-    backdrop.innerHTML = `
-      <div class="modal-box" style="max-width:500px; width:90%; padding:var(--space-xl); max-height:90vh; overflow-y:auto;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--space-md);">
-          <h3 class="modal-title" style="margin:0;">Manage Availability</h3>
-          <button class="btn btn-ghost btn-sm" id="btn-close-timetable"><i data-lucide="x" style="width:20px;height:20px;"></i></button>
-        </div>
-        
-        <p style="color:var(--text-secondary); font-size:13px; margin-bottom:var(--space-md);">
-          Define the time blocks you have available for the AI Scheduler to slot tasks into.
-        </p>
-
-        <!-- Day Selector -->
-        <div class="filter-bar mb-md" id="schedule-days-bar">
-          ${DAYS.map((day, i) => `
-            <button class="filter-chip ${day === selectedDay ? "active" : "ripple"}" data-day="${day}">
-              ${DAY_SHORTS[i]} — ${day}
-            </button>
-          `).join("")}
-        </div>
-
-        <!-- Task List -->
-        <div id="schedule-list" class="mb-md" style="min-height:100px;"></div>
-
-        <button class="btn btn-secondary btn-full ripple" id="btn-add-block" style="margin-bottom:var(--space-md);">
-          <i data-lucide="plus" style="width:16px;height:16px;margin-right:6px;"></i> Add Block to ${selectedDay}
-        </button>
-
-        <button class="btn btn-primary btn-full ripple" id="btn-save-timetable">
-          <i data-lucide="save" style="width:16px;height:16px;margin-right:6px;"></i> Save & Replace Schedule
-        </button>
+  backdrop.innerHTML = `
+    <div class="modal-box" style="max-width:600px; width:95%; padding:var(--space-xl); max-height:90vh; overflow-y:auto; position:relative; background:var(--bg-elevated); border:1px solid var(--border);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--space-md);">
+        <h3 class="modal-title" style="margin:0;">Manage Availability</h3>
+        <button class="btn btn-ghost btn-sm" id="btn-close-timetable" style="position:absolute; top:16px; right:16px; padding:8px; z-index:100; color:var(--text-secondary); transition:color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='var(--text-secondary)'"><i data-lucide="x" style="width:24px;height:24px;"></i></button>
       </div>
-    `;
+      
+      <p style="color:var(--text-secondary); font-size:13px; margin-bottom:var(--space-md);">
+        Define the time blocks you have available for the AI Scheduler to slot tasks into.
+      </p>
 
-    // Attach Day Selector Events
-    backdrop.querySelectorAll(".filter-chip").forEach(btn => {
+      <!-- Day Selector -->
+      <div class="filter-bar mb-md" id="schedule-days-bar"></div>
+
+      <!-- Task List -->
+      <div id="schedule-list" class="mb-md" style="min-height:100px;"></div>
+
+      <button class="btn btn-secondary btn-full ripple" id="btn-add-block" style="margin-bottom:var(--space-md);">
+        <i data-lucide="plus" style="width:16px;height:16px;margin-right:6px;"></i> Add Block to <span id="current-day-display">Monday</span>
+      </button>
+
+      <button class="btn btn-primary btn-full ripple" id="btn-save-timetable">
+        <i data-lucide="save" style="width:16px;height:16px;margin-right:6px;"></i> Save Schedule
+      </button>
+    </div>
+  `;
+
+  const updateView = () => {
+    // 1. Update Day Chip selector
+    const daysBar = backdrop.querySelector("#schedule-days-bar");
+    daysBar.innerHTML = DAYS.map((day, i) => `
+      <button class="filter-chip ${day === selectedDay ? "active" : "ripple"}" data-day="${day}" style="min-width:40px; justify-content:center;">
+        ${DAY_SHORTS[i]}
+      </button>
+    `).join("");
+
+    // Re-bind day clicks
+    daysBar.querySelectorAll(".filter-chip").forEach(btn => {
       btn.addEventListener("click", () => {
         selectedDay = btn.dataset.day;
-        renderModal();
+        updateView();
       });
     });
 
-    // Render Blocks
+    // 2. Update Add button text
+    backdrop.querySelector("#current-day-display").textContent = selectedDay;
+
+    // 3. Update List with Animation
     const listEl = backdrop.querySelector("#schedule-list");
+    
+    // Trigger animation
+    listEl.classList.remove("animate-list");
+    void listEl.offsetWidth; // force reflow
+    listEl.classList.add("animate-list");
+
     let dayTasks = localSchedule[selectedDay] || [];
     dayTasks.sort((a, b) => a.start_time.localeCompare(b.start_time));
 
@@ -406,57 +417,62 @@ function openWeeklyTimetableModal(uid, currentSchedule, onUpdate) {
       listEl.innerHTML = `<div style="text-align:center; padding:var(--space-md); color:var(--text-muted); font-size:13px; border:1px dashed var(--border); border-radius:8px;">No blocks scheduled for ${selectedDay}.</div>`;
     } else {
       listEl.innerHTML = dayTasks.map(t => `
-        <div class="task-card" style="margin-bottom:8px; border-color:var(--border); display:flex; justify-content:space-between; align-items:center;">
-          <div>
-            <div style="font-weight:600; font-size:14px; color:var(--text-primary); margin-bottom:4px;">${escHtml(t.title)} <span style="font-size:10px; padding:2px 6px; border-radius:4px; background:var(--bg-secondary); color:var(--text-secondary); margin-left:6px; font-weight:500;">${t.type}</span></div>
-            <div style="font-size:12px; color:var(--text-muted);"><i data-lucide="clock" style="width:12px;height:12px;display:inline-block;vertical-align:-2px;"></i> ${t.start_time} - ${t.end_time}</div>
+        <div class="task-card" style="margin-bottom:12px !important; border-color:var(--border); display:flex !important; flex-direction:row !important; justify-content:space-between; align-items:center; padding:12px 16px !important; height:auto !important; min-height:0 !important; cursor:default;">
+          <div style="flex:1;">
+            <div style="font-weight:600; font-size:14px; color:var(--text-primary); margin-bottom:2px; display:flex; align-items:center; gap:8px;">
+              ${escHtml(t.title)} 
+              <span style="font-size:10px; padding:2px 6px; border-radius:4px; background:var(--bg-card-hover); color:var(--text-secondary); font-weight:500;">${t.type || 'Study'}</span>
+            </div>
+            <div style="font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:4px;">
+              <i data-lucide="clock" style="width:12px;height:12px;"></i> ${t.start_time} - ${t.end_time}
+            </div>
           </div>
-          <button class="btn btn-sm btn-ghost btn-del-block" data-id="${t.id}" style="color:var(--error); padding:6px;"><i data-lucide="trash-2" style="width:16px;height:16px;"></i></button>
+          <button class="btn btn-sm btn-ghost btn-del-block" data-id="${t.id}" style="color:var(--error); padding:8px; margin-left:12px;"><i data-lucide="trash-2" style="width:18px;height:18px;"></i></button>
         </div>
       `).join("");
+
+      // Attach Delete
+      listEl.querySelectorAll(".btn-del-block").forEach(btn => {
+        btn.addEventListener("click", () => {
+          localSchedule[selectedDay] = localSchedule[selectedDay].filter(x => x.id !== btn.dataset.id);
+          updateView();
+        });
+      });
     }
 
-    // Attach Delete
-    backdrop.querySelectorAll(".btn-del-block").forEach(btn => {
-      btn.addEventListener("click", () => {
-        localSchedule[selectedDay] = localSchedule[selectedDay].filter(x => x.id !== btn.dataset.id);
-        renderModal();
-      });
-    });
-
-    // Close
-    backdrop.querySelector("#btn-close-timetable").addEventListener("click", () => backdrop.remove());
-
-    // Add Block
-    backdrop.querySelector("#btn-add-block").addEventListener("click", () => {
-      openAddBlockModal(selectedDay, (newBlock) => {
-        localSchedule[selectedDay].push(newBlock);
-        renderModal();
-      });
-    });
-
-    // Save Entire Timetable
-    backdrop.querySelector("#btn-save-timetable").addEventListener("click", async () => {
-      const btn = backdrop.querySelector("#btn-save-timetable");
-      btn.disabled = true;
-      btn.innerHTML = `Saving...`;
-      try {
-        await saveWeeklySchedule(uid, localSchedule);
-        showSnackbar("Timetable updated successfully!", "success");
-        if (onUpdate) onUpdate(localSchedule);
-        backdrop.remove();
-      } catch (e) {
-        showSnackbar("Failed to update timetable", "error");
-        btn.disabled = false;
-        btn.innerHTML = `<i data-lucide="save" style="width:16px;height:16px;margin-right:6px;"></i> Save & Replace Schedule`;
-      }
-    });
-
     if (window.lucide) window.lucide.createIcons();
-  }
+  };
 
-  renderModal();
+  // Bind Static Actions
+  backdrop.querySelector("#btn-close-timetable").addEventListener("click", () => backdrop.remove());
+  
+  backdrop.querySelector("#btn-add-block").addEventListener("click", () => {
+    openAddBlockModal(selectedDay, (newBlock) => {
+      if (!localSchedule[selectedDay]) localSchedule[selectedDay] = [];
+      localSchedule[selectedDay].push(newBlock);
+      updateView();
+    });
+  });
+
+  backdrop.querySelector("#btn-save-timetable").addEventListener("click", async () => {
+    const btn = backdrop.querySelector("#btn-save-timetable");
+    btn.disabled = true;
+    btn.innerHTML = `Saving...`;
+    try {
+      await saveWeeklySchedule(uid, localSchedule);
+      showSnackbar("Timetable updated successfully!", "success");
+      if (onUpdate) onUpdate(localSchedule);
+      backdrop.remove();
+    } catch (e) {
+      showSnackbar("Failed to update timetable", "error");
+      btn.disabled = false;
+      btn.innerHTML = `<i data-lucide="save" style="width:16px;height:16px;margin-right:6px;"></i> Save Schedule`;
+    }
+  });
+
+  updateView();
   document.body.appendChild(backdrop);
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function openAddBlockModal(day, onAdd) {
