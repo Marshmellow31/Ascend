@@ -1,6 +1,7 @@
 {
   "name": "Your Day",
   "short_name": "Your Day",
+  "id": "/",
   "description": "Plan smarter. Grow daily. Your personal companion for productivity and growth.",
   "start_url": "/",
   "display": "standalone",

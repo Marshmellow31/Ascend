@@ -1,3 +1,4 @@
+import "./styles.css";
 import { onAuthStateChanged } from "./auth.js";
 import { getUserProfile } from "./db.js";
 import { renderDashboard } from "./pages/dashboard.js";
@@ -159,6 +160,9 @@ async function handleUserAuth(user) {
   showAppPage();
   initNavigation();
   initFab();
+
+  // Home Button Logic
+  $("btn-home")?.addEventListener("click", () => navigate("dashboard"));
 
   // Foreground push message listener
   try {

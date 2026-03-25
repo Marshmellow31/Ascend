@@ -99,6 +99,8 @@ export async function renderTasks(container, uid, profile) {
       card.style.animationDelay = `${i * 40}ms`;
       list.appendChild(card);
     });
+
+    if (window.lucide) window.lucide.createIcons();
   };
 
   // Filter chips

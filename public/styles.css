@@ -1,18 +1,18 @@
 /* ============================================================
-   styles.css — Your Day Design System
+   styles.css - Your Day Design System
    Mobile-first, dark mode default, iOS PWA optimised
    ============================================================ */
 
-/* ── Google Fonts ──────────────────────────────────────────── */
+/* -- Google Fonts -- */
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
 
-/* ── CSS Custom Properties (Design Tokens) ─────────────────── */
+/* -- CSS Custom Properties (Design Tokens) -- */
 :root {
-  /* Accents & Special */
-  --accent: #6c63ff;
-  --accent-light: #A1A1A1;
-  --accent-dark: #6B6B6B;
-  --accent-glow: rgba(138, 138, 138, 0.15);
+  /* Accents & Special - Flush Black & Grey Theme */
+  --accent: #FFFFFF;
+  --accent-light: #F5F5F5;
+  --accent-dark: #A1A1A1;
+  --accent-glow: rgba(255, 255, 255, 0.1);
   --premium-glow: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.25) 0%, rgba(0, 0, 0, 0) 70%);
   --premium-shimmer: linear-gradient(110deg, #ffffff 15%, #888888 50%, #ffffff 85%);
   --premium-shadow: 0px 2px 10px rgba(255, 255, 255, 0.1);
@@ -426,24 +426,47 @@ h4 { font-size: var(--font-size-lg); font-weight: 600; }
 
 /* ── FAB (Floating Action Button) ──────────────────────────── */
 .fab {
-  position: fixed;
-  bottom: calc(var(--safe-bottom) + var(--space-md));
-  left: calc(50% + min(50%, 240px) - var(--space-md) - 58px);
+  position: fixed !important;
+  bottom: calc(var(--safe-bottom) + var(--space-lg)) !important;
+  right: var(--space-lg) !important;
+  left: auto !important;
   width: 58px;
   height: 58px;
-  background: var(--accent);
-  color: #fff;
+  background: #1A1A1A; /* Dark Grey/Black base */
+  color: var(--text-primary);
   border-radius: var(--border-radius-full);
-  display: flex;
+  display: flex !important;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-accent);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
   border: none;
-  z-index: 90;
-  transition: transform var(--transition), box-shadow var(--transition);
+  z-index: 10000 !important;
+  transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
 }
 .fab:active { transform: scale(0.92); }
-.fab:hover { box-shadow: var(--shadow-md); filter: brightness(1.2); }
+.fab:hover { background: #222222; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.2); }
+
+/* ── Home Button ── */
+.home-btn {
+  position: fixed !important;
+  bottom: calc(var(--safe-bottom) + var(--space-lg)) !important;
+  left: var(--space-lg) !important;
+  right: auto !important;
+  width: 58px;
+  height: 58px;
+  background: #1A1A1A;
+  color: var(--text-primary);
+  border-radius: var(--border-radius-full);
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  border: none;
+  z-index: 10000 !important;
+  transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+}
+.home-btn:active { transform: scale(0.92); }
+.home-btn:hover { background: #222222; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.2); }
 
 /* ── Quick Add Task ────────────────────────────────────────── */
 .quick-add-container { width: 100%; }
