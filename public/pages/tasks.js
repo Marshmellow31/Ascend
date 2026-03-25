@@ -2,7 +2,11 @@
 // pages/tasks.js — Tasks page with filters, sorting, CRUD
 // ============================================================
 
-import { getTasks, createTask, updateTask, deleteTask, completeTask, reopenTask, getSubjects, getTopics } from "../db.js";
+import { 
+  getTasks, createTask, updateTask, deleteTask, completeTask, reopenTask, 
+  getSubjects, createSubject, updateSubject, deleteSubject,
+  getTopics 
+} from "../db.js";
 import { escHtml, formatDate } from "./dashboard.js";
 import { showSnackbar, showConfirmDialog } from "../snackbar.js";
 
@@ -13,37 +17,76 @@ export async function renderTasks(container, uid, profile) {
     <div class="page-header">
       <h1 class="page-title">All Tasks</h1>
     </div>
-    <!-- Filter chips -->
-    <div class="filter-bar" id="task-filters">
-      <button class="filter-chip active ripple" data-filter="all">All</button>
-      <button class="filter-chip ripple" data-filter="today">Today</button>
-      <button class="filter-chip ripple" data-filter="pending">Pending</button>
-      <button class="filter-chip ripple" data-filter="completed">Completed</button>
-      <button class="filter-chip ripple" data-filter="overdue">Overdue</button>
-      <button class="filter-chip ripple" data-filter="high"><span class="priority-dot" style="background:var(--error)"></span> High</button>
-      <button class="filter-chip ripple" data-filter="medium"><span class="priority-dot" style="background:var(--warning)"></span> Medium</button>
-      <button class="filter-chip ripple" data-filter="low"><span class="priority-dot" style="background:var(--success)"></span> Low</button>
+    <!-- Filter bar -->
+    <div class="filter-wrapper">
+      <div class="filter-row">
+        <div class="custom-select-wrapper">
+          <select class="filter-select ripple" id="filter-status">
+            <option value="all">Status: All</option>
+            <option value="today">Today</option>
+            <option value="pending">Pending</option>
+            <option value="completed">Completed</option>
+            <option value="overdue">Overdue</option>
+          </select>
+        </div>
+        <div class="custom-select-wrapper">
+          <select class="filter-select ripple" id="filter-priority">
+            <option value="all">Priority: All</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <div class="custom-select-wrapper">
+          <select class="filter-select ripple" id="filter-subject">
+            <option value="all">Subject: All</option>
+            <!-- Dynamic subjects -->
+          </select>
+        </div>
+        <button class="filter-pill-btn ripple" id="btn-manage-subjects" title="Manage Subjects">
+          <i data-lucide="settings-2" style="width:14px;height:14px"></i>
+        </button>
+      </div>
     </div>
-    <!-- Sort -->
-    <div class="flex justify-between items-center mb-md">
+
+    <!-- Sort & Count -->
+    <div class="flex justify-between items-center mb-md px-md">
       <span class="text-muted text-sm" id="task-count">Loading…</span>
-      <select class="form-select" id="task-sort" style="width:auto;padding:8px 36px 8px 12px;font-size:13px">
-        <option value="newest">Newest first</option>
-        <option value="oldest">Oldest first</option>
-        <option value="due">Due date</option>
-        <option value="priority">Priority</option>
-      </select>
+      <div class="custom-select-wrapper">
+        <select class="filter-select ripple" id="task-sort">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="due">Due date</option>
+          <option value="priority">Priority Order</option>
+        </select>
+      </div>
     </div>
     <div id="tasks-list"></div>
   `;
 
-  let activeFilter = "all";
-  let activeSort   = "newest";
-  let allTasks     = [];
+  let activeStatus   = "all";
+  let activePriority = "all";
+  let activeSubject  = "all";
+  let activeSort     = "newest";
+  let allTasks       = [];
+  let allSubjects    = [];
 
   const refreshTaskList = async () => {
     try {
-      allTasks = await getTasks(uid);
+      const [tasks, subjects] = await Promise.all([getTasks(uid), getSubjects(uid)]);
+      allTasks = tasks;
+      allSubjects = subjects;
+      
+      // Populate subject filter
+      const subFilter = document.getElementById("filter-subject");
+      if (subFilter) {
+        subFilter.innerHTML = `<option value="all">Subject: All</option>`;
+        allSubjects.forEach(s => {
+          subFilter.innerHTML += `<option value="${s.id}">${escHtml(s.name)}</option>`;
+        });
+        subFilter.value = activeSubject;
+      }
+      
       renderFiltered();
     } catch (err) {
       showSnackbar("Failed to load tasks", "error");
@@ -58,24 +101,38 @@ export async function renderTasks(container, uid, profile) {
 
     let tasks = [...allTasks];
 
-    if (activeFilter === "today")
+    // Status Filter
+    if (activeStatus === "today")
       tasks = tasks.filter((t) => {
         if (!t.dueDate) return false;
         const d = t.dueDate.toDate ? t.dueDate.toDate() : new Date(t.dueDate);
         return d >= today && d < tomorrow;
       });
-    else if (activeFilter === "pending")   tasks = tasks.filter((t) => !t.isCompleted);
-    else if (activeFilter === "completed") tasks = tasks.filter((t) => t.isCompleted);
-    else if (activeFilter === "overdue")   tasks = tasks.filter((t) => {
+    else if (activeStatus === "pending")   tasks = tasks.filter((t) => !t.isCompleted);
+    else if (activeStatus === "completed") tasks = tasks.filter((t) => t.isCompleted);
+    else if (activeStatus === "overdue")   tasks = tasks.filter((t) => {
       if (t.isCompleted || !t.dueDate) return false;
       const d = t.dueDate.toDate ? t.dueDate.toDate() : new Date(t.dueDate);
       return d < now;
     });
-    else if (["high","medium","low"].includes(activeFilter))
-      tasks = tasks.filter((t) => t.priority === activeFilter);
+
+    // Priority Filter
+    if (activePriority !== "all") {
+      tasks = tasks.filter(t => t.priority === activePriority);
+    }
+
+    // Subject Filter
+    if (activeSubject !== "all") {
+      tasks = tasks.filter(t => t.subjectId === activeSubject);
+    }
 
     // Sort
     const priorityOrder = { high:0, medium:1, low:2 };
+    const ts = (v) => {
+      if (!v) return 0;
+      return (v.toDate ? v.toDate() : new Date(v)).getTime();
+    };
+
     if (activeSort === "newest")   tasks.sort((a,b) => ts(b.createdAt) - ts(a.createdAt));
     else if (activeSort === "oldest") tasks.sort((a,b) => ts(a.createdAt) - ts(b.createdAt));
     else if (activeSort === "due") tasks.sort((a,b) => ts(a.dueDate) - ts(b.dueDate));
@@ -89,12 +146,12 @@ export async function renderTasks(container, uid, profile) {
     list.innerHTML = "";
 
     if (tasks.length === 0) {
-      list.innerHTML = `<div class="empty-state"><div class="empty-icon"><i data-lucide="party-popper"></i></div><div class="empty-title">Nothing here</div><div class="empty-desc">No tasks match this filter.</div></div>`;
+      list.innerHTML = `<div class="empty-state"><div class="empty-icon"><i data-lucide="party-popper"></i></div><div class="empty-title">Nothing here</div><div class="empty-desc">No tasks match these filters.</div></div>`;
       return;
     }
 
     tasks.forEach((task, i) => {
-      const card = renderTaskCard(task, uid, refreshTaskList);
+      const card = renderTaskCard(task, uid, refreshTaskList, allSubjects);
       card.classList.add("stagger-item");
       card.style.animationDelay = `${i * 40}ms`;
       list.appendChild(card);
@@ -103,14 +160,27 @@ export async function renderTasks(container, uid, profile) {
     if (window.lucide) window.lucide.createIcons();
   };
 
-  // Filter chips
-  document.getElementById("task-filters")?.addEventListener("click", (e) => {
-    const chip = e.target.closest(".filter-chip");
-    if (!chip) return;
-    document.querySelectorAll(".filter-chip").forEach((c) => c.classList.remove("active"));
-    chip.classList.add("active");
-    activeFilter = chip.dataset.filter;
+  // Status Filter Event
+  document.getElementById("filter-status")?.addEventListener("change", (e) => {
+    activeStatus = e.target.value;
     renderFiltered();
+  });
+
+  // Priority Filter Event
+  document.getElementById("filter-priority")?.addEventListener("change", (e) => {
+    activePriority = e.target.value;
+    renderFiltered();
+  });
+
+  // Subject Filter Event
+  document.getElementById("filter-subject")?.addEventListener("change", (e) => {
+    activeSubject = e.target.value;
+    renderFiltered();
+  });
+
+  // Manage Subjects
+  document.getElementById("btn-manage-subjects")?.addEventListener("click", () => {
+    openSubjectManagementModal(uid, refreshTaskList);
   });
 
   // Sort change
@@ -161,7 +231,7 @@ export async function updateTaskStatus(taskId, newStatus, refreshCallback) {
   }
 }
 
-function renderTaskCard(task, uid, onUpdate) {
+function renderTaskCard(task, uid, onUpdate, allSubjects = []) {
   const card = document.createElement("div");
   const isDone = task.isCompleted;
   const priority = task.priority || "medium";
@@ -188,6 +258,14 @@ function renderTaskCard(task, uid, onUpdate) {
     <div class="task-main-section">
       <div class="task-title">${escHtml(task.title)}</div>
       ${task.description ? `<div class="text-muted text-sm" style="margin-bottom: 4px">${escHtml(task.description)}</div>` : ""}
+      
+      ${task.subjectId ? `
+        <div class="task-subject-tag">
+          <i data-lucide="book" style="width:10px;height:10px"></i>
+          ${escHtml(allSubjects.find(s => s.id === task.subjectId)?.name || "Subject")}
+        </div>
+      ` : ""}
+
       <div class="task-meta">
         ${due ? `<span class="task-due${isOverdue ? " overdue" : ""}" style="display:inline-flex;align-items:center;gap:4px"><i data-lucide="calendar" style="width:12px;height:12px"></i> ${formatDate(due)}</span>` : `<span class="task-due" style="display:inline-flex;align-items:center;gap:4px"><i data-lucide="calendar-off" style="width:12px;height:12px"></i> No date</span>`}
         ${task.scheduledStart && task.scheduledEnd ? `<span style="display:inline-flex;align-items:center;gap:4px;color:var(--text-secondary);"><i data-lucide="clock" style="width:12px;height:12px"></i> ${task.scheduledStart} - ${task.scheduledEnd}</span>` : ""}
@@ -408,6 +486,132 @@ export async function openTaskModal(uid, profile, onSave, existing = null) {
 
   document.body.appendChild(backdrop);
   setTimeout(() => backdrop.querySelector("#task-title")?.focus(), 150);
+}
+
+// ── Subject Management Modal ────────────────────────────────
+async function openSubjectManagementModal(uid, onUpdate) {
+  const subjects = await getSubjects(uid);
+  const backdrop = document.createElement("div");
+  backdrop.className = "modal-backdrop";
+  backdrop.innerHTML = `
+    <div class="drawer" style="max-width:480px;margin:0 auto">
+      <div class="drawer-handle"></div>
+      <div class="flex justify-between items-center mb-md">
+        <h3 class="modal-title" style="margin:0">Manage Subjects</h3>
+        <button class="btn btn-primary btn-sm ripple" id="btn-new-subject">
+          <i data-lucide="plus" style="width:16px;height:16px"></i> Add
+        </button>
+      </div>
+      
+      <div id="subjects-list-modal" class="modal-list-container">
+        ${subjects.length === 0 ? '<div class="text-muted text-center py-xl">No subjects yet.</div>' : ''}
+        ${subjects.map(s => `
+          <div class="modal-list-item">
+            <div class="flex-1">
+              <div class="font-bold">${escHtml(s.name)}</div>
+            </div>
+            <div class="flex gap-sm">
+              <button class="btn-icon ripple btn-edit-sub" data-id="${s.id}" data-name="${s.name}">
+                <i data-lucide="pencil" style="width:16px;height:16px"></i>
+              </button>
+              <button class="btn-icon ripple btn-del-sub" data-id="${s.id}" data-name="${s.name}">
+                <i data-lucide="trash-2" style="width:16px;height:16px"></i>
+              </button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div class="modal-actions pt-md">
+        <button class="btn btn-secondary w-full ripple" id="sub-mgmt-close">Close</button>
+      </div>
+    </div>
+  `;
+
+  const refreshModalList = async () => {
+    const updated = await getSubjects(uid);
+    const listEl = backdrop.querySelector("#subjects-list-modal");
+    listEl.innerHTML = updated.length === 0 ? '<div class="text-muted text-center py-xl">No subjects yet.</div>' : 
+      updated.map(s => `
+        <div class="modal-list-item">
+          <div class="flex-1">
+            <div class="font-bold">${escHtml(s.name)}</div>
+          </div>
+          <div class="flex gap-sm">
+            <button class="btn-icon ripple btn-edit-sub" data-id="${s.id}" data-name="${s.name}">
+              <i data-lucide="pencil" style="width:16px;height:16px"></i>
+            </button>
+            <button class="btn-icon ripple btn-del-sub" data-id="${s.id}" data-name="${s.name}">
+              <i data-lucide="trash-2" style="width:16px;height:16px"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    if (window.lucide) window.lucide.createIcons();
+    attachListeners();
+    onUpdate(); // Refresh the main tasks list too
+  };
+
+  const attachListeners = () => {
+    backdrop.querySelectorAll(".btn-edit-sub").forEach(btn => {
+      btn.onclick = () => openSubjectEditModal(uid, { id: btn.dataset.id, name: btn.dataset.name }, refreshModalList);
+    });
+    backdrop.querySelectorAll(".btn-del-sub").forEach(btn => {
+      btn.onclick = async () => {
+        const confirmed = await showConfirmDialog("Delete Subject", `Delete "${btn.dataset.name}"? Tasks remain but will lose their subject tag.`, "Delete", true);
+        if (confirmed) {
+          await deleteSubject(btn.dataset.id);
+          showSnackbar("Subject deleted", "success");
+          refreshModalList();
+        }
+      };
+    });
+  };
+
+  backdrop.querySelector("#btn-new-subject").onclick = () => openSubjectEditModal(uid, null, refreshModalList);
+  backdrop.querySelector("#sub-mgmt-close").onclick = () => backdrop.remove();
+  
+  document.body.appendChild(backdrop);
+  if (window.lucide) window.lucide.createIcons();
+  attachListeners();
+}
+
+async function openSubjectEditModal(uid, existing, onSave) {
+  const isEdit = !!existing;
+  const subBackdrop = document.createElement("div");
+  subBackdrop.className = "modal-backdrop sub-modal";
+  subBackdrop.innerHTML = `
+    <div class="drawer" style="max-width:400px;margin:0 auto;z-index:11000">
+      <div class="drawer-handle"></div>
+      <h3 class="modal-title">${isEdit ? "Edit Subject" : "New Subject"}</h3>
+      <div class="form-group">
+        <label class="form-label">Name</label>
+        <input class="form-input" id="sub-name-inp" value="${escHtml(existing?.name||'')}" placeholder="e.g. Science" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary ripple" id="sub-edit-cancel">Cancel</button>
+        <button class="btn btn-primary ripple" id="sub-edit-save">Save</button>
+      </div>
+    </div>
+  `;
+
+  subBackdrop.querySelector("#sub-edit-cancel").onclick = () => subBackdrop.remove();
+  subBackdrop.querySelector("#sub-edit-save").onclick = async () => {
+    const name = subBackdrop.querySelector("#sub-name-inp").value.trim();
+    if (!name) return showSnackbar("Name required", "error");
+    try {
+      if (isEdit) await updateSubject(existing.id, { name });
+      else await createSubject(uid, { name });
+      showSnackbar("Subject saved", "success");
+      subBackdrop.remove();
+      onSave();
+    } catch (err) {
+      showSnackbar("Error saving subject", "error");
+    }
+  };
+
+  document.body.appendChild(subBackdrop);
+  setTimeout(() => subBackdrop.querySelector("#sub-name-inp").focus(), 150);
 }
 
 // helpers
