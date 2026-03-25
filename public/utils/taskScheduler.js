@@ -13,77 +13,117 @@ const DAYS_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Sat
  * @returns {Object} - { scheduled: [], unscheduled: [] }
  */
 export function generateStudyPlan(tasks, weeklySchedule) {
+  // 0. Calculate "Effective Today" (5 AM to 5 AM)
+  const now = new Date();
+  // We subtract 5 hours to get the "effective" date for the plan
+  const effectiveNow = new Date(now.getTime() - 5 * 60 * 60 * 1000);
+  const effectiveDayIdx = effectiveNow.getDay(); 
+  
+  const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const todayName = dayNames[effectiveNow.getDay()];
+  const tomorrowName = dayNames[(effectiveNow.getDay() + 1) % 7];
+
   // 1. Sort tasks: Priority first, then Deadline
   const priorityWeight = { high: 3, medium: 2, low: 1 };
-  
   const sortedTasks = [...tasks].sort((a, b) => {
     const pwA = priorityWeight[(a.priority || 'medium').toLowerCase()] || 0;
     const pwB = priorityWeight[(b.priority || 'medium').toLowerCase()] || 0;
-    
-    if (pwA !== pwB) {
-      return pwB - pwA; // higher priority first
-    }
-    
-    // Sort by deadline if present
-    if (a.deadline && b.deadline) {
-      return new Date(a.deadline) - new Date(b.deadline);
-    }
+    if (pwA !== pwB) return pwB - pwA;
+    if (a.deadline && b.deadline) return new Date(a.deadline) - new Date(b.deadline);
     if (a.deadline) return -1;
     if (b.deadline) return 1;
-    
-    return 0; // maintain original order
+    return 0;
   });
 
-  // 2. Extract and format available Study blocks
-  // Flatten weekly schedule into an array of blocks, ensuring they are ordered.
+  // 2. Extract available Study blocks for the Effective Today only
+  // This includes Today [5 AM - Midnight] and Tomorrow [Midnight - 5 AM]
   let availableBlocks = [];
-  DAYS_ORDER.forEach(day => {
-    const dayBlocks = weeklySchedule[day] || [];
-    dayBlocks.forEach(block => {
-      // Only allocate in study slots
-      if (!block.type || block.type === "Study") {
-        availableBlocks.push({
-          id: block.id,
-          day: day,
-          title: block.title || "Study Block",
-          startTimeMin: timeToMinutes(block.start_time),
-          endTimeMin: timeToMinutes(block.end_time),
-          durationMin: getDurationMinutes(block.start_time, block.end_time),
-          usedMin: 0
-        });
-      }
-    });
+  
+  // Part A: Today's remaining blocks (from current time or 5 AM, whichever is later)
+  const todayBlocks = weeklySchedule[todayName] || [];
+  const currentMin = now.getHours() * 60 + now.getMinutes();
+  
+  // We only show blocks starting after 5 AM or CURRENT time
+  const dayStartLimit = 5 * 60; // 5:00 AM
+  
+  todayBlocks.forEach(block => {
+    if (block.type && block.type !== "Study") return;
+    const startMin = timeToMinutes(block.start_time);
+    const endMin = timeToMinutes(block.end_time);
+    
+    // Ignore blocks that ended before "now" or before 5 AM reset
+    if (endMin <= currentMin) return;
+    if (endMin <= dayStartLimit) return; 
+
+    const effectiveStartMin = Math.max(startMin, currentMin, dayStartLimit);
+    const duration = endMin - effectiveStartMin;
+    
+    if (duration > 0) {
+      availableBlocks.push({
+        id: block.id,
+        title: block.title || "Study Block",
+        startTimeMin: effectiveStartMin,
+        endTimeMin: endMin,
+        durationMin: duration,
+        usedMin: 0,
+        label: "Today"
+      });
+    }
   });
 
-  // Sort blocks chronologically within each day? They already should be from the loop above,
-  // but let's ensure they are sorted by start time per day.
-  // Actually, we process blocks day by day, block by block.
-  
+  // Part B: Blocks from "Tomorrow" that are before 5 AM (Transition window)
+  const tomorrowBlocks = weeklySchedule[tomorrowName] || [];
+  tomorrowBlocks.forEach(block => {
+    if (block.type && block.type !== "Study") return;
+    const startMin = timeToMinutes(block.start_time);
+    const endMin = timeToMinutes(block.end_time);
+    
+    // Only include if it ends before 5 AM tomorrow
+    if (startMin >= dayStartLimit) return; 
+    
+    const effectiveEndMin = Math.min(endMin, dayStartLimit);
+    const duration = effectiveEndMin - startMin;
+
+    if (duration > 0) {
+      availableBlocks.push({
+        id: block.id + "_next",
+        title: block.title || "Study Block",
+        startTimeMin: startMin,
+        endTimeMin: effectiveEndMin,
+        durationMin: duration,
+        usedMin: 0,
+        label: "Today", // Still "Today" because it's part of the effective day
+        isLateNight: true
+      });
+    }
+  });
+
+  // Sort available blocks chronologically
+  // Late night blocks (00:00-05:00) should come AFTER today's blocks (05:00-23:59)
+  availableBlocks.sort((a, b) => {
+    if (a.isLateNight && !b.isLateNight) return 1;
+    if (!a.isLateNight && b.isLateNight) return -1;
+    return a.startTimeMin - b.startTimeMin;
+  });
+
   const scheduledTasks = [];
   const unscheduledTasks = [];
 
   // 3. Greedy Assignment
-  // For each task, find the earliest block that has enough time. If a block is too small,
-  // we can split the task across multiple blocks.
   for (let task of sortedTasks) {
     let remainingTime = task.estimatedTime;
     let allocations = [];
 
-    // Find available slots for this task
     for (let block of availableBlocks) {
       if (remainingTime <= 0) break;
-
       const availableTime = block.durationMin - block.usedMin;
       if (availableTime <= 0) continue;
 
       const timeToUse = Math.min(remainingTime, availableTime);
-      
       const allocStartMin = block.startTimeMin + block.usedMin;
       const allocEndMin = allocStartMin + timeToUse;
       
       allocations.push({
-        blockId: block.id,
-        day: block.day,
         startTime: minutesToTime(allocStartMin),
         endTime: minutesToTime(allocEndMin),
         timeSpent: timeToUse,
@@ -95,27 +135,19 @@ export function generateStudyPlan(tasks, weeklySchedule) {
     }
 
     if (remainingTime > 0) {
-      // Could not fully schedule this task
-      unscheduledTasks.push({
-        ...task,
-        reason: "Not enough study time available",
-        remainingTimeUnscheduled: remainingTime
-      });
+      unscheduledTasks.push({ ...task, remainingTimeUnscheduled: remainingTime });
     } else {
-      scheduledTasks.push({
-        task: task,
-        allocations: allocations
-      });
+      scheduledTasks.push({ task: task, allocations: allocations });
     }
   }
 
-  // Group scheduled tasks by DAY -> BLOCK -> TASK for easy UI rendering
-  const planByDay = {};
-  DAYS_ORDER.forEach(day => planByDay[day] = []);
+  // 4. Group for UI (Strictly one day now)
+  const planByDay = { "Today": [] };
+  const orderedLabels = ["Today"];
 
   scheduledTasks.forEach(st => {
     st.allocations.forEach(alloc => {
-      planByDay[alloc.day].push({
+      planByDay["Today"].push({
         taskId: st.task.id,
         taskTitle: st.task.title,
         priority: st.task.priority || 'Medium',
@@ -127,10 +159,16 @@ export function generateStudyPlan(tasks, weeklySchedule) {
     });
   });
   
-  // Sort plan arrays by start time
-  Object.keys(planByDay).forEach(day => {
-    planByDay[day].sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
+  planByDay["Today"].sort((a, b) => {
+    // Handling sorting across the 12 AM boundary
+    const aMins = timeToMinutes(a.startTime);
+    const bMins = timeToMinutes(b.startTime);
+    const isALate = aMins < (5 * 60);
+    const isBLate = bMins < (5 * 60);
+    if (isALate && !isBLate) return 1;
+    if (!isALate && isBLate) return -1;
+    return aMins - bMins;
   });
 
-  return { planByDay, unscheduledTasks, allBlocks: availableBlocks };
+  return { planByDay, unscheduledTasks, orderedLabels };
 }

@@ -2,9 +2,9 @@
 // pages/scheduler.js — AI Task Scheduler
 // ============================================================
 
-import { 
-  getSchedulerTasks, 
-  createSchedulerTask, 
+import {
+  getSchedulerTasks,
+  createSchedulerTask,
   deleteSchedulerTask,
   getWeeklySchedule,
   saveWeeklySchedule,
@@ -30,12 +30,19 @@ let unscheduled = [];
 export async function renderSchedulerTab(container, uid, profile) {
   try {
     // Load initial data
-    tasks = await getSchedulerTasks(uid);
+    await reloadTasks(uid);
     weeklySchedule = await getWeeklySchedule(uid);
     const savedPlan = await getGeneratedPlan(uid);
     if (savedPlan) {
       generatedPlan = savedPlan.planByDay;
       unscheduled = savedPlan.unscheduledTasks;
+      
+      // We need to wait for the DOM render below before we can set datasets on the child.
+      // Or we can just set them on the tab container and make renderPlanView smarter.
+      // Let's set them on the tab container and update renderPlanView.
+      container.dataset.orderedLabels = JSON.stringify(savedPlan.orderedLabels || []);
+      const date = savedPlan.updatedAt ? (savedPlan.updatedAt.toDate ? savedPlan.updatedAt.toDate() : new Date(savedPlan.updatedAt)) : null;
+      container.dataset.generatedAt = date ? date.toLocaleString() : "";
     }
   } catch (err) {
     if (err.message && err.message.toLowerCase().includes("permission")) {
@@ -93,34 +100,49 @@ export async function renderSchedulerTab(container, uid, profile) {
   renderPlanView();
 
   // Bind Generate Plan
-  container.querySelector("#btn-generate-plan").addEventListener("click", async () => {
-    const btn = container.querySelector("#btn-generate-plan");
-    btn.innerHTML = `<i data-lucide="loader-2" class="icon-spin"></i> Generating...`;
-    
-    // Refresh data right before generation
-    tasks = await getSchedulerTasks(uid);
-    weeklySchedule = await getWeeklySchedule(uid);
-    
-    if (tasks.length === 0) {
-      showSnackbar("No pending tasks to schedule.", "info");
-      btn.innerHTML = `<i data-lucide="sparkles"></i> Generate Study Plan`;
-      if (window.lucide) window.lucide.createIcons();
-      return;
-    }
+  const genBtn = container.querySelector("#btn-generate-plan");
+  if (genBtn) {
+    genBtn.addEventListener("click", async () => {
+      genBtn.innerHTML = `<i data-lucide="loader-2" class="icon-spin"></i> Generating...`;
+      
+      try {
+        const { allTasks } = await getUnifiedTasks(uid);
+        tasks = allTasks;
+        weeklySchedule = await getWeeklySchedule(uid);
+        
+        if (tasks.length === 0) {
+          showSnackbar("No pending tasks to schedule.", "info");
+          genBtn.innerHTML = `<i data-lucide="sparkles" style="width:16px;height:16px;margin-right:6px;"></i> Generate Plan`;
+          if (window.lucide) window.lucide.createIcons();
+          return;
+        }
 
-    const { planByDay, unscheduledTasks } = generateStudyPlan(tasks, weeklySchedule);
-    generatedPlan = planByDay;
-    unscheduled = unscheduledTasks;
+        const { planByDay, unscheduledTasks, orderedLabels } = generateStudyPlan(tasks, weeklySchedule);
+        generatedPlan = planByDay;
+        unscheduled = unscheduledTasks;
 
-    // Save plan
-    await saveGeneratedPlan(uid, { planByDay: generatedPlan, unscheduledTasks: unscheduled });
-    
-    showSnackbar("Study Plan Generated successfully!", "success");
-    renderPlanView();
+        // Set on the Page container so renderPlanView can find it
+        container.dataset.orderedLabels = JSON.stringify(orderedLabels);
+        container.dataset.generatedAt = new Date().toLocaleString();
 
-    btn.innerHTML = `<i data-lucide="sparkles" style="width:16px;height:16px;margin-right:6px;"></i> Generate Plan`;
-    if (window.lucide) window.lucide.createIcons();
-  });
+        // Save plan
+        await saveGeneratedPlan(uid, { 
+          planByDay: generatedPlan, 
+          unscheduledTasks: unscheduled,
+          orderedLabels: orderedLabels
+        });
+        
+        showSnackbar("Study Plan Generated successfully!", "success");
+        renderPlanView();
+      } catch (err) {
+        console.error(err);
+        showSnackbar("Error generating plan.", "error");
+      } finally {
+        genBtn.innerHTML = `<i data-lucide="sparkles" style="width:16px;height:16px;margin-right:6px;"></i> Generate Plan`;
+        if (window.lucide) window.lucide.createIcons();
+      }
+    });
+  }
 
   // Bind Manage Blocks
   container.querySelector("#btn-manage-blocks").addEventListener("click", () => {
@@ -140,9 +162,36 @@ export async function renderSchedulerTab(container, uid, profile) {
   if (window.lucide) window.lucide.createIcons();
 }
 
+async function getUnifiedTasks(uid) {
+  const { getTasks } = await import("../db.js");
+  const [schedTasks, mainTasks] = await Promise.all([
+    getSchedulerTasks(uid),
+    getTasks(uid, { isCompleted: false })
+  ]);
+
+  const formattedMain = mainTasks
+    .filter(mt => mt.isScheduled && !schedTasks.some(st => st.sourceGoalTaskId === mt.sourceGoalTaskId && mt.sourceGoalTaskId))
+    .map(mt => ({
+      id: mt.id,
+      title: mt.title,
+      estimatedTime: mt.estimatedTime || 30,
+      priority: mt.priority || "Medium",
+      deadline: mt.dueDate ? (mt.dueDate.toDate ? mt.dueDate.toDate().toISOString().split("T")[0] : mt.dueDate) : null,
+      isMainTask: true
+    }));
+
+  return { allTasks: [...schedTasks, ...formattedMain] };
+}
+
 async function reloadTasks(uid) {
-  tasks = await getSchedulerTasks(uid);
-  renderTaskList(uid);
+  try {
+    const { allTasks } = await getUnifiedTasks(uid);
+    tasks = allTasks;
+    renderTaskList(uid);
+  } catch (err) {
+    console.error("Failed to reload tasks:", err);
+    showSnackbar("Error refreshing task list", "error");
+  }
 }
 
 function renderTaskList(uid) {
@@ -165,24 +214,63 @@ function renderTaskList(uid) {
         <div style="font-weight:600; color:var(--text-primary); font-size:15px; display:flex; align-items:center; gap:8px;">
           ${escHtml(t.title)} 
           <span class="priority-label ${(t.priority || 'medium').toLowerCase()}" style="font-size:10px; padding:2px 6px;">${t.priority || 'Medium'}</span>
+          ${t.isMainTask ? `<span style="font-size:9px; background:rgba(var(--accent-rgb),0.1); color:var(--accent); padding:1px 5px; border-radius:4px; border:1px solid rgba(var(--accent-rgb),0.2);">Task List</span>` : ''}
+          ${t.autoGenerated ? `<span style="font-size:9px; background:rgba(52,211,153,0.1); color:#34D399; padding:1px 5px; border-radius:4px; border:1px solid rgba(52,211,153,0.2);">Goal</span>` : ''}
         </div>
-        <div style="font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:10px;">
-          <span style="display:flex; align-items:center; gap:4px;"><i data-lucide="clock" style="width:12px;height:12px;"></i> ${t.estimatedTime} mins</span>
+        <div style="font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <i data-lucide="clock" style="width:12px;height:12px;"></i>
+            <input type="number" class="sched-task-time-edit" data-id="${t.id}" data-ismaintask="${!!t.isMainTask}" value="${t.estimatedTime}" style="width:45px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:4px; color:#fff; font-size:11px; padding:2px 4px;" />
+            <span>mins</span>
+          </div>
           ${t.deadline ? `<span style="display:flex; align-items:center; gap:4px;"><i data-lucide="calendar" style="width:12px;height:12px;"></i> Due: ${t.deadline}</span>` : ''}
         </div>
       </div>
       
-      <button class="btn btn-sm btn-ghost btn-del-sched-task" data-id="${t.id}" style="padding:6px; margin-left:12px; color:var(--text-muted); border:1px solid transparent; flex-shrink:0;" onmouseover="this.style.color='var(--error)'; this.style.background='var(--bg-card)'" onmouseout="this.style.color='var(--text-muted)'; this.style.background='transparent'">
+      <button class="btn btn-sm btn-ghost btn-del-sched-task" data-id="${t.id}" data-ismaintask="${!!t.isMainTask}" style="padding:6px; margin-left:12px; color:var(--text-muted); border:1px solid transparent; flex-shrink:0;" onmouseover="this.style.color='var(--error)'; this.style.background='var(--bg-card)'" onmouseout="this.style.color='var(--text-muted)'; this.style.background='transparent'">
         <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
       </button>
     </div>
   `).join("");
 
+  // Bind duration changes
+  listEl.querySelectorAll(".sched-task-time-edit").forEach(input => {
+    input.addEventListener("change", async () => {
+      const val = parseInt(input.value, 10);
+      const id = input.dataset.id;
+      const isMain = input.dataset.ismaintask === "true";
+      if (isNaN(val) || val < 1) return;
+
+      try {
+        const { updateSchedulerTask, updateTask } = await import("../db.js");
+        if (isMain) {
+          await updateTask(id, { estimatedTime: val });
+        } else {
+          await updateSchedulerTask(id, { estimatedTime: val });
+        }
+        showSnackbar("Time updated", "success");
+        // Update local state without full reload
+        const t = tasks.find(x => x.id === id);
+        if (t) t.estimatedTime = val;
+      } catch (err) {
+        showSnackbar("Failed to update time", "error");
+      }
+    });
+  });
+
   // Bind deletes
   listEl.querySelectorAll(".btn-del-sched-task").forEach(btn => {
     btn.addEventListener("click", async () => {
-      if (!confirm("Remove this target study task?")) return;
-      await deleteSchedulerTask(btn.dataset.id);
+      const isMain = btn.dataset.ismaintask === "true";
+      const id = btn.dataset.id;
+      if (isMain) {
+        if (!confirm("Remove this task from the Scheduler? (It will still exist in your All Tasks list)")) return;
+        const { updateTask } = await import("../db.js");
+        await updateTask(id, { isScheduled: false });
+      } else {
+        if (!confirm("Remove this target study task?")) return;
+        await deleteSchedulerTask(id);
+      }
       showSnackbar("Task removed", "success");
       reloadTasks(uid);
     });
@@ -192,15 +280,25 @@ function renderTaskList(uid) {
 }
 
 function renderPlanView() {
+  // Use the main tab container to find datasets
+  const tabContainer = document.getElementById("main-content");
   const container = document.getElementById("generated-plan-container");
-  if (!container) return;
+  if (!container || !tabContainer) return;
 
   if (!generatedPlan) {
     container.innerHTML = "";
     return;
   }
 
-  let html = `<h2 class="page-title" style="margin-top:var(--space-2xl); margin-bottom:var(--space-md); font-size:18px;">Your Generated Plan</h2>`;
+  const generatedAt = tabContainer.dataset.generatedAt;
+  const orderedLabelsRaw = tabContainer.dataset.orderedLabels;
+
+  let html = `
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:var(--space-2xl); margin-bottom:var(--space-md);">
+      <h2 class="page-title" style="margin:0; font-size:18px;">Your Generated Plan</h2>
+      ${generatedAt ? `<div style="font-size:11px; color:var(--text-muted);">Updated: ${generatedAt}</div>` : ""}
+    </div>
+  `;
 
   // Show Unscheduled if any
   if (unscheduled && unscheduled.length > 0) {
@@ -221,15 +319,34 @@ function renderPlanView() {
   }
 
   // Show Days
-  const DAYS_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  let orderedLabels = [];
+  try {
+    orderedLabels = JSON.parse(tabContainer.dataset.orderedLabels || "[]");
+  } catch(e) {}
   
-  DAYS_ORDER.forEach(day => {
-    const dayPlan = generatedPlan[day];
+  if (orderedLabels.length > 0 && !orderedLabels.includes("Today")) {
+     html += `<div style="font-size:12px; color:var(--text-muted); padding:8px 12px; background:rgba(255,255,255,0.03); border-radius:8px; margin-bottom:16px;">
+        <i data-lucide="info" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> No remaining study blocks for today. Plan starts from the next available time.
+     </div>`;
+  }
+
+  if (orderedLabels.length === 0) {
+    orderedLabels = Object.keys(generatedPlan).sort((a,b) => {
+      if (a === "Today") return -1;
+      if (b === "Today") return 1;
+      if (a === "Tomorrow") return -1;
+      if (b === "Tomorrow") return 1;
+      return 0;
+    });
+  }
+
+  orderedLabels.forEach(label => {
+    const dayPlan = generatedPlan[label];
     if (dayPlan && dayPlan.length > 0) {
       html += `
         <div class="card mb-md">
           <h4 style="color:var(--text-primary); margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:8px; display:flex; align-items:center; gap:8px;">
-            <i data-lucide="calendar-days" style="width:16px;height:16px;color:var(--accent);"></i> ${day}
+            <i data-lucide="${label === 'Today' ? 'zap' : 'calendar-days'}" style="width:16px;height:16px;color:var(--accent);"></i> ${label}
           </h4>
           <div style="display:flex; flex-direction:column; gap:8px;">
             ${dayPlan.map(block => `
@@ -349,7 +466,7 @@ const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
 const DAY_SHORTS = ["M", "T", "W", "T", "F", "S", "S"];
 
 function openWeeklyTimetableModal(uid, currentSchedule, onUpdate) {
-  let localSchedule = JSON.parse(JSON.stringify(currentSchedule));
+  let localSchedule = JSON.parse(JSON.stringify(currentSchedule || {}));
   let selectedDay = "Monday";
 
   const backdrop = document.createElement("div");
@@ -369,8 +486,8 @@ function openWeeklyTimetableModal(uid, currentSchedule, onUpdate) {
       <!-- Day Selector -->
       <div class="filter-bar mb-md" id="schedule-days-bar"></div>
 
-      <!-- Task List -->
-      <div id="schedule-list" class="mb-md" style="min-height:100px;"></div>
+      <!-- Block List -->
+      <div id="modal-schedule-list" class="mb-md" style="min-height:100px;"></div>
 
       <button class="btn btn-secondary btn-full ripple" id="btn-add-block" style="margin-bottom:var(--space-md);">
         <i data-lucide="plus" style="width:16px;height:16px;margin-right:6px;"></i> Add Block to <span id="current-day-display">Monday</span>
@@ -382,34 +499,9 @@ function openWeeklyTimetableModal(uid, currentSchedule, onUpdate) {
     </div>
   `;
 
-  const updateView = () => {
-    // 1. Update Day Chip selector
-    const daysBar = backdrop.querySelector("#schedule-days-bar");
-    daysBar.innerHTML = DAYS.map((day, i) => `
-      <button class="filter-chip ${day === selectedDay ? "active" : "ripple"}" data-day="${day}" style="min-width:40px; justify-content:center;">
-        ${DAY_SHORTS[i]}
-      </button>
-    `).join("");
-
-    // Re-bind day clicks
-    daysBar.querySelectorAll(".filter-chip").forEach(btn => {
-      btn.addEventListener("click", () => {
-        selectedDay = btn.dataset.day;
-        updateView();
-      });
-    });
-
-    // 2. Update Add button text
+  const renderBlocks = () => {
     backdrop.querySelector("#current-day-display").textContent = selectedDay;
-
-    // 3. Update List with Animation
-    const listEl = backdrop.querySelector("#schedule-list");
-    
-    // Trigger animation
-    listEl.classList.remove("animate-list");
-    void listEl.offsetWidth; // force reflow
-    listEl.classList.add("animate-list");
-
+    const listEl = backdrop.querySelector("#modal-schedule-list");
     let dayTasks = localSchedule[selectedDay] || [];
     dayTasks.sort((a, b) => a.start_time.localeCompare(b.start_time));
 
@@ -431,26 +523,40 @@ function openWeeklyTimetableModal(uid, currentSchedule, onUpdate) {
         </div>
       `).join("");
 
-      // Attach Delete
       listEl.querySelectorAll(".btn-del-block").forEach(btn => {
         btn.addEventListener("click", () => {
           localSchedule[selectedDay] = localSchedule[selectedDay].filter(x => x.id !== btn.dataset.id);
-          updateView();
+          renderBlocks();
         });
       });
     }
-
     if (window.lucide) window.lucide.createIcons();
   };
 
-  // Bind Static Actions
+  const updateDaySelector = () => {
+    const daysBar = backdrop.querySelector("#schedule-days-bar");
+    daysBar.innerHTML = DAYS.map((day, i) => `
+      <button class="filter-chip ${day === selectedDay ? "active" : "ripple"}" data-day="${day}" style="min-width:40px; justify-content:center;">
+        ${DAY_SHORTS[i]}
+      </button>
+    `).join("");
+
+    daysBar.querySelectorAll(".filter-chip").forEach(btn => {
+      btn.addEventListener("click", () => {
+        selectedDay = btn.dataset.day;
+        updateDaySelector();
+        renderBlocks();
+      });
+    });
+  };
+
   backdrop.querySelector("#btn-close-timetable").addEventListener("click", () => backdrop.remove());
   
   backdrop.querySelector("#btn-add-block").addEventListener("click", () => {
     openAddBlockModal(selectedDay, (newBlock) => {
       if (!localSchedule[selectedDay]) localSchedule[selectedDay] = [];
       localSchedule[selectedDay].push(newBlock);
-      updateView();
+      renderBlocks();
     });
   });
 
@@ -460,19 +566,20 @@ function openWeeklyTimetableModal(uid, currentSchedule, onUpdate) {
     btn.innerHTML = `Saving...`;
     try {
       await saveWeeklySchedule(uid, localSchedule);
-      showSnackbar("Timetable updated successfully!", "success");
+      showSnackbar("Schedule saved successfully", "success");
       if (onUpdate) onUpdate(localSchedule);
       backdrop.remove();
-    } catch (e) {
-      showSnackbar("Failed to update timetable", "error");
+    } catch (err) {
+      showSnackbar("Error saving schedule", "error");
       btn.disabled = false;
-      btn.innerHTML = `<i data-lucide="save" style="width:16px;height:16px;margin-right:6px;"></i> Save Schedule`;
+      btn.innerHTML = `<i data-lucide="save"></i> Save Schedule`;
+      if (window.lucide) window.lucide.createIcons();
     }
   });
 
-  updateView();
   document.body.appendChild(backdrop);
-  if (window.lucide) window.lucide.createIcons();
+  updateDaySelector();
+  renderBlocks();
 }
 
 function openAddBlockModal(day, onAdd) {

@@ -12,13 +12,20 @@ let dashboardChart = null;
 let dashboardInterval = null;
 
 export async function renderDashboard(container, uid, profile) {
-  if (dashboardChart) {
-    dashboardChart.destroy();
-    dashboardChart = null;
-  }
-  if (dashboardInterval) {
-    clearInterval(dashboardInterval);
-  }
+  // ── Lifecycle Cleanup ──
+  const cleanup = () => {
+    if (dashboardChart) {
+      dashboardChart.destroy();
+      dashboardChart = null;
+    }
+    if (dashboardInterval) {
+      clearInterval(dashboardInterval);
+      dashboardInterval = null;
+    }
+  };
+
+  // Ensure no duplicate intervals if re-rendered without navigation (though navigate handles it now)
+  cleanup();
   
   // Refresh schedule every minute to update current task logic
   dashboardInterval = setInterval(() => {
@@ -50,7 +57,7 @@ export async function renderDashboard(container, uid, profile) {
     </div>
   `;
 
-  document.getElementById("btn-see-schedule")?.addEventListener("click", () => navigate("schedule"));
+  document.getElementById("btn-see-schedule")?.addEventListener("click", () => navigate("scheduler"));
 
   // BTech Banner
   renderBTechBanner(profile);
@@ -62,6 +69,8 @@ export async function renderDashboard(container, uid, profile) {
   if (el) el.remove();
   const content = document.getElementById("dash-content");
   if (content) content.classList.remove("hidden");
+
+  return { cleanup };
 }
 
 function renderBTechBanner(profile) {

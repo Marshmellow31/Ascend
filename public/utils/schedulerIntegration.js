@@ -28,6 +28,22 @@ export async function pushToScheduler(uid, goalTask) {
   const ref = await createSchedulerTask(uid, schedulerPayload);
   const schedulerTaskId = ref.id;
 
+  // Also push to the main "tasks" list for visibility
+  try {
+    const { createTask } = await import("../db.js");
+    await createTask(uid, {
+      title: goalTask.title,
+      description: `Target for Goal: ${goalTask.sourceGoalId}`,
+      priority: goalTask.priority || "medium",
+      dueDate: goalTask.deadline,
+      isScheduled: true,
+      schedulerTaskId: schedulerTaskId,
+      sourceGoalTaskId: goalTask.id
+    });
+  } catch (err) {
+    console.warn("Failed to sync with main tasks list:", err);
+  }
+
   // Mark the goalTask as scheduled and store the scheduler task ID
   await updateGoalTask(goalTask.id, {
     status: "scheduled",

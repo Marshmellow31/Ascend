@@ -69,6 +69,8 @@ export async function renderSchedule(container, uid) {
   });
 
   renderScheduleList(uid);
+
+  return { cleanup: () => {} };
 }
 
 function renderScheduleList(uid) {

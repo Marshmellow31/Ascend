@@ -1,4 +1,9 @@
 import "./styles.css";
+import { createIcons, icons } from "lucide";
+window.lucide = { 
+  createIcons: (config = {}) => createIcons({ icons, ...config }), 
+  icons 
+};
 import { onAuthStateChanged } from "./auth.js";
 import { getUserProfile } from "./db.js";
 import { renderDashboard } from "./pages/dashboard.js";
@@ -19,6 +24,7 @@ export const state = {
   currentPage: "dashboard",
   selectedSubjectId: null,
   selectedSubjectName: null,
+  currentPageController: null, // Tracks the currently active page for cleanup
 };
 
 // ── Show Landing / Auth / App shells ──────────────────────────────────────────
@@ -57,6 +63,16 @@ export function applyTheme(theme = "dark") {
 
 // ── Navigation Logic ──────────────────────────────────────────────────────────
 export async function navigate(page, params = {}) {
+  // ── Lifecycle Cleanup ──
+  if (state.currentPageController?.cleanup) {
+    try {
+      state.currentPageController.cleanup();
+    } catch (err) {
+      console.warn(`Cleanup failed for page: ${state.currentPage}`, err);
+    }
+  }
+  state.currentPageController = null;
+
   state.currentPage = page;
   if (params.subjectId) state.selectedSubjectId = params.subjectId;
   if (params.subjectName) state.selectedSubjectName = params.subjectName;
@@ -83,23 +99,26 @@ export async function navigate(page, params = {}) {
     fab.classList.toggle("hidden", hideFabPages.includes(page));
   }
 
+  let controller = null;
+
   switch (page) {
-    case "dashboard":  await renderDashboard(content, uid, profile); break;
-    case "subjects":   await renderSubjects(content, uid, profile); break;
-    case "topics":     await renderTopics(content, uid, params.subjectId || state.selectedSubjectId, params.subjectName || state.selectedSubjectName); break;
-    case "tasks":      await renderTasks(content, uid, profile); break;
-    case "analytics":  await renderAnalytics(content, uid, profile); break;
-    case "settings":   await renderSettings(content, uid, profile, state); break;
+    case "dashboard":  controller = await renderDashboard(content, uid, profile); break;
+    case "subjects":   controller = await renderSubjects(content, uid, profile); break;
+    case "topics":     controller = await renderTopics(content, uid, params.subjectId || state.selectedSubjectId, params.subjectName || state.selectedSubjectName); break;
+    case "tasks":      controller = await renderTasks(content, uid, profile); break;
+    case "analytics":  controller = await renderAnalytics(content, uid, profile); break;
+    case "settings":   controller = await renderSettings(content, uid, profile, state); break;
     case "scheduler":   
       const { renderSchedulerTab } = await import("./pages/scheduler.js");
-      await renderSchedulerTab(content, uid, profile); 
+      controller = await renderSchedulerTab(content, uid, profile); 
       break;
     case "personalDevelopment":
       const { renderPersonalDevelopment } = await import("./pages/personalDevelopment.js");
-      await renderPersonalDevelopment(content, uid, profile);
+      controller = await renderPersonalDevelopment(content, uid, profile);
       break;
   }
 
+  state.currentPageController = controller;
   initRipples();
   if (window.lucide) window.lucide.createIcons();
 }
@@ -124,7 +143,6 @@ function initNavigation() {
 
   // ── Swipe Gestures ──
   let touchStartX = 0;
-  let touchTranslateX = 0;
   const SWIPE_THRESHOLD = 80;
   const EDGE_THRESHOLD = 40;
 
@@ -138,15 +156,9 @@ function initNavigation() {
     const isOpen = drawer?.classList.contains("open");
 
     if (!isOpen) {
-      // Swipe to Open (from left edge)
-      if (touchStartX < EDGE_THRESHOLD && deltaX > SWIPE_THRESHOLD) {
-        open();
-      }
+      if (touchStartX < EDGE_THRESHOLD && deltaX > SWIPE_THRESHOLD) open();
     } else {
-      // Swipe to Close (anywhere leftwards)
-      if (deltaX < -SWIPE_THRESHOLD) {
-        close();
-      }
+      if (deltaX < -SWIPE_THRESHOLD) close();
     }
   }, { passive: true });
 }
@@ -224,20 +236,10 @@ function main() {
   initAuthForms(handleUserAuth, showLanding);
   initInstallPrompt();
   
-  // Register Service Worker for PWA
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      // In dev mode, VitePWA may serve sw.js at the root or as /dev-sw.js?dev-sw
-      // By using /sw.js, we target the production-ready path which VitePWA handles
-      navigator.serviceWorker.register('/sw.js', { scope: '/' })
-        .then(reg => {
-          console.log('SW registered:', reg);
-        })
-        .catch(err => {
-          console.log('SW registration failed:', err);
-        });
-    });
-  }
+  // Service worker is managed by VitePWA in the build, 
+  // but we keep a generic registration for dev/fallback if needed.
+  // Actually, Vite-plugin-PWA handles this automatically when injectRegister is 'auto'.
+  // So we remove manual registration to avoid conflicts with 'auto' mode.
 
   onAuthStateChanged(async (user) => {
     if (user) await handleUserAuth(user);

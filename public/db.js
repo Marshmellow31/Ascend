@@ -18,90 +18,141 @@ import {
   Timestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { db } from "./firebase-config.js";
+import { showSnackbar } from "./snackbar.js";
+
+function handleError(err, context = "operation") {
+  console.error(`DB Error (${context}):`, err);
+  if (err.message && err.message.toLowerCase().includes("permission")) {
+    showSnackbar("Permission denied. Check database rules.", "error");
+  } else {
+    showSnackbar(`Failed to sync ${context}.`, "error");
+  }
+  throw err;
+}
 
 // ─────────────────────────────────────────────────────────────
 //  USER PROFILE
 // ─────────────────────────────────────────────────────────────
 export async function getUserProfile(uid) {
-  const snap = await getDoc(doc(db, "users", uid));
-  return snap.exists() ? snap.data() : null;
+  try {
+    const snap = await getDoc(doc(db, "users", uid));
+    return snap.exists() ? snap.data() : null;
+  } catch (err) {
+    return handleError(err, "profile");
+  }
 }
 
 export async function updateUserProfile(uid, data) {
-  await updateDoc(doc(db, "users", uid), { ...data, updatedAt: serverTimestamp() });
+  try {
+    await updateDoc(doc(db, "users", uid), { ...data, updatedAt: serverTimestamp() });
+  } catch (err) {
+    handleError(err, "update profile");
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
 //  SUBJECTS
 // ─────────────────────────────────────────────────────────────
 export async function createSubject(uid, { name, color, order = 0 }) {
-  return addDoc(collection(db, "subjects"), {
-    userId: uid,
-    name,
-    color: color || "#6c63ff",
-    order,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  });
+  try {
+    return await addDoc(collection(db, "subjects"), {
+      userId: uid,
+      name,
+      color: color || "#6c63ff",
+      order,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (err) {
+    return handleError(err, "create subject");
+  }
 }
 
 export async function getSubjects(uid) {
-  const q = query(
-    collection(db, "subjects"),
-    where("userId", "==", uid)
-  );
-  const snap = await getDocs(q);
-  const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  return data.sort((a, b) => {
-    if (a.order !== b.order) return (a.order || 0) - (b.order || 0);
-    const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : Date.now();
-    const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : Date.now();
-    return tA - tB;
-  });
+  try {
+    const q = query(
+      collection(db, "subjects"),
+      where("userId", "==", uid)
+    );
+    const snap = await getDocs(q);
+    const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    return data.sort((a, b) => {
+      if (a.order !== b.order) return (a.order || 0) - (b.order || 0);
+      const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : Date.now();
+      const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : Date.now();
+      return tA - tB;
+    });
+  } catch (err) {
+    return handleError(err, "load subjects");
+  }
 }
 
 export async function updateSubject(id, data) {
-  await updateDoc(doc(db, "subjects", id), { ...data, updatedAt: serverTimestamp() });
+  try {
+    await updateDoc(doc(db, "subjects", id), { ...data, updatedAt: serverTimestamp() });
+  } catch (err) {
+    handleError(err, "update subject");
+  }
 }
 
 export async function deleteSubject(id) {
-  await deleteDoc(doc(db, "subjects", id));
+  try {
+    await deleteDoc(doc(db, "subjects", id));
+  } catch (err) {
+    handleError(err, "delete subject");
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
 //  TOPICS
 // ─────────────────────────────────────────────────────────────
 export async function createTopic(uid, { subjectId, name, order = 0 }) {
-  return addDoc(collection(db, "topics"), {
-    userId: uid,
-    subjectId,
-    name,
-    order,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  });
+  try {
+    return await addDoc(collection(db, "topics"), {
+      userId: uid,
+      subjectId,
+      name,
+      order,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (err) {
+    return handleError(err, "create topic");
+  }
 }
 
 export async function getTopics(uid, subjectId = null) {
-  const constraints = [where("userId", "==", uid)];
-  if (subjectId) constraints.push(where("subjectId", "==", subjectId));
-  const q = query(collection(db, "topics"), ...constraints);
-  const snap = await getDocs(q);
-  const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  return data.sort((a, b) => {
-    if (a.order !== b.order) return (a.order || 0) - (b.order || 0);
-    const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : Date.now();
-    const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : Date.now();
-    return tA - tB;
-  });
+  try {
+    const constraints = [where("userId", "==", uid)];
+    if (subjectId) constraints.push(where("subjectId", "==", subjectId));
+    const q = query(collection(db, "topics"), ...constraints);
+    const snap = await getDocs(q);
+    const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    return data.sort((a, b) => {
+      if (a.order !== b.order) return (a.order || 0) - (b.order || 0);
+      const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : Date.now();
+      const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : Date.now();
+      return tA - tB;
+    });
+  } catch (err) {
+    return handleError(err, "load topics");
+  }
 }
 
 export async function updateTopic(id, data) {
-  await updateDoc(doc(db, "topics", id), { ...data, updatedAt: serverTimestamp() });
+  try {
+    await updateDoc(doc(db, "topics", id), { ...data, updatedAt: serverTimestamp() });
+  } catch (err) {
+    handleError(err, "update topic");
+  }
 }
 
 export async function deleteTopic(id) {
-  await deleteDoc(doc(db, "topics", id));
+  try {
+    await deleteDoc(doc(db, "topics", id));
+  } catch (err) {
+    handleError(err, "delete topic");
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -118,93 +169,129 @@ export async function createTask(uid, taskData) {
     reminderTime = null,
   } = taskData;
 
-  return addDoc(collection(db, "tasks"), {
-    userId: uid,
-    subjectId,
-    topicId,
-    title,
-    description,
-    priority,
-    dueDate: dueDate ? Timestamp.fromDate(new Date(dueDate)) : null,
-    reminderTime: reminderTime ? Timestamp.fromDate(new Date(reminderTime)) : null,
-    isCompleted: false,
-    completedAt: null,
-    reminderSent: false,
-    snoozedUntil: null,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  });
+  try {
+    return await addDoc(collection(db, "tasks"), {
+      userId: uid,
+      subjectId,
+      topicId,
+      title,
+      description,
+      priority,
+      dueDate: dueDate ? Timestamp.fromDate(new Date(dueDate)) : null,
+      reminderTime: reminderTime ? Timestamp.fromDate(new Date(reminderTime)) : null,
+      isCompleted: false,
+      completedAt: null,
+      reminderSent: false,
+      snoozedUntil: null,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (err) {
+    return handleError(err, "create task");
+  }
 }
 
 export async function getTasks(uid, filters = {}) {
-  const constraints = [where("userId", "==", uid)];
+  try {
+    const constraints = [where("userId", "==", uid)];
 
-  if (filters.subjectId) constraints.push(where("subjectId", "==", filters.subjectId));
-  if (filters.topicId) constraints.push(where("topicId", "==", filters.topicId));
-  if (filters.isCompleted !== undefined)
-    constraints.push(where("isCompleted", "==", filters.isCompleted));
-  if (filters.priority) constraints.push(where("priority", "==", filters.priority));
+    if (filters.subjectId) constraints.push(where("subjectId", "==", filters.subjectId));
+    if (filters.topicId) constraints.push(where("topicId", "==", filters.topicId));
+    if (filters.isCompleted !== undefined)
+      constraints.push(where("isCompleted", "==", filters.isCompleted));
+    if (filters.priority) constraints.push(where("priority", "==", filters.priority));
 
-  const q = query(collection(db, "tasks"), ...constraints);
-  const snap = await getDocs(q);
-  const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  return data.sort((a, b) => {
-    const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : Date.now();
-    const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : Date.now();
-    return tB - tA; // desc
-  });
+    const q = query(collection(db, "tasks"), ...constraints);
+    const snap = await getDocs(q);
+    const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    return data.sort((a, b) => {
+      const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : Date.now();
+      const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : Date.now();
+      return tB - tA; // desc
+    });
+  } catch (err) {
+    return handleError(err, "load tasks");
+  }
 }
 
 export async function updateTask(id, data) {
-  const update = { ...data, updatedAt: serverTimestamp() };
-  if (data.dueDate) update.dueDate = Timestamp.fromDate(new Date(data.dueDate));
-  if (data.reminderTime) update.reminderTime = Timestamp.fromDate(new Date(data.reminderTime));
-  await updateDoc(doc(db, "tasks", id), update);
+  try {
+    const update = { ...data, updatedAt: serverTimestamp() };
+    if (data.dueDate) update.dueDate = Timestamp.fromDate(new Date(data.dueDate));
+    if (data.reminderTime) update.reminderTime = Timestamp.fromDate(new Date(data.reminderTime));
+    await updateDoc(doc(db, "tasks", id), update);
+  } catch (err) {
+    handleError(err, "update task");
+  }
 }
 
 export async function completeTask(id) {
-  await updateDoc(doc(db, "tasks", id), {
-    isCompleted: true,
-    completedAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  });
+  try {
+    await updateDoc(doc(db, "tasks", id), {
+      isCompleted: true,
+      completedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (err) {
+    handleError(err, "complete task");
+  }
 }
 
 export async function reopenTask(id) {
-  await updateDoc(doc(db, "tasks", id), {
-    isCompleted: false,
-    completedAt: null,
-    reminderSent: false,
-    updatedAt: serverTimestamp(),
-  });
+  try {
+    await updateDoc(doc(db, "tasks", id), {
+      isCompleted: false,
+      completedAt: null,
+      reminderSent: false,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (err) {
+    handleError(err, "reopen task");
+  }
 }
 
 export async function snoozeTask(id, minutes = 15) {
-  const snoozedUntil = new Date(Date.now() + minutes * 60 * 1000);
-  await updateDoc(doc(db, "tasks", id), {
-    snoozedUntil: Timestamp.fromDate(snoozedUntil),
-    reminderSent: false,
-    updatedAt: serverTimestamp(),
-  });
+  try {
+    const snoozedUntil = new Date(Date.now() + minutes * 60 * 1000);
+    await updateDoc(doc(db, "tasks", id), {
+      snoozedUntil: Timestamp.fromDate(snoozedUntil),
+      reminderSent: false,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (err) {
+    handleError(err, "snooze task");
+  }
 }
 
 export async function deleteTask(id) {
-  await deleteDoc(doc(db, "tasks", id));
+  try {
+    await deleteDoc(doc(db, "tasks", id));
+  } catch (err) {
+    handleError(err, "delete task");
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
 //  FCM TOKENS
 // ─────────────────────────────────────────────────────────────
 export async function saveFcmToken(uid, token) {
-  await setDoc(doc(db, "users", uid, "fcmTokens", token), {
-    token,
-    createdAt: serverTimestamp(),
-    platform: navigator.platform || "unknown",
-  });
+  try {
+    await setDoc(doc(db, "users", uid, "fcmTokens", token), {
+      token,
+      createdAt: serverTimestamp(),
+      platform: navigator.platform || "unknown",
+    });
+  } catch (err) {
+    handleError(err, "save token");
+  }
 }
 
 export async function removeFcmToken(uid, token) {
-  await deleteDoc(doc(db, "users", uid, "fcmTokens", token));
+  try {
+    await deleteDoc(doc(db, "users", uid, "fcmTokens", token));
+  } catch (err) {
+    handleError(err, "remove token");
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -215,59 +302,83 @@ const defaultSchedule = {
 };
 
 export async function getWeeklySchedule(uid) {
-  const snap = await getDoc(doc(db, "users", uid, "planner", "schedule"));
-  if (snap.exists()) {
-    const data = snap.data();
-    return { ...defaultSchedule, ...data.week_schedule };
+  try {
+    const snap = await getDoc(doc(db, "users", uid, "planner", "schedule"));
+    if (snap.exists()) {
+      const data = snap.data();
+      return { ...defaultSchedule, ...data.week_schedule };
+    }
+    return defaultSchedule;
+  } catch (err) {
+    return handleError(err, "load schedule");
   }
-  return defaultSchedule;
 }
 
 export async function saveWeeklySchedule(uid, week_schedule) {
-  await setDoc(doc(db, "users", uid, "planner", "schedule"), {
-    week_schedule,
-    updatedAt: serverTimestamp(),
-  });
+  try {
+    await setDoc(doc(db, "users", uid, "planner", "schedule"), {
+      week_schedule,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (err) {
+    handleError(err, "save schedule");
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
 //  SCHEDULER TASKS & GENERATED PLAN
 // ─────────────────────────────────────────────────────────────
 export async function createSchedulerTask(uid, taskData) {
-  return addDoc(collection(db, "schedulerTasks"), {
-    userId: uid,
-    title: taskData.title,
-    subject: taskData.subject || "",
-    estimatedTime: parseInt(taskData.estimatedTime, 10) || 60,
-    deadline: taskData.deadline || null,
-    priority: taskData.priority || "medium",
-    notes: taskData.notes || "",
-    status: "pending",
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  });
+  try {
+    return await addDoc(collection(db, "schedulerTasks"), {
+      userId: uid,
+      title: taskData.title,
+      subject: taskData.subject || "",
+      estimatedTime: parseInt(taskData.estimatedTime, 10) || 60,
+      deadline: taskData.deadline || null,
+      priority: taskData.priority || "medium",
+      notes: taskData.notes || "",
+      status: "pending",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (err) {
+    return handleError(err, "create scheduler task");
+  }
 }
 
 export async function getSchedulerTasks(uid) {
-  const q = query(collection(db, "schedulerTasks"), where("userId", "==", uid));
-  const snap = await getDocs(q);
-  const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  return data.sort((a, b) => {
-    const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : Date.now();
-    const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : Date.now();
-    return tA - tB;
-  });
+  try {
+    const q = query(collection(db, "schedulerTasks"), where("userId", "==", uid));
+    const snap = await getDocs(q);
+    const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    return data.sort((a, b) => {
+      const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : Date.now();
+      const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : Date.now();
+      return tA - tB;
+    });
+  } catch (err) {
+    return handleError(err, "load scheduler tasks");
+  }
 }
 
 export async function updateSchedulerTask(id, data) {
-  await updateDoc(doc(db, "schedulerTasks", id), {
-    ...data,
-    updatedAt: serverTimestamp()
-  });
+  try {
+    await updateDoc(doc(db, "schedulerTasks", id), {
+      ...data,
+      updatedAt: serverTimestamp()
+    });
+  } catch (err) {
+    handleError(err, "update scheduler task");
+  }
 }
 
 export async function deleteSchedulerTask(id) {
-  await deleteDoc(doc(db, "schedulerTasks", id));
+  try {
+    await deleteDoc(doc(db, "schedulerTasks", id));
+  } catch (err) {
+    handleError(err, "delete scheduler task");
+  }
 }
 
 export async function getGeneratedPlan(uid) {
@@ -286,44 +397,60 @@ export async function saveGeneratedPlan(uid, plan) {
 //  PERSONAL GOALS
 // ─────────────────────────────────────────────────────────────
 export async function createGoal(uid, goalData) {
-  return addDoc(collection(db, "personalGoals"), {
-    userId: uid,
-    title: goalData.title,
-    category: goalData.category || "custom",
-    totalTarget: goalData.totalTarget,
-    unit: goalData.unit || "sessions",
-    durationDays: goalData.durationDays,
-    startDate: goalData.startDate,
-    endDate: goalData.endDate || null,
-    dailyTarget: goalData.dailyTarget,
-    priority: goalData.priority || "medium",
-    autoAddDaily: goalData.autoAddDaily !== false,
-    status: "active",
-    totalProgress: 0,
-    lastGeneratedDate: null,
-    notes: goalData.notes || "",
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  });
+  try {
+    return await addDoc(collection(db, "personalGoals"), {
+      userId: uid,
+      title: goalData.title,
+      category: goalData.category || "custom",
+      totalTarget: goalData.totalTarget,
+      unit: goalData.unit || "sessions",
+      durationDays: goalData.durationDays,
+      startDate: goalData.startDate,
+      endDate: goalData.endDate || null,
+      dailyTarget: goalData.dailyTarget,
+      priority: goalData.priority || "medium",
+      autoAddDaily: goalData.autoAddDaily !== false,
+      status: "active",
+      totalProgress: 0,
+      lastGeneratedDate: null,
+      notes: goalData.notes || "",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (err) {
+    return handleError(err, "create goal");
+  }
 }
 
 export async function getGoals(uid) {
-  const q = query(collection(db, "personalGoals"), where("userId", "==", uid));
-  const snap = await getDocs(q);
-  const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  return data.sort((a, b) => {
-    const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-    const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-    return tB - tA;
-  });
+  try {
+    const q = query(collection(db, "personalGoals"), where("userId", "==", uid));
+    const snap = await getDocs(q);
+    const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    return data.sort((a, b) => {
+      const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+      const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+      return tB - tA;
+    });
+  } catch (err) {
+    return handleError(err, "load goals");
+  }
 }
 
 export async function updateGoal(id, data) {
-  await updateDoc(doc(db, "personalGoals", id), { ...data, updatedAt: serverTimestamp() });
+  try {
+    await updateDoc(doc(db, "personalGoals", id), { ...data, updatedAt: serverTimestamp() });
+  } catch (err) {
+    handleError(err, "update goal");
+  }
 }
 
 export async function deleteGoal(id) {
-  await deleteDoc(doc(db, "personalGoals", id));
+  try {
+    await deleteDoc(doc(db, "personalGoals", id));
+  } catch (err) {
+    handleError(err, "delete goal");
+  }
 }
 
 // ─────────────────────────────────────────────────────────────

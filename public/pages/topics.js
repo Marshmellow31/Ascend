@@ -34,6 +34,8 @@ export async function renderTopics(container, uid, subjectId, subjectName) {
   );
 
   await loadTopics(container, uid, subjectId, subjectName);
+
+  return { cleanup: () => {} };
 }
 
 async function loadTopics(container, uid, subjectId, subjectName) {

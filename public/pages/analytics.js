@@ -119,4 +119,6 @@ export async function renderAnalytics(container, uid, profile) {
   `;
 
   if (window.lucide) window.lucide.createIcons();
+
+  return { cleanup: () => {} };
 }

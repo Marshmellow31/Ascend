@@ -4,9 +4,14 @@
 
 import { createGoalTask, getGoalTasks, updateGoal } from "../db.js";
 
-// Return today's date as "YYYY-MM-DD"
-function todayStr() {
-  return new Date().toISOString().split("T")[0];
+// Return today's date formatted as "YYYY-MM-DD"
+// respects a 5 AM "start of day" rollover.
+export function effectiveTodayStr() {
+  const now = new Date();
+  if (now.getHours() < 5) {
+    now.setDate(now.getDate() - 1);
+  }
+  return now.toISOString().split("T")[0];
 }
 
 // Return an array of "YYYY-MM-DD" strings between startDate and endDate inclusive
@@ -32,9 +37,11 @@ export function buildDailyTaskPayload(goal, dateStr) {
   const amount = goal.dailyTarget;
   const title = `${goal.title} — ${amount} ${unitLabel}`;
 
-  // estimatedTime: if unit is minutes, use dailyTarget directly; otherwise 30 min default
-  const estimatedTime =
-    goal.unit === "minutes" ? goal.dailyTarget : 30;
+  // Use custom defaultDuration if set, otherwise fallback logic
+  let estimatedTime = goal.defaultDuration || 30;
+  if (!goal.defaultDuration && goal.unit === "minutes") {
+    estimatedTime = goal.dailyTarget;
+  }
 
   return {
     sourceGoalId: goal.id,
@@ -70,7 +77,7 @@ export async function generateDailyTask(uid, goal, dateStr, existingTasks) {
  * Returns array of newly created task refs.
  */
 export async function autoGenerateTodaysTasks(uid, goals) {
-  const today = todayStr();
+  const today = effectiveTodayStr();
   const created = [];
 
   // Load all existing goal tasks once (one Firestore read, avoid N reads)

@@ -27,7 +27,7 @@ import {
   getCustomUnits,
   saveCustomUnit
 } from "../utils/personalDevelopment.js";
-import { autoGenerateTodaysTasks } from "../utils/dailyGenerator.js";
+import { autoGenerateTodaysTasks, effectiveTodayStr } from "../utils/dailyGenerator.js";
 import { pushToScheduler, pushAllPendingGoalTasks } from "../utils/schedulerIntegration.js";
 import { showSnackbar } from "../snackbar.js";
 
@@ -230,34 +230,34 @@ export async function renderPersonalDevelopment(container, uid, profile) {
         align-items: center;
         gap: 6px;
       }
-      /* Toggle switch */
+      /* Toggle switch - Modernized */
       .toggle-switch {
         position: relative;
-        width: 40px;
-        height: 22px;
+        width: 44px;
+        height: 24px;
       }
       .toggle-switch input { opacity: 0; width: 0; height: 0; }
       .toggle-slider {
         position: absolute;
         inset: 0;
-        background: var(--border-active);
+        background: rgba(255,255,255,0.1);
         border-radius: 999px;
         cursor: pointer;
-        transition: background 0.2s;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(255,255,255,0.05);
       }
-      .toggle-slider:before {
-        content: '';
+      .toggle-circle {
         position: absolute;
-        width: 16px; height: 16px;
-        left: 3px; top: 3px;
-        background: var(--bg-base);
+        width: 18px; height: 18px;
+        left: 3px; top: 2px;
+        background: #F5F5F5;
         border-radius: 50%;
-        transition: transform 0.2s, background 0.2s;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
       }
-      .toggle-switch input:checked + .toggle-slider { background: #1A3A2A; }
-      .toggle-switch input:checked + .toggle-slider:before {
-        transform: translateX(18px);
-        background: #34D399;
+      .toggle-switch input:checked + .toggle-slider { background: #10B981; border-color: #059669; }
+      .toggle-switch input:checked + .toggle-slider .toggle-circle {
+        transform: translateX(20px);
       }
 
       /* ── Push button ── */
@@ -595,7 +595,7 @@ function renderGoalCardHTML(goal) {
   }
   const pct = progressPercent(goal.totalProgress || 0, goal.totalTarget);
   const remaining = daysRemaining(goal.endDate);
-  const today = new Date().toISOString().split("T")[0];
+  const today = effectiveTodayStr();
   const isCompleted = checkGoalCompletion(goal) || goal.status === "completed";
   const todayTask = _goalTasks.find(
     t => t.sourceGoalId === goal.id && t.date === today
@@ -697,7 +697,7 @@ function renderGoalCardHTML(goal) {
           </span>
           <label class="toggle-switch">
             <input type="checkbox" class="goal-auto-toggle" ${goal.autoAddDaily ? "checked" : ""}>
-            <span class="toggle-slider"></span>
+            <span class="toggle-slider"><span class="toggle-circle"></span></span>
           </label>
         </div>
 
@@ -937,6 +937,11 @@ function openGoalForm(uid, existingGoal, onSave) {
           <label class="form-label">Priority</label>
           <select class="form-select" id="pd-goal-priority">${priorityOptions}</select>
         </div>
+        <div class="form-group">
+          <label class="form-label">Task Time (mins)</label>
+          <input class="form-input" type="number" id="pd-goal-task-duration" min="5" step="5"
+            placeholder="30" value="${existingGoal?.defaultDuration || ""}" />
+        </div>
       </div>
 
       <div class="pd-form-grid">
@@ -982,7 +987,7 @@ function openGoalForm(uid, existingGoal, onSave) {
         </span>
         <label class="toggle-switch">
           <input type="checkbox" id="pd-goal-auto" ${(existingGoal?.autoAddDaily !== false) ? "checked" : ""}>
-          <span class="toggle-slider"></span>
+          <span class="toggle-slider"><span class="toggle-circle"></span></span>
         </label>
       </div>
 
@@ -1055,6 +1060,7 @@ function openGoalForm(uid, existingGoal, onSave) {
       startDate: backdrop.querySelector("#pd-goal-start").value,
       dailyTarget: backdrop.querySelector("#pd-goal-daily").value,
       autoAddDaily: backdrop.querySelector("#pd-goal-auto").checked,
+      defaultDuration: backdrop.querySelector("#pd-goal-task-duration").value,
       notes: backdrop.querySelector("#pd-goal-notes").value.trim(),
     };
 

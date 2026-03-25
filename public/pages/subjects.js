@@ -22,6 +22,8 @@ export async function renderSubjects(container, uid, profile) {
   );
 
   await loadSubjects(container, uid, profile);
+
+  return { cleanup: () => {} };
 }
 
 async function loadSubjects(container, uid, profile) {

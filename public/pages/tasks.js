@@ -248,31 +248,43 @@ export async function renderTasks(container, uid, profile) {
   // Re-init subject dropdown on refreshTaskList population
   // handled by initDropdown("subject", ...) if we ensure the structure exists
 
-  // Scroll/Resize handling for fixed menus
-  window.addEventListener("scroll", () => {
-    document.querySelectorAll(".custom-select-wrapper.open").forEach(w => {
-      const id = w.id.replace("wrapper-", "");
-      updateDropdownPosition(id);
-    });
-  }, true);
-  
-  window.addEventListener("resize", () => {
-    document.querySelectorAll(".custom-select-wrapper").forEach(w => w.classList.remove("open"));
-  });
-
   // Manage Subjects
   document.getElementById("btn-manage-subjects")?.addEventListener("click", () => {
     openSubjectManagementModal(uid, refreshTaskList);
   });
 
-  // Global click to close dropdowns
-  document.addEventListener("click", (e) => {
+  // ── Global Event Listeners ──
+  const handleScroll = () => {
+    document.querySelectorAll(".custom-select-wrapper.open").forEach(w => {
+      const id = w.id.replace("wrapper-", "");
+      updateDropdownPosition(id);
+    });
+  };
+
+  const handleResize = () => {
+    document.querySelectorAll(".custom-select-wrapper").forEach(w => w.classList.remove("open"));
+  };
+
+  const handleClickOutside = (e) => {
     if (!e.target.closest(".custom-select-wrapper")) {
       document.querySelectorAll(".custom-select-wrapper").forEach(w => w.classList.remove("open"));
     }
-  });
+  };
+
+  window.addEventListener("scroll", handleScroll, true);
+  window.addEventListener("resize", handleResize);
+  document.addEventListener("click", handleClickOutside);
 
   await refreshTaskList();
+
+  // Return cleanup controller
+  return {
+    cleanup: () => {
+      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("resize", handleResize);
+      document.removeEventListener("click", handleClickOutside);
+    }
+  };
 }
 
 export function isTaskOverdue(task, currentTime) {
@@ -329,6 +341,9 @@ function renderTaskCard(task, uid, onUpdate, allSubjects = []) {
       <div class="task-actions" style="display:flex; gap:8px;">
         <button class="btn btn-sm ${isDone ? "btn-secondary" : "btn-primary"} btn-check ripple" style="padding: 4px 10px;" title="${isDone ? "Undo" : "Done"}">
           <i data-lucide="${isDone ? "rotate-ccw" : "check"}" style="width:14px;height:14px;"></i>
+        </button>
+        <button class="btn btn-sm btn-ghost btn-push-sched ripple" style="padding: 4px 10px;" title="Push to Scheduler">
+          <i data-lucide="send" style="width:14px;height:14px;color:var(--accent)"></i>
         </button>
         <button class="btn btn-sm btn-ghost btn-edit ripple" style="padding: 4px 10px;" aria-label="Edit" title="Edit">
           <i data-lucide="pencil" style="width:14px;height:14px"></i>
@@ -403,6 +418,17 @@ function renderTaskCard(task, uid, onUpdate, allSubjects = []) {
   card.querySelector(".btn-edit").addEventListener("click", (e) => {
     e.stopPropagation();
     openTaskModal(uid, null, onUpdate, task);
+  });
+
+  card.querySelector(".btn-push-sched").addEventListener("click", async (e) => {
+    e.stopPropagation();
+    try {
+      await updateTask(task.id, { isScheduled: true });
+      showSnackbar("Task added to Scheduler!", "success");
+      onUpdate();
+    } catch (err) {
+      showSnackbar("Failed to schedule task", "error");
+    }
   });
 
   card.querySelector(".btn-del").addEventListener("click", async (e) => {

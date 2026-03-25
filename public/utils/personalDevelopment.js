@@ -92,6 +92,7 @@ export async function createGoal(uid, rawData) {
     dailyTarget,
     priority: rawData.priority || "medium",
     autoAddDaily: rawData.autoAddDaily !== false,
+    defaultDuration: parseInt(rawData.defaultDuration, 10) || null,
     notes: rawData.notes || "",
   };
 

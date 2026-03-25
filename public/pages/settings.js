@@ -180,6 +180,8 @@ export async function renderSettings(container, uid, profile, state) {
     if (!confirmed) return;
     await logOut();
   });
+
+  return { cleanup: () => {} };
 }
 
 // ── Profile edit modal ────────────────────────────────────────
@@ -208,10 +210,10 @@ function openProfileModal(uid, profile, state) {
     await updateUserProfile(uid, { displayName });
     state.profile = { ...state.profile, displayName };
     backdrop.remove();
-    // Re-render settings
-    const { renderSettings } = await import("./settings.js");
-    const container = document.getElementById("main-content");
-    if (container) renderSettings(container, uid, state.profile, state);
+    state.profile = { ...state.profile, displayName };
+    backdrop.remove();
+    // Re-render settings via central navigate
+    navigate("settings");
   });
 
   document.body.appendChild(backdrop);
