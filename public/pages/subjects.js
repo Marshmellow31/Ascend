@@ -4,7 +4,7 @@
 
 import { getSubjects, createSubject, updateSubject, deleteSubject, getTopics, getTasks } from "../db.js";
 import { navigate } from "../app.js";
-import { escHtml } from "./dashboard.js";
+import { escHtml } from "../js/utils.js";
 import { showSnackbar, showConfirmDialog } from "../snackbar.js";
 
 export async function renderSubjects(container, uid, profile) {

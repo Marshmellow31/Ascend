@@ -47,3 +47,26 @@ export function initRipples() {
     });
   });
 }
+
+/**
+ * Safely escape HTML to prevent XSS in template literals
+ */
+export function escHtml(str = "") {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/**
+ * Format a date relative to today ("Today", "Tomorrow", or "Jan 5")
+ */
+export function formatDate(date) {
+  const now = new Date();
+  const d = new Date(date);
+  if (d.toDateString() === now.toDateString()) return "Today";
+  const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1);
+  if (d.toDateString() === tomorrow.toDateString()) return "Tomorrow";
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}

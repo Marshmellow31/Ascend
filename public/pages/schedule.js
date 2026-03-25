@@ -4,7 +4,7 @@
 
 import { getWeeklySchedule, saveWeeklySchedule } from "../db.js";
 import { showSnackbar } from "../snackbar.js";
-import { escHtml } from "./dashboard.js";
+import { escHtml } from "../js/utils.js";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const DAY_SHORTS = ["M", "T", "W", "T", "F", "S", "S"];

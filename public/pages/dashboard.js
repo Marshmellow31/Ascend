@@ -2,11 +2,11 @@
 // pages/dashboard.js — Dashboard page renderer
 // ============================================================
 
-import { getTasks, completeTask, snoozeTask } from "../db.js";
+import { getTasks, completeTask, snoozeTask, getSubjects } from "../db.js";
 import { computeAnalytics } from "../analytics.js";
-import { getSubjects } from "../db.js";
 import { navigate } from "../app.js";
 import { showSnackbar } from "../snackbar.js";
+import { escHtml, formatDate } from "../js/utils.js";
 
 let dashboardChart = null;
 let dashboardInterval = null;
@@ -395,15 +395,4 @@ function getSubtitle() {
   return subtitles[Math.floor(Math.random() * subtitles.length)];
 }
 
-export function escHtml(str = "") {
-  return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-}
-
-export function formatDate(date) {
-  const now = new Date();
-  const d = new Date(date);
-  if (d.toDateString() === now.toDateString()) return "Today";
-  const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1);
-  if (d.toDateString() === tomorrow.toDateString()) return "Tomorrow";
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
+// escHtml and formatDate are now in js/utils.js

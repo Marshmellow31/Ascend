@@ -2,7 +2,7 @@
 // utils/schedulerIntegration.js — Push goal tasks to Scheduler
 // ============================================================
 
-import { createSchedulerTask, updateGoalTask } from "../db.js";
+import { createSchedulerTask, updateGoalTask, createTask } from "../db.js";
 
 /**
  * Map a goalTask to a schedulerTask shape and persist it.
@@ -30,7 +30,6 @@ export async function pushToScheduler(uid, goalTask) {
 
   // Also push to the main "tasks" list for visibility
   try {
-    const { createTask } = await import("../db.js");
     await createTask(uid, {
       title: goalTask.title,
       description: `Target for Goal: ${goalTask.sourceGoalId}`,

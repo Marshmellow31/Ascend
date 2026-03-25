@@ -4,7 +4,7 @@
 
 import { computeAnalytics } from "../analytics.js";
 import { getSubjects } from "../db.js";
-import { escHtml } from "./dashboard.js";
+import { escHtml } from "../js/utils.js";
 
 export async function renderAnalytics(container, uid, profile) {
   container.innerHTML = `

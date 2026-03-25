@@ -30,14 +30,7 @@ import {
 import { autoGenerateTodaysTasks, effectiveTodayStr } from "../utils/dailyGenerator.js";
 import { pushToScheduler, pushAllPendingGoalTasks } from "../utils/schedulerIntegration.js";
 import { showSnackbar } from "../snackbar.js";
-
-// ─── Escape HTML ────────────────────────────────────────────
-const esc = (s) => {
-  if (!s) return "";
-  return String(s).replace(/[&<>'"]/g,
-    t => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[t])
-  );
-};
+import { escHtml } from "../js/utils.js";
 
 // Module-level state
 let _uid = null;
@@ -621,7 +614,7 @@ function renderGoalCardHTML(goal) {
       <div class="goal-card-accent" style="background: ${meta.color};"></div>
 
       <div class="goal-card-header">
-        <div class="goal-card-title">${esc(goal.title)}</div>
+        <div class="goal-card-title">${escHtml(goal.title)}</div>
         <div class="goal-card-actions">
           ${goal.status !== "completed" ? `
             <button class="goal-icon-btn goal-log-btn" title="Log progress" aria-label="Log progress">
@@ -653,7 +646,7 @@ function renderGoalCardHTML(goal) {
 
       <div class="goal-progress-wrap">
         <div class="goal-progress-label">
-          <span>${goal.totalProgress || 0} / ${goal.totalTarget} ${esc(goal.unit)}</span>
+          <span>${goal.totalProgress || 0} / ${goal.totalTarget} ${escHtml(goal.unit)}</span>
           <span style="font-weight:700; color:var(--text-primary);">${pct}%</span>
         </div>
         <div class="goal-progress-bar">
@@ -671,7 +664,7 @@ function renderGoalCardHTML(goal) {
       <div class="goal-stats-row">
         <div class="goal-stat">
           <div class="goal-stat-val">${goal.dailyTarget}</div>
-          <div class="goal-stat-lbl">${esc(goal.unit)}/day</div>
+          <div class="goal-stat-lbl">${escHtml(goal.unit)}/day</div>
         </div>
         <div class="goal-stat">
           <div class="goal-stat-val">${goal.durationDays}</div>
@@ -737,7 +730,7 @@ function renderTodayTasks(uid) {
       return `
         <div class="goal-task-row" id="gtask-row-${task.id}">
           <div class="goal-task-dot" style="background:${meta.color};"></div>
-          <div class="goal-task-title">${esc(task.title)}</div>
+          <div class="goal-task-title">${escHtml(task.title)}</div>
           <div class="goal-task-meta">${task.estimatedTime}m</div>
           ${isCompleted
             ? `<span class="goal-task-push-btn scheduled">✓ Done</span>`
@@ -806,19 +799,19 @@ function attachHybridDropdown(containerId, optionsConfig) {
         <div class="hd-trigger ${isInputMode ? 'hidden' : ''}" tabindex="0">
           <div class="hd-trigger-val">
             ${isCategory && activeOpt.icon ? `<i data-lucide="${activeOpt.icon}" style="width:14px;height:14px;"></i>` : ""}
-            <span>${esc(activeOpt.label || placeholder)}</span>
+            <span>${escHtml(activeOpt.label || placeholder)}</span>
           </div>
           <i data-lucide="chevron-down" style="width:14px;height:14px;color:#666;"></i>
         </div>
         <div class="hd-input-wrap ${isInputMode ? 'active' : ''}">
-          <input type="text" class="hd-custom-input" placeholder="${placeholder}" value="${!opts.some(o => o.value === currentVal) && currentVal !== (isCategory?'custom':'sessions') ? esc(currentVal) : ""}" />
+          <input type="text" class="hd-custom-input" placeholder="${placeholder}" value="${!opts.some(o => o.value === currentVal) && currentVal !== (isCategory?'custom':'sessions') ? escHtml(currentVal) : ""}" />
           <i data-lucide="x" class="hd-input-close" style="width:14px;height:14px;"></i>
         </div>
         <div class="hd-menu">
           ${opts.map(o => `
-            <div class="hd-option ${String(o.value).toLowerCase() === String(currentVal).toLowerCase() ? 'selected' : ''}" data-val="${esc(o.value)}">
+            <div class="hd-option ${String(o.value).toLowerCase() === String(currentVal).toLowerCase() ? 'selected' : ''}" data-val="${escHtml(o.value)}">
               ${isCategory && o.icon ? `<i data-lucide="${o.icon}" style="width:14px;height:14px;"></i>` : ""}
-              ${esc(o.label)}
+              ${escHtml(o.label)}
             </div>
           `).join("")}
           <div class="hd-option hd-option-custom" data-val="--trigger-custom--">
@@ -925,7 +918,7 @@ function openGoalForm(uid, existingGoal, onSave) {
       <div class="form-group">
         <label class="form-label">Goal Title *</label>
         <input class="form-input" id="pd-goal-title" placeholder="e.g. LeetCode 250 Questions"
-          value="${esc(existingGoal?.title || "")}" />
+          value="${escHtml(existingGoal?.title || "")}" />
       </div>
 
       <div class="pd-form-grid">
@@ -993,7 +986,7 @@ function openGoalForm(uid, existingGoal, onSave) {
 
       <div class="form-group">
         <label class="form-label">Notes (optional)</label>
-        <textarea class="form-input" id="pd-goal-notes" rows="2" placeholder="Any extra context…">${esc(existingGoal?.notes || "")}</textarea>
+        <textarea class="form-input" id="pd-goal-notes" rows="2" placeholder="Any extra context…">${escHtml(existingGoal?.notes || "")}</textarea>
       </div>
 
       <div id="pd-form-err" class="form-error hidden"></div>
@@ -1124,12 +1117,12 @@ function openProgressModal(uid, goal, onSave) {
     <div class="modal-box" style="max-width:360px;">
       <h3 class="modal-title">Log Progress</h3>
       <div style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">
-        ${esc(goal.title)}
+        ${escHtml(goal.title)}
       </div>
 
       <div class="goal-progress-wrap" style="margin-bottom:16px;">
         <div class="goal-progress-label">
-          <span>${goal.totalProgress || 0} / ${goal.totalTarget} ${esc(goal.unit)}</span>
+          <span>${goal.totalProgress || 0} / ${goal.totalTarget} ${escHtml(goal.unit)}</span>
           <span style="color:#F5F5F5;font-weight:700;">${pct}%</span>
         </div>
         <div class="goal-progress-bar">
@@ -1142,7 +1135,7 @@ function openProgressModal(uid, goal, onSave) {
         <input class="form-input" type="number" id="prog-amount" min="1"
           value="${goal.dailyTarget}" placeholder="${goal.dailyTarget}" />
         <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">
-          Unit: ${esc(goal.unit)}
+          Unit: ${escHtml(goal.unit)}
         </div>
       </div>
 

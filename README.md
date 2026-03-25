@@ -1,116 +1,241 @@
-# 🎓 Your Day — The Ultimate Student Planner PWA
+# Your Day — Student Planner PWA
 
-![Your Day Banner](https://img.shields.io/badge/Status-Live-success?style=for-the-badge) ![Version](https://img.shields.io/badge/Version-1.0.0-blue?style=for-the-badge) ![PWA](https://img.shields.io/badge/PWA-Ready-purple?style=for-the-badge)
+> **Plan smarter. Grow daily. Stay on top of everything that matters.**
 
-✨ **Live App:** [https://planner-app-for-iphone-9gz7.vercel.app/](https://planner-app-for-iphone-9gz7.vercel.app/)
-
-Your Day is a premium, beautifully designed **Progressive Web App (PWA)** built exclusively for students. It acts as a comprehensive academic dashboard to track your degree progress, manage subjects and tasks, reflect in a daily diary, and receive actual push notifications for upcoming deadlines—all running natively on your phone or browser.
+A feature-rich Progressive Web App (PWA) for students to manage tasks, track personal goals, plan study schedules with AI assistance, and monitor academic progress — all in one premium mobile-first experience.
 
 ---
 
-## 🌟 Core Features
+## 📱 Install on Your iPhone (Recommended)
 
-### 🏰 1. Smart Dashboard & Premium UI
-- **Dynamic Header:** High-end SaaS aesthetic with time-based greetings, gradient shimmer animations on your name, and a sophisticated ambient glow.
-- **BTech Journey Tracker:** Watch your degree progress bar tick up in real-time.
-- **Quick Add & Overview:** Instantly add tasks or view a beautifully rendered Chart.js graph of your weekly productivity.
-- **Streak & Milestones:** Gamify your studying by maintaining daily streaks.
+Your Day is designed to feel like a native iOS app when installed to your Home Screen.
 
-### 📚 2. Subject & Topic Management
-- **Hierarchical Structure:** Group your studies logically: `Subjects ➔ Topics ➔ Tasks`.
-- **Premium SaaS Design:** Beautiful, minimalist subject cards with subtle depth, custom gradient color coding, and clean typography to reduce visual noise.
+1. Open the app URL in **Safari** on your iPhone (Chrome/Firefox will not work for full PWA support on iOS).
+2. Tap the **Share** button (the square with an arrow pointing up) in the toolbar.
+3. Scroll down and tap **"Add to Home Screen"**.
+4. Tap **"Add"** in the top-right corner.
+5. The app now appears on your Home Screen with its own icon and launches full-screen, just like a native app! 🎉
 
-### 🧠 3. Smart Scheduler & Task Manager
-- **Auto-Scheduling Algorithm:** Automatically drops tasks into your available "Study" time blocks based on deadline, estimated completion time, and priority using a custom greedy algorithm.
-- Set **Priority Levels** (High, Medium, Low) and specific **Reminder Times**.
-- Elegant swipe-to-complete animations and UI micro-interactions.
-
-### 🎯 4. Personal Development
-- **Goal Tracking:** Establish long-term objectives and track your progress natively.
-- **Daily Action Plans:** Automatically dissect goals into daily tasks, seamlessly feeding them into your Smart Scheduler.
-
-### 📅 5. Academic Calendar
-- **Semester Visualizer:** A stunning grid layout showing exactly how many weeks are left in your semester (setup managed cleanly in the Settings tab).
-- **Cultural Integration:** Automatically displays major Indian Festivals natively on your monthly grids.
-
-### 📔 6. Daily Diary & Expense Log
-- **Mood & Score Tracking:** Rate your day and track your emotional trend.
-- **Milestone Engine:** Tick off daily habits (e.g., *Drank 2L water*, *Hit the gym*).
-- **Expense Tracker:** Log daily spending directly inside your journal entry.
-
-### 🔔 7. Native Push Notifications
-- Receive actual, native lock-screen notifications on your phone or desktop when a task is due.
-- *Bypasses paid Firebase plans entirely* by utilizing a completely free **Vercel Serverless API + Cron Job** architecture.
-
-### 📱 8. Installable PWA Experience
-- Install Your Day directly to your iPhone or Android Home Screen.
-- Operates totally fullscreen with optimized splash screens, custom manifest styling, and blazing fast performance.
----
-
-## ⚙️ How It Works (Architecture)
-
-Your Day is engineered to be blazing fast, serverless, and highly secure.
-
-#### **Frontend Flow (Vite + Vanilla JS)**
-The app uses a modular Vanilla JavaScript architecture to keep the bundle size tiny. **Vite** acts as the bundler, injecting the `vite-plugin-pwa` which automatically generates the Service Worker `sw.js` and Manifest file required for offline caching and installation.
-
-#### **Database & Security (Firebase Firestore)**
-All data (Tasks, Diary entries, Subjects) is stored in **Cloud Firestore**. 
-Advanced **Firestore Security Rules** ensure that every single database query is checked against the user's `Auth Token`. It is mathematically impossible for User A to read or modify User B's diary entries.
-
-#### **Push Notification Engine**
-To avoid costly server bills, the push notification engine is split into three parts:
-1. **Frontend:** Requests Notification permission and saves an FCM (Firebase Cloud Messaging) device token to Firestore via the `VAPID_KEY`.
-2. **Cron Scheduler:** A free external cron service pings the Vercel API every 15 minutes.
-3. **Vercel Serverless API (`/api/cron-reminders.js`):** Securely authenticates with the Firebase Admin SDK using Environment Variables, scans the database for overdue tasks, and explicitly sends the payload directly to the user's phone via Google's messaging servers.
+> **Tip:** The app works fully offline after the first load, including your schedule and goals.
 
 ---
 
-## 💻 Tech Stack
+## ✨ Features
 
-| Layer | Technology Used |
-| :--- | :--- |
-| **Frontend Framework** | Vanilla JS (ES Modules), Vite ⚡ |
-| **Styling** | Vanilla CSS (Premium Dark Theme, Glassmorphism) 🎨 |
-| **Icons** | Lucide Icons 🪶 |
-| **Charts** | Chart.js v4 📈 |
-| **Authentication** | Firebase Auth (Email/Password & Google Sign-In) 🔐 |
-| **Database** | Cloud Firestore (NoSQL) 🗄️ |
-| **Backend API** | Vercel Serverless Functions (`Node.js`) ☁️ |
-| **Hosting & CI/CD** | Vercel 🚀 |
+### 🏠 Dashboard
+- **Live greeting** based on the time of day
+- **Stats overview**: tasks done this week, completion rate, streak, and overdue count
+- **Today's Schedule** widget pulling from your weekly time blocks
+- **Upcoming Tasks** list filtered to high-priority and due-soon items
+- **BTech progress banner** (optional, based on your profile settings)
+- Refreshes automatically every minute to stay current
+
+### ✅ Tasks
+- Create, edit, delete, and complete tasks
+- Rich filtering: by **priority** (High / Medium / Low), **status** (All / Active / Completed), **subject**, and **topic**
+- Full **CRUD** for subjects and topics directly from the task form
+- **Due dates** and **reminder times** with native date pickers
+- Quick-complete and quick-delete from the task card
+- Snooze reminders directly from the task list
+
+### 📅 AI Scheduler
+A smart study planner that fits your tasks into your free time automatically.
+
+**How it works:**
+1. **Add your weekly schedule** by defining time blocks for each day (Study, Break, Class, etc.) in the Schedule tab.
+2. **Queue tasks** in the Scheduler — these are the tasks you want planned.
+3. **Generate a Plan** — the AI (greedy algorithm) assigns tasks to your Study blocks, respecting priority and deadlines.
+4. The generated plan respects a **5 AM rollover** — one "effective day" runs from 5 AM today to 5 AM tomorrow.
+5. View the plan in a clean timeline sorted chronologically, including late-night blocks.
+
+**Key concepts:**
+- Tasks not fitting into available Study blocks appear as "Unscheduled".
+- The plan resets at 5 AM each day.
+- You can push tasks directly from **Personal Dev** goals into the Scheduler with one tap.
+
+### 🌱 Personal Development
+Track personal growth goals beyond academics.
+
+- Create goals with a **target**, **unit** (sessions, minutes, pages, etc.), **duration**, and **start date**.
+- Enable **Auto Add Daily** to have a daily task automatically generated each morning.
+- Goals catch up missed days — if you were away for 3 days, it generates all 3 missed tasks at once.
+- View and manage all auto-generated daily tasks with progress tracking.
+- Push any pending goal task directly to the **AI Scheduler** with one tap.
+
+### 📊 Analytics
+- Weekly progress chart (bar chart via Chart.js)
+- Subject-wise task completion breakdown
+- Completion rate, streak, overdue count
+- Goal progress overview
+
+### ⚙️ Settings
+- Change **display name** and **email**
+- Toggle **push notifications** (FCM-powered)
+- Set your **BTech course** start/end dates for the dashboard banner
+- **Study Goals** text field for personal notes
+- Sign out
 
 ---
 
-## 🚀 Quick Start Guide
+## 🔄 Workflow Integration
 
-If you are cloning this repository to build your own version, follow these steps:
+The power of **Your Day** lies in how its features work together to automate your productivity:
 
-### 1. Prerequisites
-- Node.js installed (v18+)
-- A free Firebase Project
-- A free Vercel Account
+### 1. The Growth Loop (Goals → Tasks)
+- When you define a **Personal Development Goal** with "Auto Add Daily" enabled, the `dailyGenerator.js` utility runs every morning (respecting the 5 AM start).
+- It checks for any missed days and generates **Goal Tasks** (e.g., "Study Physics — 45 minutes").
+- These tasks appear in your **Personal Dev** tab as pending items.
 
-### 2. Local Installation
+### 2. The Planning Loop (Tasks → Scheduler)
+- Any task (Academic or Personal Dev) can be sent to the **AI Scheduler queue**.
+- The `schedulerIntegration.js` handles the hand-off, ensuring the task is visible in both the global Tasks list and the Scheduler queue.
+
+### 3. The Execution Loop (Schedule → Plan)
+- The **AI Scheduler** takes your manual **Weekly Schedule** (your "fixed" time like classes or gym) and your **Task Queue**.
+- It runs a greedy algorithm (`taskScheduler.js`) to find "Study" blocks in your day.
+- It automatically creates a minute-by-minute **Generated Plan**, placing your highest-priority and most urgent tasks into those blocks.
+- This plan is then mirrored on your **Dashboard** so you always know what to do *right now*.
+
+---
+
+## 🏗️ Architecture
+
+```
+public/
+├── index.html              # App shell, floating nav, splash screen
+├── styles.css              # Full design system (CSS variables, dark theme)
+├── app.js                  # Router, auth listener, navigation, FAB, state
+│
+├── auth.js                 # Firebase Auth helpers (sign up, log in, Google)
+├── db.js                   # Firestore CRUD for all collections
+├── analytics.js            # Analytics computations
+├── notifications.js        # FCM push + in-app notification layer
+├── snackbar.js             # Toast + confirm dialog system
+├── firebase-config.js      # Firebase app init + VAPID key
+│
+├── pages/
+│   ├── dashboard.js        # Dashboard renderer + schedule widget
+│   ├── tasks.js            # Tasks page with filtering and CRUD
+│   ├── scheduler.js        # AI Scheduler tab (schedule + plan UI)
+│   ├── schedule.js         # Weekly schedule block editor
+│   ├── personalDevelopment.js # Goals + daily task tracker
+│   ├── subjects.js         # Subjects CRUD page
+│   ├── topics.js           # Topics CRUD page (per subject)
+│   ├── analytics.js        # Analytics page
+│   └── settings.js         # Settings page
+│
+├── js/
+│   ├── utils.js            # Shared DOM helpers, escHtml, formatDate, ripples
+│   ├── auth_ui.js          # Auth form event bindings
+│   └── landing.js          # Landing page animations
+│
+└── utils/
+    ├── taskScheduler.js    # Greedy scheduling algorithm (5 AM rollover)
+    ├── dailyGenerator.js   # Auto daily task generation from goals
+    ├── schedulerIntegration.js # Push goal tasks → Scheduler + Tasks
+    ├── timeUtils.js        # Time string helpers (HH:MM ↔ minutes)
+    └── personalDevelopment.js  # Goal progress computation helpers
+```
+
+### Data Flow
+
+```
+User Action
+    │
+    ▼
+app.js (navigate / state)
+    │
+    ├─► pages/*.js       → renders UI, calls db.js
+    │
+    ├─► db.js            → Firestore (tasks, goals, schedule, plan)
+    │
+    ├─► utils/           → pure logic (scheduling, generation)
+    │
+    └─► snackbar.js      → user feedback (toasts + confirms)
+```
+
+---
+
+## 🔧 Setup & Self-Hosting
+
+### Prerequisites
+- Node.js 18+
+- A Firebase project with **Firestore**, **Firebase Auth**, and **Firebase Cloud Messaging** enabled
+
+### 1. Clone & Install
+
 ```bash
-# 1. Clone the repo & install dependencies
+git clone https://github.com/Marshmellow31/Planner-App-for-iphone.git
+cd Planner-App-for-iphone
 npm install
+```
 
-# 2. Add your Firebase keys
-# Open /public/firebase-config.js and paste your specific Firebase Web App configuration.
+### 2. Configure Firebase
 
-# 3. Start the dev server
+Copy `.env.example` to `.env` and fill in your Firebase project values:
+
+```bash
+cp .env.example .env
+```
+
+```env
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+VITE_FIREBASE_VAPID_KEY=your_vapid_key
+```
+
+### 3. Run Locally
+
+```bash
 npm run dev
 ```
 
-### 3. Deployment
-```bash
-# Deploys directly to Vercel
-npm run deploy
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-# Remember to set these two Environment Variables in your Vercel Dashboard for push notifications:
-# - FIREBASE_SERVICE_ACCOUNT (Your Firebase Admin JSON key)
-# - CRON_SECRET (A random password for API security)
+### 4. Build for Production
+
+```bash
+npm run build
 ```
 
+### 5. Deploy
+
+The app is configured for **Vercel** (via `vercel.json`). Simply run:
+
+```bash
+vercel --prod
+```
+
+Or connect your GitHub repo to Vercel for automatic deployments.
+
 ---
-*Built with ❤️ to make studying just a little bit easier.* 
+
+## 🔒 Firestore Security Rules
+
+The project includes `firestore.rules` scoped per-user — every document is owned by and accessible only to the authenticated user who created it.
+
+---
+
+## 🛎️ Push Notifications
+
+Push notifications are powered by **Firebase Cloud Messaging (FCM)**.
+
+- Enable notifications from the **Settings** page.
+- Notifications are sent via Cloud Functions when a task reminder time is reached.
+- The service worker (`firebase-messaging-sw.js`) handles background message delivery.
+
+---
+
+## 🤝 Contributing
+
+Pull requests are welcome. Please open an issue first to discuss major changes.
+
+---
+
+## 📄 License
+
+MIT

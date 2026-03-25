@@ -7,7 +7,7 @@ import { logOut, resetPassword } from "../auth.js";
 import { showSnackbar } from "../snackbar.js";
 import { initNotifications, disableNotifications, isNotificationSupported, getNotificationPermission } from "../notifications.js";
 import { applyTheme } from "../app.js";
-import { escHtml } from "./dashboard.js";
+import { escHtml } from "../js/utils.js";
 
 export async function renderSettings(container, uid, profile, state) {
   const p = profile || {};

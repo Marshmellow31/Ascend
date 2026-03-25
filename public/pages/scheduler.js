@@ -13,14 +13,7 @@ import {
 } from "../db.js";
 import { generateStudyPlan } from "../utils/taskScheduler.js";
 import { showSnackbar } from "../snackbar.js";
-
-// Escape HTML utility
-const escHtml = (str) => {
-  if (!str) return "";
-  return String(str).replace(/[&<>'"]/g, 
-    tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag])
-  );
-};
+import { escHtml } from "../js/utils.js";
 
 let tasks = [];
 let weeklySchedule = null;

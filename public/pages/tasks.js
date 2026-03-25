@@ -7,7 +7,7 @@ import {
   getSubjects, createSubject, updateSubject, deleteSubject,
   getTopics 
 } from "../db.js";
-import { escHtml, formatDate } from "./dashboard.js";
+import { escHtml, formatDate } from "../js/utils.js";
 import { showSnackbar, showConfirmDialog } from "../snackbar.js";
 
 const PRIORITIES = ["high", "medium", "low"];

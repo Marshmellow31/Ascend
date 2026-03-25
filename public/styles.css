@@ -189,8 +189,8 @@ h4 { font-size: var(--font-size-lg); font-weight: 600; }
 
 .page-content {
   padding: var(--space-md);
-  padding-top: calc(env(safe-area-inset-top, 0px) + 60px);
-  padding-bottom: calc(var(--safe-bottom) + var(--space-xl));
+  padding-top: calc(env(safe-area-inset-top, 0px) + 100px);
+  padding-bottom: calc(var(--safe-bottom) + 120px);
   flex: 1;
 }
 
