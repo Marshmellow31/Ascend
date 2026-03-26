@@ -109,8 +109,16 @@ export async function navigate(page, params = {}) {
   if (!content) return;
   
   // ── SWR Caching Step ──
-  const uid = state.user?.uid;
-  const cacheKey = `${page}_${uid || 'guest'}`;
+  const uid = state.user?.uid || 'guest';
+  let cacheKey = `${page}_${uid}`;
+  
+  // Specific overrides for pages with custom or unified keys
+  if (page === 'growth' || page === 'personalDevelopment') {
+    cacheKey = `pd_${uid}`;
+  } else if (page === 'subtopics' && state.selectedTopicId) {
+    cacheKey = `subtopics_${uid}_${state.selectedTopicId}`;
+  }
+  
   const cachedData = cacheManager.get(cacheKey);
 
   // Apply visual transition

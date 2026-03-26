@@ -457,7 +457,7 @@ async function reloadAll(uid, isBackground = false) {
       getSubjects(uid)
     ]);
 
-    const cacheKey = `pd_data_${uid}`;
+    const cacheKey = `pd_${uid}`;
     const oldCache = cacheManager.get(cacheKey);
     const newData = { goals, goalTasks: gtasks, topics };
 
