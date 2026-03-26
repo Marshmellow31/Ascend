@@ -72,9 +72,9 @@ export async function renderPersonalDevelopment(container, uid, profile, initial
 
       /* ── Goal Cards ── */
       .goal-card {
-        background: var(--bg-tertiary);
-        border: 1px solid var(--border);
-        border-radius: 20px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--border-radius);
         padding: 18px;
         margin-bottom: 14px;
         position: relative;
@@ -185,6 +185,7 @@ export async function renderPersonalDevelopment(container, uid, profile, initial
       .goal-stats-row {
         display: flex;
         gap: 0;
+        background: var(--bg-elevated);
         border: 1px solid var(--border-subtle);
         border-radius: 12px;
         overflow: hidden;
@@ -194,7 +195,7 @@ export async function renderPersonalDevelopment(container, uid, profile, initial
         flex: 1;
         text-align: center;
         padding: 10px 0;
-        border-right: 1px solid #222;
+        border-right: 1px solid var(--border-subtle);
       }
       .goal-stat:last-child { border-right: none; }
       .goal-stat-val {
@@ -217,7 +218,8 @@ export async function renderPersonalDevelopment(container, uid, profile, initial
         align-items: center;
         justify-content: space-between;
         padding: 10px 14px;
-        background: var(--bg-card-subtle);
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-subtle);
         border-radius: 10px;
         margin-bottom: 10px;
       }
