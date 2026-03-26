@@ -7,7 +7,7 @@ import {
   getSubjects, createSubject, updateSubject, deleteSubject,
   getTopics 
 } from "../db.js";
-import { escHtml, formatDate } from "../js/utils.js";
+import { escHtml, formatDate, chunkProcess } from "../js/utils.js";
 import { showSnackbar, showConfirmDialog } from "../snackbar.js";
 
 const PRIORITIES = ["high", "medium", "low"];
@@ -175,17 +175,17 @@ export async function renderTasks(container, uid, profile) {
       return;
     }
 
-    tasks.forEach((task, i) => {
+    chunkProcess(tasks, (task, i) => {
       const card = renderTaskCard(task, uid, refreshTaskList, allTopics);
       card.classList.add("stagger-item");
-      card.style.animationDelay = `${i * 40}ms`;
+      card.style.animationDelay = `${i * 20}ms`;
       list.appendChild(card);
+    }, 20).then(() => {
+      if (window.lucide) {
+        const list = document.getElementById("tasks-list");
+        if (list) window.lucide.createIcons({ nodes: list.querySelectorAll('[data-lucide]') });
+      }
     });
-
-    if (window.lucide) {
-      const list = document.getElementById("tasks-list");
-      if (list) window.lucide.createIcons({ nodes: list.querySelectorAll('[data-lucide]') });
-    }
   };
 
   // Setup Dropdown Interactions

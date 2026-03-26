@@ -100,6 +100,26 @@ The power of **Your Day** lies in how its features work together to automate you
 
 ---
 
+## ⚡ Performance & Optimization
+
+Your Day is engineered for a "native-feel" experience with a focus on **0-second perceived latency** and **60FPS smoothness**.
+
+### 🚀 Dashboard Load Strategy (LCP < 2s)
+- **Synchronous Shell Rendering**: The app shell (header, greeting, layout) paints instantly during navigation, before any data is fetched.
+- **Priority Orchestration**: Using `requestAnimationFrame`, the app prioritizes the **Today's Schedule** and **Academic Banner** to ensure they appear first.
+- **Skeleton Loaders**: Integrated animated skeletons provide immediate visual structure while data is loading.
+- **Lazy Data Fetching**: Non-critical components (Stats cards, Analytics charts) are deferred to idle time using `requestIdleCallback`.
+
+### 🧵 Main-Thread Safety
+- **Chunked Processing**: Large lists (tasks, schedule items) are processed in small batches (~10-15ms each) to keep the main thread responsive and avoid long tasks.
+- **Deferred Preloading**: Background preloading of secondary routes is throttled to run only after the dashboard has settled for 6 seconds.
+
+### 🧠 Analytics & Logic
+- **Memory Caching**: Expensive analytics (streaks, heatmap data) are cached in memory to avoid redundant re-computations during rapid navigation.
+- **Lifecycle Cleanup**: Robust cleanup logic cancels all pending async tasks, timers, and intervals when navigating away from a page, preventing memory leaks.
+
+---
+
 ## 🏗️ Architecture
 
 ```

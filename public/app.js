@@ -23,9 +23,7 @@ window.lucide = {
 import { onAuthStateChanged } from "./auth.js";
 import { getUserProfile } from "./db.js";
 import { renderDashboard } from "./pages/dashboard.js";
-import { renderTasks } from "./pages/tasks.js";
-import { renderAnalytics } from "./pages/analytics.js";
-import { renderSettings } from "./pages/settings.js";
+// Non-critical pages moved to dynamic imports inside navigate() and preloadRoutes()
 import { onForegroundMessage } from "./notifications.js";
 import { $, showEl, hideEl, initRipples } from "./js/utils.js";
 import { initAuthForms } from "./js/auth_ui.js";
@@ -97,7 +95,17 @@ export async function navigate(page, params = {}) {
 
   const content = $("main-content");
   if (!content) return;
-  content.innerHTML = "";
+  
+  // Show a lightweight loader while the page module is being fetched/rendered
+  content.innerHTML = `
+    <div class="route-loader">
+      <div class="loader-dots">
+        <div class="loader-dot"></div>
+        <div class="loader-dot"></div>
+        <div class="loader-dot"></div>
+      </div>
+    </div>
+  `;
 
   const uid = state.user?.uid;
   const profile = state.profile;
@@ -125,19 +133,43 @@ export async function navigate(page, params = {}) {
   let controller = null;
 
   switch (page) {
-    case "dashboard":  controller = await renderDashboard(content, uid, profile); break;
-    case "tasks":      controller = await renderTasks(content, uid, profile); break;
-    case "analytics":  controller = await renderAnalytics(content, uid, profile); break;
-    case "settings":   controller = await renderSettings(content, uid, profile, state); break;
-    case "scheduler":   
-      const { renderSchedulerTab } = await import("./pages/scheduler.js");
+    case "dashboard": {
+      content.innerHTML = ""; 
+      // renderDashboard returns the controller (sync shell setup)
+      controller = renderDashboard(content, uid, profile);
+      break;
+    }
+    case "tasks": {
+      const { renderTasks } = await import(/* @vite-ignore */ "./pages/tasks.js");
+      content.innerHTML = ""; // Clear loader before rendering
+      controller = await renderTasks(content, uid, profile);
+      break;
+    }
+    case "analytics": {
+      const { renderAnalytics } = await import(/* @vite-ignore */ "./pages/analytics.js");
+      content.innerHTML = ""; 
+      controller = await renderAnalytics(content, uid, profile);
+      break;
+    }
+    case "settings": {
+      const { renderSettings } = await import(/* @vite-ignore */ "./pages/settings.js");
+      content.innerHTML = "";
+      controller = await renderSettings(content, uid, profile, state);
+      break;
+    }
+    case "scheduler": {
+      const { renderSchedulerTab } = await import(/* @vite-ignore */ "./pages/scheduler.js");
+      content.innerHTML = "";
       controller = await renderSchedulerTab(content, uid, profile); 
       break;
+    }
     case "personalDevelopment":
-    case "growth":
-      const { renderPersonalDevelopment } = await import("./pages/personalDevelopment.js");
+    case "growth": {
+      const { renderPersonalDevelopment } = await import(/* @vite-ignore */ "./pages/personalDevelopment.js");
+      content.innerHTML = "";
       controller = await renderPersonalDevelopment(content, uid, profile);
       break;
+    }
   }
 
   state.currentPageController = controller;
@@ -275,13 +307,52 @@ async function handleUserAuth(user) {
   } catch (_) {}
 
   // Check for action shortcut in URL
-  const params = new URLSearchParams(window.location.search);
-  if (params.get("action") === "add-task") {
-    const { openTaskModal } = await import("./pages/tasks.js");
-    openTaskModal(user.uid, profile, () => navigate("tasks"));
+  // Start navigation to dashboard immediately (shell will show with fallback data)
+  const navTask = navigate("dashboard");
+  
+  // Finish loading profile in background if it takes time
+  if (!state.profile) {
+    getUserProfile(user.uid).then(profile => {
+      state.profile = profile;
+      // If we are still on the dashboard, update it with full profile data
+      if (state.currentPage === "dashboard" && state.currentPageController?.update) {
+         state.currentPageController.update(profile);
+      }
+    });
   }
+  
+  // ── Background Preloading ──
+  // After initial paint, we preload other routes in the background during idle time
+  // Wait a few seconds for the dashboard staggered content to settle
+  // Wait significantly (6s) for the dashboard content and stats to settle
+  setTimeout(() => {
+    requestIdlePreload([
+      "./pages/tasks.js",
+      "./pages/analytics.js",
+      "./pages/settings.js",
+      "./pages/scheduler.js",
+      "./pages/personalDevelopment.js"
+    ]);
+  }, 6000);
+}
 
-  await navigate("dashboard");
+/**
+ * Preload modules during idle periods
+ * @param {string[]} paths 
+ */
+function requestIdlePreload(paths) {
+  const runner = window.requestIdleCallback || ((cb) => setTimeout(cb, 2000));
+  
+  paths.forEach((path, index) => {
+    // Stagger preloading to avoid any potential network congestion
+    runner(() => {
+      import(/* @vite-ignore */ path).then(() => {
+        console.log(`[PWA] Preloaded: ${path}`);
+      }).catch(err => {
+        console.warn(`[PWA] Preload failed for ${path}`, err);
+      });
+    }, { timeout: 3000 + (index * 1500) });
+  });
 }
 
 // ── Entry point ───────────────────────────────────────────────────────────────

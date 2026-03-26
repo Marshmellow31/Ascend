@@ -3,6 +3,7 @@
 // ============================================================
 
 import { getTasks } from "./db.js";
+import { chunkProcess } from "./js/utils.js";
 
 // ── Get week boundaries ───────────────────────────────────────────────────────
 export function getWeekBounds(weekStartDay = "monday") {
@@ -29,12 +30,29 @@ function inRange(ts, start, end) {
   return d >= start && d <= end;
 }
 
+// ── Cache for analytics ───────────────────────────────────────────────────────
+const analyticsCache = {
+  uid: null,
+  taskCount: 0,
+  timestamp: 0,
+  data: null
+};
+
 // ── Compute all analytics stats ───────────────────────────────────────────────
 export async function computeAnalytics(uid, weekStartDay = "monday", topics = []) {
   const allTasks = await getTasks(uid);
+  
+  // ── Cache Check ──
+  const now = new Date();
+  if (analyticsCache.uid === uid && 
+      analyticsCache.taskCount === allTasks.length && 
+      (now.getTime() - analyticsCache.timestamp) < 30000) { // 30s TTL
+    return analyticsCache.data;
+  }
+
+  console.time("computeAnalytics");
   const { weekStart, weekEnd } = getWeekBounds(weekStartDay);
 
-  const now = new Date();
   const today = new Date(now);
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
@@ -61,11 +79,12 @@ export async function computeAnalytics(uid, weekStartDay = "monday", topics = []
   let totalHistoricCompleted = 0;
   const streakDatesSet = new Set();
 
-  // Topic counters: { [topicId]: { total, completed } }
+  // ── Topic counters: { [topicId]: { total, completed } }
   const topicCounters = {};
   topics.forEach(t => { topicCounters[t.id] = { total: 0, completed: 0 }; });
 
-  for (const t of allTasks) {
+  // ── Chunked aggregation ─────────────────────────────────────────────────
+  await chunkProcess(allTasks, (t) => {
     const dueDate = t.dueDate ? (t.dueDate.toDate ? t.dueDate.toDate() : new Date(t.dueDate)) : null;
     const completedAt = (t.isCompleted && t.completedAt) ? (t.completedAt.toDate ? t.completedAt.toDate() : new Date(t.completedAt)) : null;
 
@@ -115,7 +134,7 @@ export async function computeAnalytics(uid, weekStartDay = "monday", topics = []
       // Streak dates
       streakDatesSet.add(`${completedAt.getFullYear()}-${completedAt.getMonth()}-${completedAt.getDate()}`);
     }
-  }
+  }, 100); // 100 items per chunk
 
   const total = weekTasks.length;
   const completionRate = total > 0 ? Math.round((weekCompleted.length / total) * 100) : 0;
@@ -175,7 +194,7 @@ export async function computeAnalytics(uid, weekStartDay = "monday", topics = []
     insights.push(`High output detected. You've completed over 80% of your planned load.`);
   }
 
-  return {
+  const result = {
     weekStart,
     weekEnd,
     total,
@@ -195,6 +214,15 @@ export async function computeAnalytics(uid, weekStartDay = "monday", topics = []
     heatmapData,
     insights
   };
+
+  // ── Update Cache ──
+  analyticsCache.uid = uid;
+  analyticsCache.taskCount = allTasks.length;
+  analyticsCache.timestamp = Date.now();
+  analyticsCache.data = result;
+
+  console.timeEnd("computeAnalytics");
+  return result;
 }
 
 // ── Compute daily streak (O(n) with Set) ─────────────────────────────────────

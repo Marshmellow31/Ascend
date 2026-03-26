@@ -70,3 +70,40 @@ export function formatDate(date) {
   if (d.toDateString() === tomorrow.toDateString()) return "Tomorrow";
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
+/**
+ * Schedule a task to run during idle time or after a delay.
+ * @param {Function} fn 
+ * @param {number} delay 
+ * @returns {number|string} taskId
+ */
+export function scheduleTask(fn, delay = 0) {
+  if (delay > 0) {
+    return setTimeout(fn, delay);
+  }
+  if (window.requestIdleCallback) {
+    return window.requestIdleCallback(fn, { timeout: 2000 });
+  }
+  return setTimeout(fn, 16);
+}
+
+/**
+ * Process an array in small chunks to avoid blocking the main thread.
+ * @param {Array} items 
+ * @param {Function} processor (item, index) => void
+ * @param {number} chunkSize 
+ */
+export async function chunkProcess(items, processor, chunkSize = 50) {
+  let index = 0;
+  function doChunk() {
+    const end = Math.min(index + chunkSize, items.length);
+    for (; index < end; index++) {
+      processor(items[index], index);
+    }
+    if (index < items.length) {
+      return new Promise(resolve => {
+        scheduleTask(() => resolve(doChunk()));
+      });
+    }
+  }
+  return doChunk();
+}

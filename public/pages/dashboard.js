@@ -6,14 +6,24 @@ import { getTasks, completeTask, snoozeTask, getSubjects } from "../db.js";
 import { computeAnalytics } from "../analytics.js";
 import { navigate } from "../app.js";
 import { showSnackbar } from "../snackbar.js";
-import { escHtml, formatDate } from "../js/utils.js";
+import { escHtml, formatDate, scheduleTask } from "../js/utils.js";
 
 let dashboardChart = null;
 let dashboardInterval = null;
+let isDashboardRendering = false;
+let pendingDashboardTasks = new Set();
 
-export async function renderDashboard(container, uid, profile) {
+export function renderDashboard(container, uid, profile) {
+  let currentProfile = profile;
+
   // ── Lifecycle Cleanup ──
   const cleanup = () => {
+    pendingDashboardTasks.forEach(id => {
+      if (typeof id === 'number') clearTimeout(id);
+      else if (window.cancelIdleCallback) window.cancelIdleCallback(id);
+    });
+    pendingDashboardTasks.clear();
+
     if (dashboardChart) {
       dashboardChart.destroy();
       dashboardChart = null;
@@ -22,35 +32,42 @@ export async function renderDashboard(container, uid, profile) {
       clearInterval(dashboardInterval);
       dashboardInterval = null;
     }
+    isDashboardRendering = false;
   };
 
-  // Ensure no duplicate intervals if re-rendered without navigation (though navigate handles it now)
   cleanup();
   
-  // Refresh schedule every minute to update current task logic
   dashboardInterval = setInterval(() => {
     refreshScheduleState(uid);
   }, 60000);
 
+  // 1. Render FULL visible structure immediately (Sync)
   container.innerHTML = `
     <div class="premium-header">
       <div class="premium-greeting">${getGreeting()}</div>
-      <h1 class="premium-name">${profile?.displayName || "Student"}</h1>
+      <h1 class="premium-name" id="dash-user-name">${currentProfile?.displayName || "Student"}</h1>
       <div class="premium-subtitle">${getSubtitle()}</div>
     </div>
-    <div id="dash-loading" class="animate-pulse text-muted text-sm mb-md">Preparing your day…</div>
-    <div id="dash-content" class="hidden">
-      <!-- BTech Banner -->
+    <div id="dash-content">
+      <!-- BTech Banner (Fast) -->
       <div id="dash-btech-banner"></div>
 
-      <div class="stats-row mb-lg" id="dash-stats"></div>
+      <!-- Stats Row (Deferred but structure is here) -->
+      <div class="stats-row mb-lg" id="dash-stats">
+         <div class="stat-card skeleton" style="height:80px"></div>
+         <div class="stat-card skeleton" style="height:80px"></div>
+         <div class="stat-card skeleton" style="height:80px"></div>
+         <div class="stat-card skeleton" style="height:80px"></div>
+      </div>
 
-      <!-- Today's Schedule -->
+      <!-- Today's Schedule (Critical) -->
       <div class="section-header mb-md">
         <div class="section-title">Today's Schedule</div>
         <button class="btn btn-sm btn-ghost ripple" id="btn-see-schedule">Manage</button>
       </div>
-      <div id="today-schedule-list" class="mb-lg"></div>
+      <div id="today-schedule-list" class="mb-lg">
+         <div class="task-card skeleton" style="height:120px"></div>
+      </div>
 
       <!-- Tasks summary -->
       <div id="dash-tasks-section"></div>
@@ -59,18 +76,21 @@ export async function renderDashboard(container, uid, profile) {
 
   document.getElementById("btn-see-schedule")?.addEventListener("click", () => navigate("scheduler"));
 
-  // BTech Banner
-  renderBTechBanner(profile);
+  // 2. Priority Phase: Render Banner and Schedule ASAP
+  requestAnimationFrame(() => {
+    if (currentProfile) renderBTechBanner(currentProfile);
+    updateDashboardState(uid, currentProfile, true);
+  });
 
-  // Fetch initial data
-  await updateDashboardState(uid, profile, true);
-
-  const el = document.getElementById("dash-loading");
-  if (el) el.remove();
-  const content = document.getElementById("dash-content");
-  if (content) content.classList.remove("hidden");
-
-  return { cleanup };
+  return { 
+    cleanup,
+    update: (newProfile) => {
+      currentProfile = newProfile;
+      const nameEl = document.getElementById("dash-user-name");
+      if (nameEl) nameEl.textContent = newProfile?.displayName || "Student";
+      renderBTechBanner(newProfile);
+    }
+  };
 }
 
 function renderBTechBanner(profile) {
@@ -113,145 +133,160 @@ function renderBTechBanner(profile) {
 }
 
 async function updateDashboardState(uid, profile, isFirstLoad = false) {
-  let topics = [], analyticsData = null;
+  // ── Guard against duplicate renders ──
+  if (isDashboardRendering) return;
+  isDashboardRendering = true;
+
   try {
-    topics = await getSubjects(uid);
-    analyticsData = await computeAnalytics(uid, profile?.weekStartDay || "monday", topics);
-  } catch (err) {
-    showSnackbar("Failed to load dashboard data", "error");
-    console.error("Dashboard load error:", err);
-    return;
-  }
-
-  // 1. Stats
-  const statsEl = document.getElementById("dash-stats");
-  if (statsEl) {
-    statsEl.innerHTML = `
-      <div class="stat-card ${isFirstLoad ? 'stagger-item' : ''}" style="animation-delay:0ms">
-        <div class="stat-number">${analyticsData.completed}</div>
-        <div class="stat-label">Done</div>
-      </div>
-      <div class="stat-card ${isFirstLoad ? 'stagger-item' : ''}" style="animation-delay:40ms">
-        <div class="stat-number">${analyticsData.completionRate}%</div>
-        <div class="stat-label">Rate</div>
-      </div>
-      <div class="stat-card ${isFirstLoad ? 'stagger-item' : ''}" style="animation-delay:80ms">
-        <div class="stat-number">${analyticsData.streak}</div>
-        <div class="stat-label">Streak <i data-lucide="flame" style="width:14px;height:14px;display:inline-block;vertical-align:middle;color:var(--warning)"></i></div>
-      </div>
-      <div class="stat-card ${isFirstLoad ? 'stagger-item' : ''}" style="animation-delay:120ms">
-        <div class="stat-number" style="${analyticsData.overdue > 0 ? 'color:var(--error)' : ''}">${analyticsData.overdue}</div>
-        <div class="stat-label">Overdue</div>
-      </div>
-    `;
-  }
-
-  // 2. Scheduled Tasks Logic
-  const schedList = document.getElementById("today-schedule-list");
-  if (schedList) {
-    const { getWeeklySchedule } = await import("../db.js");
-    const scheduleData = await getWeeklySchedule(uid);
+    console.time("updateDashboardState");
     
-    const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    const todayStr = DAYS[new Date().getDay()];
-    let todayTasks = scheduleData[todayStr] || [];
+    // ── Step 1: Render Schedule (Medium effort, fast DB read)
+    const renderSchedule = async () => {
+      const schedList = document.getElementById("today-schedule-list");
+      if (!schedList) return;
 
-    // Sort by start time
-    todayTasks.sort((a, b) => a.start_time.localeCompare(b.start_time));
+      const { getWeeklySchedule } = await import("../db.js");
+      const scheduleData = await getWeeklySchedule(uid);
+      
+      const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      const todayStr = DAYS[new Date().getDay()];
+      const todayTasks = scheduleData[todayStr] || [];
 
-    const now = new Date();
-    const currentMins = now.getHours() * 60 + now.getMinutes();
-    
-    // Parse HH:MM to minutes
-    const toMins = (t) => {
-      const [h, m] = t.split(":");
-      return parseInt(h) * 60 + parseInt(m);
-    };
+      todayTasks.sort((a, b) => a.start_time.localeCompare(b.start_time));
+      const now = new Date();
+      const currentMins = now.getHours() * 60 + now.getMinutes();
+      const toMins = (t) => {
+        const [h, m] = t.split(":");
+        return parseInt(h) * 60 + parseInt(m);
+      };
 
-    let prevTask = null, currTask = null, nextTasks = [];
+      let prevTask = null, currTask = null, nextTasks = [];
+      todayTasks.forEach(t => {
+        const sMins = toMins(t.start_time);
+        const eMins = toMins(t.end_time);
 
-    todayTasks.forEach(t => {
-      const sMins = toMins(t.start_time);
-      const eMins = toMins(t.end_time);
-
-      if (currentMins >= sMins && currentMins < eMins) {
-        currTask = t;
-      } else if (currentMins >= eMins) {
-        prevTask = t; // Will end up being the last completed task because of the sort
-      } else if (currentMins < sMins) {
-        nextTasks.push(t);
-      }
-    });
-
-    // Build the display list
-    let displayTasks = [];
-    if (currTask) {
-      if (prevTask) displayTasks.push({ ...prevTask, _state: "prev" });
-      displayTasks.push({ ...currTask, _state: "curr" });
-      if (nextTasks.length > 0) displayTasks.push({ ...nextTasks[0], _state: "next" });
-    } else {
-      // No current task, show up to 3 upcoming
-      displayTasks = nextTasks.slice(0, 3).map(t => ({ ...t, _state: "next" }));
-    }
-
-    if (displayTasks.length === 0 && todayTasks.length > 0) {
-      // Only previous tasks left today
-      displayTasks.push({ ...todayTasks[todayTasks.length - 1], _state: "prev" });
-    }
-
-    if (displayTasks.length === 0) {
-      schedList.innerHTML = `
-        <div class="empty-state" style="padding:var(--space-md); text-align:left; flex-direction:row; align-items:center; gap:var(--space-md);">
-          <div class="empty-icon" style="margin:0"><i data-lucide="coffee"></i></div>
-          <div>
-            <div class="empty-title" style="margin:0; font-size:var(--font-size-md)">Free Day!</div>
-            <div class="empty-desc">No more tasks scheduled for today.</div>
-          </div>
-        </div>`;
-    } else {
-      schedList.innerHTML = displayTasks.map((task, index) => {
-        let badgeStyle = "background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border-subtle);";
-        let stateLabel = "";
-
-        if (task._state === "curr") {
-          badgeStyle = "background: rgba(255, 255, 255, 0.05); color: var(--text-primary); border: 1px solid var(--border-active); animation: pulse 2s infinite;";
-          stateLabel = "HAPPENING NOW";
-        } else if (task._state === "prev") {
-          stateLabel = "COMPLETED";
-        } else if (task._state === "next") {
-          stateLabel = "UPCOMING";
+        if (currentMins >= sMins && currentMins < eMins) {
+          currTask = t;
+        } else if (currentMins >= eMins) {
+          prevTask = t;
+        } else if (currentMins < sMins) {
+          nextTasks.push(t);
         }
+      });
 
-        const priority = (task.priority || 'medium').toLowerCase();
+      let displayTasks = [];
+      if (currTask) {
+        if (prevTask) displayTasks.push({ ...prevTask, _state: "prev" });
+        displayTasks.push({ ...currTask, _state: "curr" });
+        if (nextTasks.length > 0) displayTasks.push({ ...nextTasks[0], _state: "next" });
+      } else {
+        displayTasks = nextTasks.slice(0, 3).map(t => ({ ...t, _state: "next" }));
+      }
+      
+      if (displayTasks.length === 0 && todayTasks.length > 0) {
+        displayTasks.push({ ...todayTasks[todayTasks.length - 1], _state: "prev" });
+      }
 
-        return `
-          <div class="task-card priority-${priority} ${isFirstLoad ? 'stagger-item' : ''}" style="animation-delay:${200 + (index * 40)}ms; cursor:default;">
-            <div class="task-body">
-              <div style="font-size:10px; font-weight:700; letter-spacing:1px; margin-bottom:8px; padding:4px 10px; display:inline-block; border-radius:var(--border-radius-full); ${badgeStyle}">${stateLabel}</div>
-              <div class="task-title" style="word-break:break-word; font-size:var(--font-size-md); font-weight:600;">${escHtml(task.title)}</div>
-              <div class="task-meta" style="margin-top:8px;">
-                <span class="task-due" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary)">
-                  <i data-lucide="clock" style="width:14px;height:14px"></i> 
-                  ${task.start_time} - ${task.end_time}
-                </span>
-                <span class="badge badge-${priority}">${task.priority || 'Medium'}</span>
+      if (displayTasks.length === 0) {
+        schedList.innerHTML = `
+          <div class="empty-state" style="padding:var(--space-md); text-align:left; flex-direction:row; align-items:center; gap:var(--space-md);">
+            <div class="empty-icon" style="margin:0"><i data-lucide="coffee"></i></div>
+            <div>
+              <div class="empty-title" style="margin:0; font-size:var(--font-size-md)">Free Day!</div>
+              <div class="empty-desc">No more tasks scheduled for today.</div>
+            </div>
+          </div>`;
+      } else {
+        schedList.innerHTML = displayTasks.map((task, index) => {
+          let badgeStyle = "background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border-subtle);";
+          let stateLabel = "";
+
+          if (task._state === "curr") {
+            badgeStyle = "background: rgba(255, 255, 255, 0.05); color: var(--text-primary); border: 1px solid var(--border-active); animation: pulse 2s infinite;";
+            stateLabel = "HAPPENING NOW";
+          } else if (task._state === "prev") {
+            stateLabel = "COMPLETED";
+          } else if (task._state === "next") {
+            stateLabel = "UPCOMING";
+          }
+
+          const priority = (task.priority || 'medium').toLowerCase();
+
+          return `
+            <div class="task-card priority-${priority} ${isFirstLoad ? 'stagger-item' : ''}" style="animation-delay:${100 + (index * 40)}ms; cursor:default;">
+              <div class="task-body">
+                <div style="font-size:10px; font-weight:700; letter-spacing:1px; margin-bottom:8px; padding:4px 10px; display:inline-block; border-radius:var(--border-radius-full); ${badgeStyle}">${stateLabel}</div>
+                <div class="task-title" style="word-break:break-word; font-size:var(--font-size-md); font-weight:600;">${escHtml(task.title)}</div>
+                <div class="task-meta" style="margin-top:8px;">
+                  <span class="task-due" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary)">
+                    <i data-lucide="clock" style="width:14px;height:14px"></i> 
+                    ${task.start_time} - ${task.end_time}
+                  </span>
+                  <span class="badge badge-${priority}">${task.priority || 'Medium'}</span>
+                </div>
               </div>
             </div>
-          </div>
-        `;
-      }).join("");
-    }
+          `;
+        }).join("");
+      }
+      
+      if (window.lucide) {
+        window.lucide.createIcons({ nodes: schedList.querySelectorAll('[data-lucide]') });
+      }
+    };
+
+    // ── Step 2: Render Stats (Heavy DB read & compute)
+    const renderStats = async () => {
+      const statsEl = document.getElementById("dash-stats");
+      if (!statsEl) return;
+
+      const topics = await getSubjects(uid);
+      const analyticsData = await computeAnalytics(uid, profile?.weekStartDay || "monday", topics);
+      
+      statsEl.innerHTML = `
+        <div class="stat-card ${isFirstLoad ? 'stagger-item' : ''}" style="animation-delay:0ms">
+          <div class="stat-number">${analyticsData.completed}</div>
+          <div class="stat-label">Done</div>
+        </div>
+        <div class="stat-card ${isFirstLoad ? 'stagger-item' : ''}" style="animation-delay:40ms">
+          <div class="stat-number">${analyticsData.completionRate}%</div>
+          <div class="stat-label">Rate</div>
+        </div>
+        <div class="stat-card ${isFirstLoad ? 'stagger-item' : ''}" style="animation-delay:80ms">
+          <div class="stat-number">${analyticsData.streak}</div>
+          <div class="stat-label">Streak <i data-lucide="flame" style="width:14px;height:14px;display:inline-block;vertical-align:middle;color:var(--warning)"></i></div>
+        </div>
+        <div class="stat-card ${isFirstLoad ? 'stagger-item' : ''}" style="animation-delay:120ms">
+          <div class="stat-number" style="${analyticsData.overdue > 0 ? 'color:var(--error)' : ''}">${analyticsData.overdue}</div>
+          <div class="stat-label">Overdue</div>
+        </div>
+      `;
+      if (window.lucide) {
+        window.lucide.createIcons({ nodes: statsEl.querySelectorAll('[data-lucide]') });
+      }
+    };
+
+    // ── Staggered Execution ──
+    // Schedule first (Priority)
+    await renderSchedule();
+    
+    // Stats second (Deferred via scheduleTask/idle callback to avoid blocking)
+    const statsTask = scheduleTask(async () => {
+      await renderStats();
+      console.timeEnd("updateDashboardState");
+      isDashboardRendering = false;
+    }, 0); // No fixed delay, just wait for idle
+    
+    pendingDashboardTasks.add(statsTask);
+
+  } catch (err) {
+    console.error("Dashboard update error:", err);
+    isDashboardRendering = false;
   }
 
-  // 4. Tasks Summary removed as requested - see tasks tab for all task management
   const tasksSection = document.getElementById("dash-tasks-section");
   if (tasksSection) {
     tasksSection.innerHTML = "";
-  }
-
-  if (window.lucide) {
-    const container = document.getElementById("dash-content") || document.getElementById("main-content");
-    if (container) window.lucide.createIcons({ nodes: container.querySelectorAll('[data-lucide]') });
   }
 }
 
