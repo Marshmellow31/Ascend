@@ -82,18 +82,29 @@ export async function renderAnalytics(container, uid, profile) {
       <div style="display:flex; flex-direction:row-reverse; overflow-x:auto; padding-bottom:8px; gap:4px; margin-right:-8px; padding-right:8px; align-items:flex-end;">
         <div style="display:grid; grid-template-rows: repeat(7, 1fr); gap:4px; grid-auto-flow: column; grid-auto-columns: 12px; direction:ltr;">
           ${stats.heatmapData.map(d => {
-            let opacity = 0.05;
-            if (d.count === 1) opacity = 0.2;
-            else if (d.count === 2) opacity = 0.4;
-            else if (d.count >= 3 && d.count <= 4) opacity = 0.6;
-            else if (d.count >= 5) opacity = 0.9;
-            return `<div style="width:12px; height:12px; border-radius:2px; background:rgba(var(--text-primary-rgb), ${opacity}); transition:all 0.2s; cursor:pointer;" title="${d.count} tasks on ${d.date}" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'"></div>`;
+            let color = 'var(--heatmap-0)';
+            if (d.count === 1) color = 'var(--heatmap-1)';
+            else if (d.count === 2) color = 'var(--heatmap-2)';
+            else if (d.count >= 3 && d.count <= 4) color = 'var(--heatmap-3)';
+            else if (d.count >= 5) color = 'var(--heatmap-4)';
+            return `<div style="width:12px; height:12px; border-radius:2px; background:${color}; transition:all 0.2s; cursor:pointer;" title="${d.count} tasks on ${d.date}" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'"></div>`;
           }).join("")}
         </div>
       </div>
-      <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px; color:var(--text-muted);">
-        <span>12 Weeks Ago</span>
-        <span>Today</span>
+      <div style="display:flex; justify-content:space-between; margin-top:12px; align-items:center; font-size:11px; color:var(--text-muted);">
+        <div style="display:flex; gap:12px;">
+          <span>12 Weeks Ago</span>
+          <span>Today</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:3px;">
+          <span style="margin-right:2px; font-size:10px;">Less</span>
+          <div style="width:10px; height:10px; border-radius:2px; background:var(--heatmap-0);"></div>
+          <div style="width:10px; height:10px; border-radius:2px; background:var(--heatmap-1);"></div>
+          <div style="width:10px; height:10px; border-radius:2px; background:var(--heatmap-2);"></div>
+          <div style="width:10px; height:10px; border-radius:2px; background:var(--heatmap-3);"></div>
+          <div style="width:10px; height:10px; border-radius:2px; background:var(--heatmap-4);"></div>
+          <span style="margin-left:2px; font-size:10px;">More</span>
+        </div>
       </div>
     </div>
 

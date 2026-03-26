@@ -53,6 +53,13 @@
   --priority-low: rgba(139, 203, 136, 0.2);
   --priority-low-bg: rgba(139, 203, 136, 0.03);
 
+  /* Heatmap (LeetCode Style Green) */
+  --heatmap-0: #161B22;   /* No activity */
+  --heatmap-1: #0E4429;   /* Level 1 */
+  --heatmap-2: #006D32;   /* Level 2 */
+  --heatmap-3: #26A641;   /* Level 3 */
+  --heatmap-4: #39D353;   /* Level 4 (High) */
+
   /* Buttons */
   --bg-btn-primary: var(--bg-tertiary);
   --text-btn-primary: var(--text-primary);
