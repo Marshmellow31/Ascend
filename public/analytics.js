@@ -31,122 +31,125 @@ function inRange(ts, start, end) {
 
 // ── Compute all analytics stats ───────────────────────────────────────────────
 export async function computeAnalytics(uid, weekStartDay = "monday", topics = []) {
-  const [allTasks] = await Promise.all([getTasks(uid)]);
+  const allTasks = await getTasks(uid);
   const { weekStart, weekEnd } = getWeekBounds(weekStartDay);
 
-  // Filter tasks that have a dueDate or completedAt in this week
-  const weekTasks = allTasks.filter(
-    (t) => inRange(t.dueDate, weekStart, weekEnd) || inRange(t.completedAt, weekStart, weekEnd)
-  );
-
-  const completed = weekTasks.filter((t) => t.isCompleted);
-  const total = weekTasks.length;
-  const completionRate = total > 0 ? Math.round((completed.length / total) * 100) : 0;
-
-  // ── Daily breakdown ───────────────────────────────────────────────────────
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  if (weekStartDay === "sunday") {
-    days.unshift(days.pop());
-  }
-  const dailyCompleted = new Array(7).fill(0);
-  const dailyTotal = new Array(7).fill(0);
-
-  weekTasks.forEach((t) => {
-    const refDate = t.dueDate
-      ? t.dueDate.toDate
-        ? t.dueDate.toDate()
-        : new Date(t.dueDate)
-      : null;
-    if (!refDate) return;
-    const dayIndex = Math.floor((refDate - weekStart) / (1000 * 60 * 60 * 24));
-    if (dayIndex >= 0 && dayIndex < 7) {
-      dailyTotal[dayIndex]++;
-      if (t.isCompleted) dailyCompleted[dayIndex]++;
-    }
-  });
-
-  // ── Topic-wise breakdown ────────────────────────────────────────────────
-  const topicBreakdown = topics.map((sub) => {
-    const subTasks = weekTasks.filter((t) => t.subjectId === sub.id);
-    const subCompleted = subTasks.filter((t) => t.isCompleted).length;
-    return {
-      id: sub.id,
-      name: sub.name,
-      color: sub.color,
-      total: subTasks.length,
-      completed: subCompleted,
-      rate: subTasks.length > 0 ? Math.round((subCompleted / subTasks.length) * 100) : 0,
-    };
-  });
-
-  // ── Overdue tasks ─────────────────────────────────────────────────────────
   const now = new Date();
-  const overdue = allTasks.filter((t) => {
-    if (t.isCompleted) return false;
-    if (!t.dueDate) return false;
-    const due = t.dueDate.toDate ? t.dueDate.toDate() : new Date(t.dueDate);
-    return due < now;
-  });
-
-  // ── Streak ────────────────────────────────────────────────────────────────
-  const streak = computeStreak(allTasks);
-
-  // ── Today's tasks ─────────────────────────────────────────────────────────
-  const today = new Date();
+  const today = new Date(now);
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
 
-  const todayTasks = allTasks.filter((t) => {
-    if (t.isCompleted) return false;
-    if (!t.dueDate) return false;
-    const due = t.dueDate.toDate ? t.dueDate.toDate() : new Date(t.dueDate);
-    return due >= today && due < tomorrow;
-  });
-
-  // ── Study Time ───────────────────────────────────────────────────────────
-  let studyTime = 0;
-  completed.forEach(t => { studyTime += (t.estimatedTime || 0); });
-
-  // ── Heatmap Data (Last 84 days) ──────────────────────────────────────────
-  const heatmapData = [];
-  const todayFull = new Date();
-  todayFull.setHours(23,59,59,999);
+  const todayFull = new Date(now);
+  todayFull.setHours(23, 59, 59, 999);
   const startHeatmap = new Date(todayFull);
-  startHeatmap.setDate(todayFull.getDate() - 167); // 24 weeks * 7 days = 168 days
-  startHeatmap.setHours(0,0,0,0);
+  startHeatmap.setDate(todayFull.getDate() - 167);
+  startHeatmap.setHours(0, 0, 0, 0);
 
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  if (weekStartDay === "sunday") days.unshift(days.pop());
+  const dailyCompleted = new Array(7).fill(0);
+  const dailyTotal = new Array(7).fill(0);
+
+  // ── Single-pass aggregation ─────────────────────────────────────────────
+  const weekTasks = [];
+  const weekCompleted = [];
+  const overdue = [];
+  const todayTasks = [];
   const taskCountsByDate = {};
-  allTasks.forEach(t => {
-    if (t.isCompleted && t.completedAt) {
-      const d = t.completedAt.toDate ? t.completedAt.toDate() : new Date(t.completedAt);
-      if (d >= startHeatmap && d <= todayFull) {
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        taskCountsByDate[key] = (taskCountsByDate[key] || 0) + 1;
-      }
-    }
-  });
-
-  for (let i = 0; i < 168; i++) {
-    const d = new Date(startHeatmap);
-    d.setDate(startHeatmap.getDate() + i);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    heatmapData.push({ date: key, count: taskCountsByDate[key] || 0 });
-  }
-
-  // ── Insights Generation ──────────────────────────────────────────────────
-  const insights = [];
-  const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   const allDayTotals = new Array(7).fill(0);
   let totalHistoricCompleted = 0;
-  allTasks.forEach(t => {
-    if (t.isCompleted && t.completedAt) {
-      const d = t.completedAt.toDate ? t.completedAt.toDate() : new Date(t.completedAt);
-      allDayTotals[d.getDay()]++;
-      totalHistoricCompleted++;
+  const streakDatesSet = new Set();
+
+  // Topic counters: { [topicId]: { total, completed } }
+  const topicCounters = {};
+  topics.forEach(t => { topicCounters[t.id] = { total: 0, completed: 0 }; });
+
+  for (const t of allTasks) {
+    const dueDate = t.dueDate ? (t.dueDate.toDate ? t.dueDate.toDate() : new Date(t.dueDate)) : null;
+    const completedAt = (t.isCompleted && t.completedAt) ? (t.completedAt.toDate ? t.completedAt.toDate() : new Date(t.completedAt)) : null;
+
+    // Week tasks
+    const inWeekDue = dueDate && dueDate >= weekStart && dueDate <= weekEnd;
+    const inWeekCompleted = completedAt && completedAt >= weekStart && completedAt <= weekEnd;
+    if (inWeekDue || inWeekCompleted) {
+      weekTasks.push(t);
+      if (t.isCompleted) weekCompleted.push(t);
+
+      // Daily breakdown (by due date)
+      if (dueDate) {
+        const dayIndex = Math.floor((dueDate - weekStart) / 86400000);
+        if (dayIndex >= 0 && dayIndex < 7) {
+          dailyTotal[dayIndex]++;
+          if (t.isCompleted) dailyCompleted[dayIndex]++;
+        }
+      }
+
+      // Topic counters
+      if (t.subjectId && topicCounters[t.subjectId]) {
+        topicCounters[t.subjectId].total++;
+        if (t.isCompleted) topicCounters[t.subjectId].completed++;
+      }
     }
-  });
-  
+
+    // Overdue
+    if (!t.isCompleted && dueDate && dueDate < now) {
+      overdue.push(t);
+    }
+
+    // Today's tasks
+    if (!t.isCompleted && dueDate && dueDate >= today && dueDate < tomorrow) {
+      todayTasks.push(t);
+    }
+
+    // Heatmap + insights (completed tasks only)
+    if (completedAt) {
+      // Heatmap bucket
+      if (completedAt >= startHeatmap && completedAt <= todayFull) {
+        const key = `${completedAt.getFullYear()}-${String(completedAt.getMonth() + 1).padStart(2, '0')}-${String(completedAt.getDate()).padStart(2, '0')}`;
+        taskCountsByDate[key] = (taskCountsByDate[key] || 0) + 1;
+      }
+      // Insights: day-of-week distribution
+      allDayTotals[completedAt.getDay()]++;
+      totalHistoricCompleted++;
+      // Streak dates
+      streakDatesSet.add(`${completedAt.getFullYear()}-${completedAt.getMonth()}-${completedAt.getDate()}`);
+    }
+  }
+
+  const total = weekTasks.length;
+  const completionRate = total > 0 ? Math.round((weekCompleted.length / total) * 100) : 0;
+
+  // Study time from week's completed tasks
+  let studyTime = 0;
+  weekCompleted.forEach(t => { studyTime += (t.estimatedTime || 0); });
+
+  // ── Topic breakdown ─────────────────────────────────────────────────────
+  const topicBreakdown = topics.map(sub => ({
+    id: sub.id,
+    name: sub.name,
+    color: sub.color,
+    total: topicCounters[sub.id].total,
+    completed: topicCounters[sub.id].completed,
+    rate: topicCounters[sub.id].total > 0 ? Math.round((topicCounters[sub.id].completed / topicCounters[sub.id].total) * 100) : 0,
+  }));
+
+  // ── Streak (O(n) with Set) ──────────────────────────────────────────────
+  const streak = computeStreak(streakDatesSet);
+
+  // ── Heatmap grid (reuse single Date cursor) ─────────────────────────────
+  const heatmapData = [];
+  const cursor = new Date(startHeatmap);
+  for (let i = 0; i < 168; i++) {
+    const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`;
+    heatmapData.push({ date: key, count: taskCountsByDate[key] || 0 });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  // ── Insights ─────────────────────────────────────────────────────────────
+  const insights = [];
+  const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
   if (totalHistoricCompleted > 0) {
     const maxDayIdx = allDayTotals.indexOf(Math.max(...allDayTotals));
     if (allDayTotals[maxDayIdx] > 0) {
@@ -156,7 +159,7 @@ export async function computeAnalytics(uid, weekStartDay = "monday", topics = []
 
   if (overdue.length > 3) {
     insights.push(`You have ${overdue.length} overdue tasks heavily impacting your system velocity.`);
-  } else if (overdue.length === 0 && completed.length > 5) {
+  } else if (overdue.length === 0 && weekCompleted.length > 5) {
     insights.push(`Zero overdue tasks! Your execution pipeline is running optimally.`);
   }
 
@@ -176,9 +179,9 @@ export async function computeAnalytics(uid, weekStartDay = "monday", topics = []
     weekStart,
     weekEnd,
     total,
-    completed: completed.length,
+    completed: weekCompleted.length,
     completionRate,
-    pending: total - completed.length,
+    pending: total - weekCompleted.length,
     overdue: overdue.length,
     overdueList: overdue,
     dailyLabels: days,
@@ -194,26 +197,17 @@ export async function computeAnalytics(uid, weekStartDay = "monday", topics = []
   };
 }
 
-// ── Compute daily streak ──────────────────────────────────────────────────────
-function computeStreak(tasks) {
-  const completedDates = tasks
-    .filter((t) => t.isCompleted && t.completedAt)
-    .map((t) => {
-      const d = t.completedAt.toDate ? t.completedAt.toDate() : new Date(t.completedAt);
-      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-      return key;
-    });
-
-  const uniqueDays = [...new Set(completedDates)].sort().reverse();
-  if (uniqueDays.length === 0) return 0;
+// ── Compute daily streak (O(n) with Set) ─────────────────────────────────────
+function computeStreak(dateSet) {
+  if (dateSet.size === 0) return 0;
 
   let streak = 0;
-  let cursor = new Date();
+  const cursor = new Date();
   cursor.setHours(0, 0, 0, 0);
 
   for (let i = 0; i < 365; i++) {
     const key = `${cursor.getFullYear()}-${cursor.getMonth()}-${cursor.getDate()}`;
-    if (uniqueDays.includes(key)) {
+    if (dateSet.has(key)) {
       streak++;
       cursor.setDate(cursor.getDate() - 1);
     } else {

@@ -136,7 +136,10 @@ export async function navigate(page, params = {}) {
 
   state.currentPageController = controller;
   initRipples();
-  if (window.lucide) window.lucide.createIcons();
+  if (window.lucide) {
+    const content = $("main-content");
+    if (content) window.lucide.createIcons({ nodes: content.querySelectorAll('[data-lucide]') });
+  }
 }
 
 // ── Sub-component Init ────────────────────────────────────────────────────────

@@ -185,7 +185,7 @@ export async function renderSettings(container, uid, profile, state) {
     await logOut();
   });
 
-  if (window.lucide) window.lucide.createIcons();
+  if (window.lucide) window.lucide.createIcons({ nodes: container.querySelectorAll('[data-lucide]') });
 
   return { cleanup: () => {} };
 }
@@ -328,5 +328,5 @@ function openHowToModal() {
 
   backdrop.querySelector("#how-to-close").addEventListener("click", () => backdrop.remove());
   document.body.appendChild(backdrop);
-  if (window.lucide) window.lucide.createIcons();
+  if (window.lucide) window.lucide.createIcons({ nodes: backdrop.querySelectorAll('[data-lucide]') });
 }

@@ -29,7 +29,7 @@ export async function renderDashboard(container, uid, profile) {
   
   // Refresh schedule every minute to update current task logic
   dashboardInterval = setInterval(() => {
-    updateDashboardState(uid, profile);
+    refreshScheduleState(uid);
   }, 60000);
 
   container.innerHTML = `
@@ -249,7 +249,49 @@ async function updateDashboardState(uid, profile, isFirstLoad = false) {
     tasksSection.innerHTML = "";
   }
 
-  if (window.lucide) window.lucide.createIcons();
+  if (window.lucide) {
+    const container = document.getElementById("dash-content") || document.getElementById("main-content");
+    if (container) window.lucide.createIcons({ nodes: container.querySelectorAll('[data-lucide]') });
+  }
+}
+
+// ── Lightweight schedule-only refresh (no Firestore task read) ────
+async function refreshScheduleState(uid) {
+  const schedList = document.getElementById("today-schedule-list");
+  if (!schedList) return;
+
+  const { getWeeklySchedule } = await import("../db.js");
+  const scheduleData = await getWeeklySchedule(uid);
+
+  const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const todayStr = DAYS[new Date().getDay()];
+  let todayTasks = scheduleData[todayStr] || [];
+  todayTasks.sort((a, b) => a.start_time.localeCompare(b.start_time));
+
+  const now = new Date();
+  const currentMins = now.getHours() * 60 + now.getMinutes();
+  const toMins = (t) => { const [h, m] = t.split(":"); return parseInt(h) * 60 + parseInt(m); };
+
+  // Just update the state badges on existing cards
+  const cards = schedList.querySelectorAll(".task-card");
+  cards.forEach((card, i) => {
+    const badge = card.querySelector("[style*='letter-spacing']");
+    if (!badge || !todayTasks[i]) return;
+    const t = todayTasks[i];
+    const sMins = toMins(t.start_time);
+    const eMins = toMins(t.end_time);
+
+    if (currentMins >= sMins && currentMins < eMins) {
+      badge.textContent = "HAPPENING NOW";
+      badge.style.cssText = "font-size:10px; font-weight:700; letter-spacing:1px; margin-bottom:8px; padding:4px 10px; display:inline-block; border-radius:var(--border-radius-full); background: rgba(255, 255, 255, 0.05); color: var(--text-primary); border: 1px solid var(--border-active); animation: pulse 2s infinite;";
+    } else if (currentMins >= eMins) {
+      badge.textContent = "COMPLETED";
+      badge.style.cssText = "font-size:10px; font-weight:700; letter-spacing:1px; margin-bottom:8px; padding:4px 10px; display:inline-block; border-radius:var(--border-radius-full); background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border-subtle);";
+    } else {
+      badge.textContent = "UPCOMING";
+      badge.style.cssText = "font-size:10px; font-weight:700; letter-spacing:1px; margin-bottom:8px; padding:4px 10px; display:inline-block; border-radius:var(--border-radius-full); background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border-subtle);";
+    }
+  });
 }
 
 window._navTopic = (id, name) => navigate("subtopics", { topicId: id, topicName: name });

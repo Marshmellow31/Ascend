@@ -85,10 +85,10 @@ export async function renderTasks(container, uid, profile) {
       const subMenu = document.getElementById("menu-topic");
       const subSelect = document.getElementById("select-topic");
       if (subMenu && subSelect) {
-        subMenu.innerHTML = `<div class="dropdown-item ${activeTopic === 'all' ? 'active' : ''}" data-value="all">Topic: All</div>`;
-        allTopics.forEach(s => {
-          subMenu.innerHTML += `<div class="dropdown-item ${activeTopic === s.id ? 'active' : ''}" data-value="${s.id}">${escHtml(s.name)}</div>`;
-        });
+        subMenu.innerHTML = `<div class="dropdown-item ${activeTopic === 'all' ? 'active' : ''}" data-value="all">Topic: All</div>` +
+          allTopics.map(s =>
+            `<div class="dropdown-item ${activeTopic === s.id ? 'active' : ''}" data-value="${s.id}">${escHtml(s.name)}</div>`
+          ).join('');
         
         const modalContainer = document.getElementById("modal-container");
         if (modalContainer && subMenu.parentElement !== modalContainer) {
@@ -182,7 +182,10 @@ export async function renderTasks(container, uid, profile) {
       list.appendChild(card);
     });
 
-    if (window.lucide) window.lucide.createIcons();
+    if (window.lucide) {
+      const list = document.getElementById("tasks-list");
+      if (list) window.lucide.createIcons({ nodes: list.querySelectorAll('[data-lucide]') });
+    }
   };
 
   // Setup Dropdown Interactions
@@ -340,7 +343,7 @@ export async function updateTaskStatus(taskId, newStatus, refreshCallback) {
   }
 }
 
-function renderTaskCard(task, uid, onUpdate, allSubjects = []) {
+function renderTaskCard(task, uid, onUpdate, allTopics = []) {
   const card = document.createElement("div");
   const isDone = task.isCompleted;
   const priority = task.priority || "medium";
@@ -510,7 +513,7 @@ export async function openTaskModal(uid, profile, onSave, existing = null) {
       </div>
       <div class="form-group">
         <label class="form-label">Sub-topic</label>
-        <select class="form-select" id="task-topic">
+        <select class="form-select" id="task-subtopic">
           <option value="">— None —</option>
           ${topics.map((t) => `<option value="${t.id}" data-sub="${t.subjectId}" ${existing?.topicId===t.id?"selected":""}>${escHtml(t.name)}</option>`).join("")}
         </select>
@@ -538,7 +541,7 @@ export async function openTaskModal(uid, profile, onSave, existing = null) {
 
   // Filter topics by selected topic
   const subjSel  = backdrop.querySelector("#task-topic");
-  const topicSel = backdrop.querySelector("#task-topic");
+  const topicSel = backdrop.querySelector("#task-subtopic");
   const filterTopics = () => {
     const sid = subjSel.value;
     topicSel.querySelectorAll("option[data-sub]").forEach((opt) => {
@@ -581,7 +584,7 @@ export async function openTaskModal(uid, profile, onSave, existing = null) {
         title,
         description: backdrop.querySelector("#task-desc").value.trim(),
         subjectId:  backdrop.querySelector("#task-topic").value  || null,
-        topicId:    backdrop.querySelector("#task-topic").value    || null,
+        topicId:    backdrop.querySelector("#task-subtopic").value    || null,
         priority:   backdrop.querySelector("#task-priority").value || "medium",
         dueDate:    backdrop.querySelector("#task-due").value      || null,
         reminderTime: backdrop.querySelector("#task-reminder").value || null,
