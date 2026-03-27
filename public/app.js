@@ -171,44 +171,44 @@ export async function navigate(page, params = {}) {
         break;
       }
       case "tasks": {
-        const pageModule = moduleCache.get("tasks") || (await import(/* @vite-ignore */ "./pages/tasks.js"));
+        const pageModule = moduleCache.get("tasks") || (await import("./pages/tasks.js"));
         moduleCache.set("tasks", pageModule);
         controller = await pageModule.renderTasks(content, uid, profile, cachedData);
         break;
       }
       case "analytics": {
-        const pageModule = moduleCache.get("analytics") || (await import(/* @vite-ignore */ "./pages/analytics.js"));
+        const pageModule = moduleCache.get("analytics") || (await import("./pages/analytics.js"));
         moduleCache.set("analytics", pageModule);
         controller = await pageModule.renderAnalytics(content, uid, profile, cachedData);
         break;
       }
       case "settings": {
-        const pageModule = moduleCache.get("settings") || (await import(/* @vite-ignore */ "./pages/settings.js"));
+        const pageModule = moduleCache.get("settings") || (await import("./pages/settings.js"));
         moduleCache.set("settings", pageModule);
         controller = await pageModule.renderSettings(content, uid, profile, state, cachedData);
         break;
       }
       case "scheduler": {
-        const pageModule = moduleCache.get("scheduler") || (await import(/* @vite-ignore */ "./pages/scheduler.js"));
+        const pageModule = moduleCache.get("scheduler") || (await import("./pages/scheduler.js"));
         moduleCache.set("scheduler", pageModule);
         controller = await pageModule.renderSchedulerTab(content, uid, profile, cachedData); 
         break;
       }
       case "personalDevelopment":
       case "growth": {
-        const pageModule = moduleCache.get("growth") || (await import(/* @vite-ignore */ "./pages/personalDevelopment.js"));
+        const pageModule = moduleCache.get("growth") || (await import("./pages/personalDevelopment.js"));
         moduleCache.set("growth", pageModule);
         controller = await pageModule.renderPersonalDevelopment(content, uid, profile, cachedData);
         break;
       }
       case "topics": {
-        const pageModule = moduleCache.get("topics") || (await import(/* @vite-ignore */ "./pages/topics.js"));
+        const pageModule = moduleCache.get("topics") || (await import("./pages/topics.js"));
         moduleCache.set("topics", pageModule);
         controller = await pageModule.renderTopics(content, uid, profile, cachedData);
         break;
       }
       case "subtopics": {
-        const pageModule = moduleCache.get("subtopics") || (await import(/* @vite-ignore */ "./pages/subtopics.js"));
+        const pageModule = moduleCache.get("subtopics") || (await import("./pages/subtopics.js"));
         moduleCache.set("subtopics", pageModule);
         controller = await pageModule.renderSubtopics(content, uid, state.selectedTopicId, state.selectedTopicName, cachedData);
         break;
@@ -462,11 +462,11 @@ async function handleUserAuth(user) {
   // Wait a few seconds for the dashboard staggered content to settle
   setTimeout(() => {
     requestIdlePreload([
-      "./pages/tasks.js",
-      "./pages/analytics.js",
-      "./pages/settings.js",
-      "./pages/scheduler.js",
-      "./pages/personalDevelopment.js"
+      () => import("./pages/tasks.js"),
+      () => import("./pages/analytics.js"),
+      () => import("./pages/settings.js"),
+      () => import("./pages/scheduler.js"),
+      () => import("./pages/personalDevelopment.js")
     ]);
   }, 3000);
 }
@@ -475,16 +475,16 @@ async function handleUserAuth(user) {
  * Preload modules during idle periods
  * @param {string[]} paths 
  */
-function requestIdlePreload(paths) {
+function requestIdlePreload(factories) {
   const runner = window.requestIdleCallback || ((cb) => setTimeout(cb, 2000));
   
-  paths.forEach((path, index) => {
+  factories.forEach((factory, index) => {
     // Stagger preloading to avoid any potential network congestion
     runner(() => {
-      import(/* @vite-ignore */ path).then(() => {
-        console.log(`[PWA] Preloaded: ${path}`);
+      factory().then(() => {
+        console.log(`[PWA] Preloaded module ${index} ✓`);
       }).catch(err => {
-        console.warn(`[PWA] Preload failed for ${path}`, err);
+        console.warn(`[PWA] Preload failed for module ${index}`, err);
       });
     }, { timeout: 3000 + (index * 1500) });
   });
