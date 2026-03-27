@@ -427,8 +427,8 @@ h4 {
 .header-btn {
   width: 44px;
   height: 44px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border-subtle);
+  background: transparent;
+  border: 1px solid transparent;
   border-radius: 50%;
   color: var(--text-primary);
   display: flex;
@@ -447,10 +447,13 @@ h4 {
   background: rgba(255, 255, 255, 0.08);
   border-color: var(--border-active);
   transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .header-btn:active {
+  background: rgba(255, 255, 255, 0.12);
   transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .drawer-overlay {
@@ -958,9 +961,33 @@ h4 {
   color: var(--error);
 }
 
+.task-details {
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
+  width: 100%;
+}
+
+.task-card.expanded .task-details {
+  max-height: 500px; /* Allow for plenty of room */
+  opacity: 1;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.task-card.expanded {
+  background: var(--bg-card-hover) !important;
+  border-color: var(--border-active) !important;
+  transform: scale(1.02);
+  box-shadow: var(--shadow-lg);
+  z-index: 10;
+}
+
 .task-actions {
   display: flex;
-  gap: 4px;
+  gap: 8px;
 }
 
 /* ── Topic Card ────────────────────────────────────────────── */

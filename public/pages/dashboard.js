@@ -159,22 +159,59 @@ async function updateDashboardState(uid, profile, isFirstLoad = false) {
     const { getWeeklySchedule } = await import("../db.js");
     const scheduleDataTask = getWeeklySchedule(uid);
     const subjectsTask = getSubjects(uid);
+    const pendingTasksTask = getTasks(uid, { isCompleted: false });
     
-    const [scheduleData, topics] = await Promise.all([scheduleDataTask, subjectsTask]);
+    const [scheduleData, topics, pendingTasks] = await Promise.all([scheduleDataTask, subjectsTask, pendingTasksTask]);
     const analyticsData = await computeAnalytics(uid, profile?.weekStartDay || "monday", topics);
 
     const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const todayStr = DAYS[new Date().getDay()];
     const todayTasks = scheduleData[todayStr] || [];
 
+    // ── Sorting Pending Tasks ──
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const sortedPending = pendingTasks.sort((a, b) => {
+      const aDue = a.dueDate?.toDate ? a.dueDate.toDate() : (a.dueDate ? new Date(a.dueDate) : null);
+      const bDue = b.dueDate?.toDate ? b.dueDate.toDate() : (b.dueDate ? new Date(b.dueDate) : null);
+      
+      if (aDue) aDue.setHours(0,0,0,0);
+      if (bDue) bDue.setHours(0,0,0,0);
+
+      const aIsTodayOrPast = aDue && aDue <= now;
+      const bIsTodayOrPast = bDue && bDue <= now;
+      
+      // 1. Today/Overdue tasks first
+      if (aIsTodayOrPast && !bIsTodayOrPast) return -1;
+      if (!aIsTodayOrPast && bIsTodayOrPast) return 1;
+      
+      // 2. Priority order (High > Medium > Low)
+      const priorities = { high: 3, medium: 2, low: 1 };
+      const aPrio = priorities[(a.priority || "medium").toLowerCase()] || 2;
+      const bPrio = priorities[(b.priority || "medium").toLowerCase()] || 2;
+      
+      if (aPrio !== bPrio) return bPrio - aPrio;
+      
+      // 3. Tasks with dates before tasks without dates
+      if (aDue && !bDue) return -1;
+      if (!aDue && bDue) return 1;
+      
+      // 4. Then by due date (closest first)
+      if (aDue && bDue) return aDue - bDue;
+      
+      return 0;
+    });
+
     // ── Snapshot Comparison for SWR ──
     const cacheKey = `dashboard_${uid}`;
     const oldCache = cacheManager.get(cacheKey);
-    const newData = { todayTasks, analyticsData };
+    const newData = { todayTasks, analyticsData, pendingTasks: sortedPending };
     
     const hasChanged = !oldCache || 
                      JSON.stringify(newData.todayTasks) !== JSON.stringify(oldCache.todayTasks) ||
-                     JSON.stringify(newData.analyticsData) !== JSON.stringify(oldCache.analyticsData);
+                     JSON.stringify(newData.analyticsData) !== JSON.stringify(oldCache.analyticsData) ||
+                     JSON.stringify(newData.pendingTasks) !== JSON.stringify(oldCache.pendingTasks);
 
     if (hasChanged || isFirstLoad) {
       console.log("[Dashboard] Data changed or first load, updating UI");
@@ -184,6 +221,9 @@ async function updateDashboardState(uid, profile, isFirstLoad = false) {
       
       // Update Stats
       renderStatsHtml(analyticsData, isFirstLoad);
+
+      // Update Pending Tasks
+      renderPendingTasksHtml(pendingTasks, isFirstLoad);
       
       // Save to Cache
       cacheManager.set(cacheKey, newData);
@@ -198,10 +238,61 @@ async function updateDashboardState(uid, profile, isFirstLoad = false) {
     console.error("Dashboard update error:", err);
     isDashboardRendering = false;
   }
+}
 
+/**
+ * Render Pending Tasks section
+ */
+function renderPendingTasksHtml(tasks, isFirstLoad = false) {
   const tasksSection = document.getElementById("dash-tasks-section");
-  if (tasksSection) {
+  if (!tasksSection) return;
+
+  const pending = tasks.slice(0, 3);
+  if (pending.length === 0) {
     tasksSection.innerHTML = "";
+    return;
+  }
+
+  const html = `
+    <div class="section-header mb-md mt-lg">
+      <div class="section-title">Pending Tasks</div>
+      <button class="btn btn-sm btn-ghost ripple" id="dash-btn-see-all-tasks">See All</button>
+    </div>
+    <div class="tasks-grid">
+      ${pending.map((task, index) => {
+        const priority = (task.priority || "medium").toLowerCase();
+        const due = task.dueDate?.toDate ? task.dueDate.toDate() : (task.dueDate ? new Date(task.dueDate) : null);
+        
+        return `
+          <div class="task-card priority-${priority} ${isFirstLoad ? 'stagger-item' : ''}" 
+               style="animation-delay:${200 + (index * 40)}ms; cursor:pointer; padding: 12px 16px; margin-bottom: 8px;"
+               data-id="${task.id}" class="dash-pending-task-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; pointer-events: none;">
+              <div>
+                <div style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">${escHtml(task.title)}</div>
+                <div style="font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px;">
+                  <i data-lucide="calendar" style="width: 12px; height: 12px;"></i>
+                  ${due ? due.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'No date'}
+                </div>
+              </div>
+              <div class="badge badge-${priority}" style="font-size: 9px; padding: 2px 6px;">${priority}</div>
+            </div>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+
+  tasksSection.innerHTML = html;
+  
+  // Add listeners
+  tasksSection.querySelector("#dash-btn-see-all-tasks")?.addEventListener("click", () => navigate("tasks"));
+  tasksSection.querySelectorAll(".task-card").forEach(el => {
+    el.addEventListener("click", () => navigate("tasks"));
+  });
+
+  if (window.lucide) {
+    window.lucide.createIcons({ nodes: tasksSection.querySelectorAll('[data-lucide]') });
   }
 }
 
@@ -270,16 +361,20 @@ function renderScheduleHtml(todayTasks, isFirstLoad = false) {
       const priority = (task.priority || 'medium').toLowerCase();
 
       return `
-        <div class="task-card priority-${priority} ${isFirstLoad ? 'stagger-item' : ''}" style="animation-delay:${100 + (index * 40)}ms; cursor:default;">
-          <div class="task-body">
-            <div style="font-size:10px; font-weight:700; letter-spacing:1px; margin-bottom:8px; padding:4px 10px; display:inline-block; border-radius:var(--border-radius-full); ${badgeStyle}">${stateLabel}</div>
-            <div class="task-title" style="word-break:break-word; font-size:var(--font-size-md); font-weight:600;">${escHtml(task.title)}</div>
-            <div class="task-meta" style="margin-top:8px;">
-              <span class="task-due" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary)">
-                <i data-lucide="clock" style="width:14px;height:14px"></i> 
-                ${task.start_time} - ${task.end_time}
-              </span>
-              <span class="badge badge-${priority}">${task.priority || 'Medium'}</span>
+        <div class="task-card priority-${priority} ${isFirstLoad ? 'stagger-item' : ''}" style="animation-delay:${100 + (index * 40)}ms; cursor:default; padding: 14px 18px;">
+          <div class="task-body" style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 12px;">
+            <div class="task-content-left" style="flex: 1; min-width: 0;">
+              <div class="task-title" style="word-break:break-word; font-size:15px; font-weight:600; color: var(--text-primary); margin-bottom: 6px;">${escHtml(task.title)}</div>
+              <div class="badge badge-${priority}" style="padding: 2px 8px; font-size: 10px; opacity: 0.8;">${task.priority || 'Medium'}</div>
+            </div>
+            <div class="task-content-right" style="text-align: right; flex-shrink: 0;">
+              <div style="font-size:10px; font-weight:700; letter-spacing:0.5px; padding:3px 8px; display:inline-block; border-radius:var(--border-radius-full); margin-bottom: 8px; ${badgeStyle}">${stateLabel}</div>
+              <div class="task-meta" style="margin-top:0;">
+                <span class="task-due" style="display:inline-flex;align-items:center;gap:4px;color:var(--text-secondary); font-size: 12px; font-weight: 500;">
+                  <i data-lucide="clock" style="width:13px;height:13px; opacity: 0.7;"></i> 
+                  ${task.start_time} - ${task.end_time}
+                </span>
+              </div>
             </div>
           </div>
         </div>

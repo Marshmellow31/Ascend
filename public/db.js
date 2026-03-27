@@ -445,6 +445,15 @@ export async function updateGoal(id, data) {
   }
 }
 
+export async function getGoal(id) {
+  try {
+    const snap = await getDoc(doc(db, "personalGoals", id));
+    return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+  } catch (err) {
+    return handleError(err, "load goal");
+  }
+}
+
 export async function deleteGoal(id) {
   try {
     await deleteDoc(doc(db, "personalGoals", id));
@@ -485,6 +494,15 @@ export async function getGoalTasks(uid, goalId = null) {
     const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
     return tB - tA;
   });
+}
+
+export async function getGoalTask(id) {
+  try {
+    const snap = await getDoc(doc(db, "goalTasks", id));
+    return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+  } catch (err) {
+    return handleError(err, "load goal task");
+  }
 }
 
 export async function updateGoalTask(id, data) {

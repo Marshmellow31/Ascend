@@ -1,8 +1,9 @@
 import { 
   getTasks, createTask, updateTask, deleteTask, completeTask, reopenTask, 
   getSubjects, createSubject, updateSubject, deleteSubject,
-  getTopics 
+  getTopics, getGoal, getGoalTask
 } from "../db.js";
+import { markGoalProgress } from "../utils/personalDevelopment.js";
 import { escHtml, formatDate, chunkProcess } from "../js/utils.js";
 import { showSnackbar, showConfirmDialog } from "../snackbar.js";
 import { cacheManager } from "../utils/cacheManager.js";
@@ -371,38 +372,47 @@ function renderTaskCard(task, uid, onUpdate, allTopics = []) {
   card.className = `task-card priority-${priority}${isDone ? " completed" : ""}`;
   card.style.marginBottom = "10px";
   card.innerHTML = `
-    <div class="task-top-section">
-      <div class="priority-label ${priority.toLowerCase()}">${priority}</div>
-      <div class="task-actions" style="display:flex; gap:8px;">
-        <button class="btn ${isDone ? "btn-secondary" : "btn-primary"} btn-check btn-circle ripple" title="${isDone ? "Undo" : "Done"}">
-          <i data-lucide="${isDone ? "rotate-ccw" : "check"}" style="width:14px;height:14px;"></i>
-        </button>
-        <button class="btn btn-ghost btn-push-sched btn-circle ripple" title="Push to Scheduler">
-          <i data-lucide="send" style="width:14px;height:14px;color:var(--accent)"></i>
-        </button>
-        <button class="btn btn-ghost btn-edit btn-circle ripple" aria-label="Edit" title="Edit">
-          <i data-lucide="pencil" style="width:14px;height:14px"></i>
-        </button>
-        <button class="btn btn-danger btn-del btn-circle ripple" aria-label="Delete" title="Delete">
-          <i data-lucide="trash-2" style="width:14px;height:14px"></i>
-        </button>
-      </div>
+    <div class="task-header" style="display:flex; justify-content:space-between; align-items:center; width:100%; gap:12px;">
+      <div class="task-title" style="flex:1; font-size:15px;">${escHtml(task.title)}</div>
+      <button class="btn ${isDone ? "btn-secondary" : "btn-primary"} btn-check btn-circle ripple" title="${isDone ? "Undo" : "Done"}">
+        <i data-lucide="${isDone ? "rotate-ccw" : "check"}" style="width:14px;height:14px;"></i>
+      </button>
     </div>
-    <div class="task-main-section">
-      <div class="task-title">${escHtml(task.title)}</div>
-      ${task.description ? `<div class="text-muted text-sm" style="margin-bottom: 4px">${escHtml(task.description)}</div>` : ""}
-      
-      ${task.subjectId ? `
-        <div class="task-topic-tag">
-          <i data-lucide="tag" style="width:10px;height:10px;"></i>
-          ${escHtml(allTopics.find(s => s.id === task.subjectId)?.name || "Topic")}
+    
+    <div class="task-details">
+      <div class="task-main-section">
+        <div class="flex justify-between items-center mb-sm">
+          <div class="priority-label ${priority.toLowerCase()}">${priority}</div>
+           ${task.status ? `<span class="badge ${task.status === 'missed' ? 'badge-high' : 'badge-low'}">${task.status}</span>` : ""}
         </div>
-      ` : ""}
+        
+        ${task.description ? `<div class="text-muted text-sm" style="margin-bottom: 8px">${escHtml(task.description)}</div>` : ""}
+        
+        <div class="flex flex-wrap items-center gap-md">
+          ${task.subjectId ? `
+            <div class="task-topic-tag" style="margin-bottom:0">
+              <i data-lucide="tag" style="width:10px;height:10px;"></i>
+              ${escHtml(allTopics.find(s => s.id === task.subjectId)?.name || "Topic")}
+            </div>
+          ` : ""}
 
-      <div class="task-meta">
-        ${due ? `<span class="task-due${isOverdue ? " overdue" : ""}" style="display:inline-flex;align-items:center;gap:4px"><i data-lucide="calendar" style="width:12px;height:12px"></i> ${formatDate(due)}</span>` : `<span class="task-due" style="display:inline-flex;align-items:center;gap:4px"><i data-lucide="calendar-off" style="width:12px;height:12px"></i> No date</span>`}
-        ${task.scheduledStart && task.scheduledEnd ? `<span style="display:inline-flex;align-items:center;gap:4px;color:var(--text-secondary);"><i data-lucide="clock" style="width:12px;height:12px"></i> ${task.scheduledStart} - ${task.scheduledEnd}</span>` : ""}
-        ${task.status ? `<span class="badge ${task.status === 'missed' ? 'badge-high' : 'badge-low'}">${task.status}</span>` : ""}
+          <div class="task-meta">
+            ${due ? `<span class="task-due${isOverdue ? " overdue" : ""}" style="display:inline-flex;align-items:center;gap:4px"><i data-lucide="calendar" style="width:12px;height:12px"></i> ${formatDate(due)}</span>` : `<span class="task-due" style="display:inline-flex;align-items:center;gap:4px"><i data-lucide="calendar-off" style="width:12px;height:12px"></i> No date</span>`}
+            ${task.scheduledStart && task.scheduledEnd ? `<span style="display:inline-flex;align-items:center;gap:4px;color:var(--text-secondary);"><i data-lucide="clock" style="width:12px;height:12px"></i> ${task.scheduledStart} - ${task.scheduledEnd}</span>` : ""}
+          </div>
+        </div>
+
+        <div class="task-actions" style="margin-top:16px; justify-content: flex-end;">
+          <button class="btn btn-ghost btn-push-sched btn-circle ripple" title="Push to Scheduler">
+            <i data-lucide="send" style="width:14px;height:14px;color:var(--accent)"></i>
+          </button>
+          <button class="btn btn-ghost btn-edit btn-circle ripple" aria-label="Edit" title="Edit">
+            <i data-lucide="pencil" style="width:14px;height:14px"></i>
+          </button>
+          <button class="btn btn-danger btn-del btn-circle ripple" aria-label="Delete" title="Delete">
+            <i data-lucide="trash-2" style="width:14px;height:14px"></i>
+          </button>
+        </div>
       </div>
     </div>
   `;
@@ -429,8 +439,14 @@ function renderTaskCard(task, uid, onUpdate, allTopics = []) {
       updateTaskStatus(task.id, "pending", onUpdate);
     });
 
-    card.appendChild(actionsRow);
+    card.querySelector(".task-details .task-main-section").appendChild(actionsRow);
   }
+
+  // Toggle expansion logic
+  card.addEventListener("click", () => {
+    // Toggle the expansion class
+    card.classList.toggle("expanded");
+  });
 
   card.querySelector(".btn-check").addEventListener("click", async (e) => {
     e.stopPropagation();
@@ -441,6 +457,24 @@ function renderTaskCard(task, uid, onUpdate, allTopics = []) {
       } else {
         card.classList.add("task-completing");
         await completeTask(task.id);
+        
+        // Sync with Growth/Personal Development Goal
+        if (task.sourceGoalTaskId) {
+          try {
+            const gtask = await getGoalTask(task.sourceGoalTaskId);
+            if (gtask && gtask.status !== "completed") {
+              const goal = await getGoal(gtask.sourceGoalId);
+              if (goal) {
+                const { completed } = await markGoalProgress(goal, 1);
+                await updateGoalTask(gtask.id, { status: "completed" });
+                showSnackbar(`Goal progress updated! +1 ${goal.unit}${completed ? " — Goal Accomplished! 🏆" : ""}`, "success");
+              }
+            }
+          } catch (syncErr) {
+            console.warn("[Sync] Goal update failed:", syncErr);
+          }
+        }
+
         showSnackbar("Task completed! 🎉", "success");
       }
       setTimeout(() => onUpdate(), isDone ? 0 : 400);
@@ -570,15 +604,29 @@ export async function openTaskModal(uid, profile, onSave, existing = null) {
   subjSel.addEventListener("change", filterTopics);
   filterTopics();
 
-    const closeModal = () => {
+    const closeModal = (isPopState = false) => {
+      // If closing manually (not via popstate), pop the state we pushed
+      if (!isPopState && history.state?.modal) {
+        history.back();
+      }
       backdrop.classList.add("modal-exit");
       setTimeout(() => {
         backdrop.remove();
       }, 200);
     };
 
-    backdrop.querySelector("#task-cancel").addEventListener("click", closeModal);
-    backdrop.addEventListener("click", (e) => { if (e.target === backdrop) closeModal(); });
+    backdrop.querySelector("#task-cancel").addEventListener("click", () => closeModal(false));
+    backdrop.addEventListener("click", (e) => { if (e.target === backdrop) closeModal(false); });
+    
+    // Portal the backdrop to ensure it's on top
+    const modalContainer = document.getElementById("modal-container") || document.body;
+    modalContainer.appendChild(backdrop);
+
+    // Track for popstate
+    backdrop._closeModal = closeModal;
+    
+    // Support Android/Browser Back Gesture
+    history.pushState({ modal: 'task' }, "");
 
     backdrop.querySelector("#task-save").addEventListener("click", async () => {
       const title = backdrop.querySelector("#task-title").value.trim();
@@ -712,8 +760,18 @@ async function openTopicManagementModal(uid, onUpdate) {
     });
   };
 
+  const closeModal = (isPopState = false) => {
+    if (!isPopState && history.state?.modal) {
+      history.back();
+    }
+    backdrop.remove();
+  };
+
   backdrop.querySelector("#btn-new-topic").onclick = () => openTopicEditModal(uid, null, refreshModalList);
-  backdrop.querySelector("#top-mgmt-close").onclick = () => backdrop.remove();
+  backdrop.querySelector("#top-mgmt-close").onclick = () => closeModal(false);
+  backdrop._closeModal = closeModal;
+  
+  history.pushState({ modal: 'topics' }, "");
   
   document.body.appendChild(backdrop);
   if (window.lucide) window.lucide.createIcons();

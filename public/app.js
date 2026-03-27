@@ -101,6 +101,12 @@ export async function navigate(page, params = {}) {
   if (params.topicId) state.selectedTopicId = params.topicId;
   if (params.topicName) state.selectedTopicName = params.topicName;
 
+  // ── History Management ──
+  if (!params.noPush) {
+    const url = page === "dashboard" ? "/" : `#${page}`;
+    history.pushState({ page, params }, "", url);
+  }
+
   document.querySelectorAll(".nav-tab").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.page === page);
   });
@@ -221,6 +227,37 @@ export async function navigate(page, params = {}) {
     else setTimeout(runCreate, 0);
   }
 }
+
+// ── Back Gesture & History Listener ──
+window.addEventListener("popstate", (e) => {
+  // If we have a page in state, navigate to it without pushing to history again
+  if (e.state && e.state.page) {
+    navigate(e.state.page, { ...e.state.params, noPush: true });
+  } else if (window.location.hash) {
+    // Fallback for direct hash changes or initial pops
+    const page = window.location.hash.slice(1);
+    if (page) navigate(page, { noPush: true });
+  } else {
+    // Default to dashboard
+    navigate("dashboard", { noPush: true });
+  }
+  
+  // Close any open modals/drawers when backing out
+  const backdrops = document.querySelectorAll(".modal-backdrop:not(.sub-modal)");
+  backdrops.forEach(b => {
+    // If the modal has a custom closer that handles popstate correctly, use it
+    if (b._closeModal) {
+      b._closeModal(true);
+    } else {
+      // Fallback for other modals
+      b.querySelector("#task-cancel")?.click();
+      b.querySelector("#top-mgmt-close")?.click();
+      if (!b.querySelector("#task-cancel") && !b.querySelector("#top-mgmt-close")) {
+        b.remove();
+      }
+    }
+  });
+});
 
 
 // ── Sub-component Init ────────────────────────────────────────────────────────
@@ -363,7 +400,13 @@ async function handleUserAuth(user) {
   } catch (_) {}
 
   // 4. Background: Navigation and Fresh Profile Fetch
-  navigate("dashboard");
+  // Determine initial page from hash or default to dashboard
+  const hash = window.location.hash.slice(1);
+  const initialPage = (hash && ["dashboard", "tasks", "analytics", "settings", "scheduler", "growth", "personalDevelopment"].includes(hash)) 
+    ? hash 
+    : "dashboard";
+    
+  navigate(initialPage);
   
   getUserProfile(user.uid).then(profile => {
     if (!profile) return;
