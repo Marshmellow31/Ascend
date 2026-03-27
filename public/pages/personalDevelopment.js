@@ -468,8 +468,9 @@ async function reloadAll(uid, isBackground = false) {
         _goalTasks = gtasks;
         _topics = topics;
         
-        renderGoalsList(uid);
-        renderTodayTasks(uid);
+        // Use stagger only if not a background refresh
+        renderGoalsList(uid, !isBackground);
+        renderTodayTasks(uid, !isBackground);
         if (window.lucide) window.lucide.createIcons({ nodes: document.getElementById("main-content").querySelectorAll('[data-lucide]') });
         
         cacheManager.set(cacheKey, newData);
@@ -484,8 +485,8 @@ async function reloadAll(uid, isBackground = false) {
       await autoGenerateTodaysTasks(uid, _goals);
       // Re-fetch tasks after generation ONLY if it's the first render or something changed
       _goalTasks = await getGoalTasks(uid);
-      renderGoalsList(uid);
-      renderTodayTasks(uid);
+      renderGoalsList(uid, !isBackground);
+      renderTodayTasks(uid, !isBackground);
     } catch (err) {
       console.error("PD: Auto-generation failed", err);
     }
@@ -493,21 +494,30 @@ async function reloadAll(uid, isBackground = false) {
 }
 
 // ─── Goals List ──────────────────────────────────────────────
-function renderGoalsList(uid) {
+function renderGoalsList(uid, useStagger = true) {
   const container = document.getElementById("pd-goals-list");
   if (!container) return;
 
   if (_goals.length === 0) {
     container.innerHTML = `
-      <div class="pd-empty">
-        <div class="pd-empty-icon">🎯</div>
+      <div class="pd-empty stagger-item">
+        <div class="pd-empty-icon"><i data-lucide="target" style="width:48px;height:48px;color:var(--accent);opacity:0.8"></i></div>
         <div class="pd-empty-title">No goals yet</div>
         <div class="pd-empty-desc">Add your first long-term goal and<br>the app will generate daily tasks for you.</div>
       </div>`;
+    if (window.lucide) window.lucide.createIcons();
     return;
   }
 
   container.innerHTML = _goals.map(goal => renderGoalCardHTML(goal)).join("");
+
+  // Apply stagger if requested
+  if (useStagger) {
+    container.querySelectorAll(".goal-card").forEach((card, i) => {
+      card.classList.add("stagger-item");
+      card.style.animationDelay = `${i * 30}ms`;
+    });
+  }
 
   // Bind events for each goal card
   _goals.forEach(goal => {
@@ -739,7 +749,7 @@ function renderGoalCardHTML(goal) {
 }
 
 // ─── Today's Tasks Section ───────────────────────────────────
-function renderTodayTasks(uid) {
+function renderTodayTasks(uid, useStagger = true) {
   const section = document.getElementById("pd-today-tasks-section");
   if (!section) return;
 
@@ -763,7 +773,7 @@ function renderTodayTasks(uid) {
       const isScheduled = task.status === "scheduled" || !!task.schedulerTaskId;
       const isCompleted = task.status === "completed";
       return `
-        <div class="goal-task-row" id="gtask-row-${task.id}">
+        <div class="goal-task-row ${useStagger ? 'stagger-item' : ''}" id="gtask-row-${task.id}">
           <div class="goal-task-dot" style="background:${meta.color};"></div>
           <div class="goal-task-title">${escHtml(task.title)}</div>
           <div class="goal-task-meta">${task.estimatedTime}m</div>
@@ -779,6 +789,12 @@ function renderTodayTasks(uid) {
       `;
     }).join("")}
   `;
+  
+  if (useStagger) {
+    section.querySelectorAll(".goal-task-row").forEach((el, i) => {
+      el.style.animationDelay = `${i * 20}ms`;
+    });
+  }
 
   // Bind single-task push buttons
   section.querySelectorAll(".gtask-push-single").forEach(btn => {

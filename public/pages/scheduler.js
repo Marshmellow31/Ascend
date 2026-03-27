@@ -68,8 +68,8 @@ export async function renderSchedulerTab(container, uid, profile, initialData = 
         container.dataset.orderedLabels = JSON.stringify(newLabels);
         container.dataset.generatedAt = newGenAt;
         
-        renderTaskList(uid);
-        renderPlanView();
+        renderTaskList(uid, !isBackground);
+        renderPlanView(!isBackground);
         cacheManager.set(cacheKey, newData);
       }
     } catch (err) {
@@ -150,8 +150,8 @@ export async function renderSchedulerTab(container, uid, profile, initialData = 
   `;
 
   // Init list
-  renderTaskList(uid);
-  renderPlanView();
+  renderTaskList(uid, true);
+  renderPlanView(true);
 
   // Background refresh
   requestAnimationFrame(() => {
@@ -251,7 +251,7 @@ async function reloadTasks(uid) {
   }
 }
 
-function renderTaskList(uid) {
+function renderTaskList(uid, useStagger = true) {
   const listEl = document.getElementById("scheduler-task-list");
   if (!listEl) return;
 
@@ -266,7 +266,7 @@ function renderTaskList(uid) {
   }
 
   listEl.innerHTML = tasks.map((t, idx) => `
-    <div class="list-item stagger-item" style="padding:12px 0; border-bottom:1px solid var(--border-subtle); display:flex; align-items:center; gap:12px; animation-delay:${idx*40}ms;">
+    <div class="list-item ${useStagger ? 'stagger-item' : ''}" style="padding:12px 0; border-bottom:1px solid var(--border-subtle); display:flex; align-items:center; gap:12px; animation-delay:${idx*40}ms;">
       <div style="flex:1; min-width:0;">
         <div style="font-weight:600; font-size:14px; color:var(--text-primary); margin-bottom:4px; display:flex; align-items:center; gap:8px;">
           <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escHtml(t.title)}</span>
@@ -318,7 +318,7 @@ function renderTaskList(uid) {
   if (window.lucide) window.lucide.createIcons();
 }
 
-function renderPlanView() {
+function renderPlanView(useStagger = true) {
   const tabContainer = document.getElementById("main-content");
   const container = document.getElementById("generated-plan-container");
   if (!container || !tabContainer || !generatedPlan) {
@@ -357,7 +357,7 @@ function renderPlanView() {
     const dayPlan = generatedPlan[label];
     if (dayPlan?.length > 0) {
       html += `
-        <div class="sched-section stagger-item" style="animation-delay:${idx*80}ms">
+        <div class="sched-section ${useStagger ? 'stagger-item' : ''}" style="animation-delay:${idx*80}ms">
           <div style="font-weight:700; font-size:11px; letter-spacing:1px; color:var(--accent); text-transform:uppercase; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
             <i data-lucide="${label === 'Today' ? 'zap' : 'calendar'}" style="width:14px;height:14px;"></i> ${label}
           </div>

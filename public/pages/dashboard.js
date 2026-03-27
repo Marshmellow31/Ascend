@@ -117,7 +117,26 @@ function renderBTechBanner(profile) {
   const el = document.getElementById("dash-btech-banner");
   if (!el) return;
   const { btechStart, btechEnd, btechName } = profile || {};
-  if (!btechStart || !btechEnd) { el.innerHTML = ""; return; }
+  
+  if (!btechStart || !btechEnd) {
+    el.innerHTML = `
+      <div class="btech-banner btech-banner-empty stagger-item" id="btn-add-focus-block">
+        <div style="display:flex; align-items:center; gap:var(--space-lg); flex:1">
+          <div class="btech-empty-icon"><i data-lucide="target"></i></div>
+          <div style="flex:1">
+            <div class="btech-degree-label" style="font-size:15px">Long Term Focus Block</div>
+            <div class="btech-tagline" style="font-size:12px; margin-top:2px">Set your academic goals to stay on track.</div>
+          </div>
+        </div>
+        <div class="btech-btn-circle-sm">
+          <i data-lucide="plus"></i>
+        </div>
+      </div>
+    `;
+    el.querySelector("#btn-add-focus-block")?.addEventListener("click", () => navigate("settings"));
+    if (window.lucide) window.lucide.createIcons({ nodes: el.querySelectorAll('[data-lucide]') });
+    return;
+  }
 
   const start = new Date(btechStart + "T00:00:00");
   const end = new Date(btechEnd + "T00:00:00");
@@ -132,7 +151,7 @@ function renderBTechBanner(profile) {
     <div class="btech-banner">
       <div class="btech-banner-top">
         <div>
-          <div class="btech-degree-label">${escHtml(btechName || "Your Academic Journey")}</div>
+          <div class="btech-degree-label">${escHtml(btechName || "Long Term Focus Block")}</div>
           <div class="btech-tagline">Progress is steady. Stay on track.</div>
         </div>
         <div class="btech-count-box">

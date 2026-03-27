@@ -8,6 +8,7 @@ import { showSnackbar, showConfirmDialog } from "../snackbar.js";
 import { initNotifications, disableNotifications, isNotificationSupported, getNotificationPermission } from "../notifications.js";
 import { applyTheme, navigate } from "../app.js";
 import { escHtml } from "../js/utils.js";
+import { showFirstTimeGuide } from "../js/utils/userGuide.js";
 
 export async function renderSettings(container, uid, profile, state) {
   const p = profile || {};
@@ -22,19 +23,16 @@ export async function renderSettings(container, uid, profile, state) {
       <div style="margin-bottom:var(--space-sm);color:var(--accent)"><i data-lucide="user-circle-2" style="width:52px;height:52px"></i></div>
       <div style="font-size:var(--font-size-xl);font-weight:700">${escHtml(p.displayName || "Student")}</div>
       <div class="text-muted text-sm">${escHtml(p.email || "")}</div>
-      <button class="btn btn-ghost btn-sm ripple" style="margin-top:var(--space-md); border-radius:var(--border-radius-full)" id="btn-edit-profile">Edit Profile</button>
+      <button class="btn btn-ghost btn-xs ripple" style="margin-top:var(--space-sm); border-radius:var(--border-radius-full); font-size:11px; padding:4px 12px" id="btn-edit-profile">Edit Profile</button>
     </div>
 
-    <!-- Appearance -->
-    <div class="text-muted text-sm font-bold mb-sm" style="text-transform:uppercase;letter-spacing:.5px">Appearance</div>
+    <!-- Support -->
+    <div class="text-muted text-sm font-bold mb-sm" style="text-transform:uppercase;letter-spacing:.5px">Support</div>
     <div class="settings-list mb-md">
-      <div class="settings-item">
-        <span class="settings-item-icon"><i data-lucide="moon" style="width:18px;height:18px"></i></span>
-        <span class="settings-item-label">Dark Mode</span>
-        <label class="toggle">
-          <input type="checkbox" id="toggle-theme" ${p.theme !== "light" ? "checked" : ""} />
-          <span class="toggle-slider"></span>
-        </label>
+      <div class="settings-item" id="btn-how-to-use">
+        <span class="settings-item-icon"><i data-lucide="help-circle" style="width:18px;height:18px"></i></span>
+        <span class="settings-item-label">User Manual</span>
+        <span class="settings-item-arrow" style="display:flex;align-items:center"><i data-lucide="chevron-right" style="width:16px;height:16px"></i></span>
       </div>
     </div>
 
@@ -51,12 +49,35 @@ export async function renderSettings(container, uid, profile, state) {
       </div>
     </div>
 
+    <!-- Course / Goal Section -->
+    <div class="text-muted text-sm font-bold mb-sm" style="text-transform:uppercase;letter-spacing:.5px">Long Term Focus Block</div>
+    <div class="settings-list mb-md">
+      <div class="settings-item" id="btn-edit-course">
+        <span class="settings-item-icon"><i data-lucide="graduation-cap" style="width:18px;height:18px"></i></span>
+        <span class="settings-item-label" id="course-label">${p.btechName ? escHtml(p.btechName) : "Set your current degree or major academic goal"}</span>
+        <span class="settings-item-arrow" style="display:flex;align-items:center"><i data-lucide="chevron-right" style="width:16px;height:16px"></i></span>
+      </div>
+    </div>
+
+    <!-- Appearance -->
+    <div class="text-muted text-sm font-bold mb-sm" style="text-transform:uppercase;letter-spacing:.5px">Appearance</div>
+    <div class="settings-list mb-md">
+      <div class="settings-item">
+        <span class="settings-item-icon"><i data-lucide="moon" style="width:18px;height:18px"></i></span>
+        <span class="settings-item-label">Dark Mode (Beta)</span>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-theme" ${p.theme !== "light" ? "checked" : ""} />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
     <!-- Notifications -->
     <div class="text-muted text-sm font-bold mb-sm" style="text-transform:uppercase;letter-spacing:.5px">Notifications</div>
     <div class="settings-list mb-md">
       <div class="settings-item">
         <span class="settings-item-icon"><i data-lucide="bell" style="width:18px;height:18px"></i></span>
-        <span class="settings-item-label">Push Notifications</span>
+        <span class="settings-item-label">Push Notifications (Beta)</span>
         <label class="toggle">
           <input type="checkbox" id="toggle-notif" ${p.notificationEnabled ? "checked" : ""} ${!notifSupported ? "disabled" : ""} />
           <span class="toggle-slider"></span>
@@ -72,26 +93,6 @@ export async function renderSettings(container, uid, profile, state) {
         <span class="settings-item-icon"><i data-lucide="alert-triangle" style="width:18px;height:18px"></i></span>
         <span class="settings-item-label text-muted text-sm">Notifications blocked in browser settings. Please allow manually.</span>
       </div>` : ""}
-    </div>
-
-    <!-- Course / Goal Section -->
-    <div class="text-muted text-sm font-bold mb-sm" style="text-transform:uppercase;letter-spacing:.5px">🎯 Long-Term Focus</div>
-    <div class="settings-list mb-md">
-      <div class="settings-item" id="btn-edit-course">
-        <span class="settings-item-icon"><i data-lucide="graduation-cap" style="width:18px;height:18px"></i></span>
-        <span class="settings-item-label" id="course-label">${p.btechName ? escHtml(p.btechName) : "Add degree or goal (e.g., B.Tech)"}</span>
-        <span class="settings-item-arrow" style="display:flex;align-items:center"><i data-lucide="chevron-right" style="width:16px;height:16px"></i></span>
-      </div>
-    </div>
-
-    <!-- Support -->
-    <div class="text-muted text-sm font-bold mb-sm" style="text-transform:uppercase;letter-spacing:.5px">Support</div>
-    <div class="settings-list mb-md">
-      <div class="settings-item" id="btn-how-to-use">
-        <span class="settings-item-icon"><i data-lucide="help-circle" style="width:18px;height:18px"></i></span>
-        <span class="settings-item-label">How to use</span>
-        <span class="settings-item-arrow" style="display:flex;align-items:center"><i data-lucide="chevron-right" style="width:16px;height:16px"></i></span>
-      </div>
     </div>
 
     <!-- Account -->
@@ -159,8 +160,8 @@ export async function renderSettings(container, uid, profile, state) {
   // ── Course Details ───────────────────────────────────────────
   document.getElementById("btn-edit-course")?.addEventListener("click", () => openCourseModal(uid, profile, state));
 
-  // ── How to use ──────────────────────────────────────────────
-  document.getElementById("btn-how-to-use")?.addEventListener("click", () => openHowToModal());
+  // ── User Manual ─────────────────────────────────────────────
+  document.getElementById("btn-how-to-use")?.addEventListener("click", () => showFirstTimeGuide(uid));
 
   // ── Change password ───────────────────────────────────────────
   document.getElementById("btn-change-pw")?.addEventListener("click", async () => {
@@ -228,11 +229,11 @@ function openCourseModal(uid, profile, state) {
   backdrop.className = "modal-backdrop centered";
   backdrop.innerHTML = `
     <div class="modal-box" style="max-width:400px">
-      <h3 class="modal-title">Long-Term Focus</h3>
+      <h3 class="modal-title">Long Term Focus Block</h3>
       
       <div class="form-group">
         <label class="form-label">Program or Goal</label>
-        <input class="form-input" id="course-name" placeholder="e.g. B.Tech, Semester 6" value="${escHtml(profile?.btechName||'')}" />
+        <input class="form-input" id="course-name" placeholder="Enter your degree or goal" value="${escHtml(profile?.btechName||'')}" />
       </div>
       
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
@@ -268,65 +269,4 @@ function openCourseModal(uid, profile, state) {
   document.body.appendChild(backdrop);
 }
 
-// ── How to use Modal ────────────────────────────────────────────
-function openHowToModal() {
-  const backdrop = document.createElement("div");
-  backdrop.className = "modal-backdrop centered";
-  backdrop.innerHTML = `
-    <div class="modal-box" style="max-width:450px; max-height:80vh; overflow-y:auto;">
-      <h3 class="modal-title" style="display:flex; align-items:center; gap:8px">
-        <i data-lucide="help-circle" style="color:var(--accent)"></i> How to use Your Day
-      </h3>
-      
-      <div style="display:flex; flex-direction:column; gap:var(--space-md); margin-bottom:var(--space-lg)">
-        
-        <div style="display:flex; gap:12px;">
-          <div style="color:var(--accent)"><i data-lucide="layout-dashboard"></i></div>
-          <div>
-            <div style="font-weight:600; font-size:15px">Dashboard</div>
-            <div class="text-muted text-sm">Your central hub. View a summary of your day, quick stats, and upcoming high-priority tasks at a glance.</div>
-          </div>
-        </div>
-
-        <div style="display:flex; gap:12px;">
-          <div style="color:var(--accent)"><i data-lucide="check-square"></i></div>
-          <div>
-            <div style="font-weight:600; font-size:15px">Tasks</div>
-            <div class="text-muted text-sm">Manage your to-do lists. Add sub-tasks, set priorities, and organize everything you need to get done.</div>
-          </div>
-        </div>
-
-        <div style="display:flex; gap:12px;">
-          <div style="color:var(--accent)"><i data-lucide="sparkles"></i></div>
-          <div>
-            <div style="font-weight:600; font-size:15px">AI Scheduler</div>
-            <div class="text-muted text-sm">The brain of the app. It automatically organizes your tasks into your available study blocks based on urgency and priority.</div>
-          </div>
-        </div>
-
-        <div style="display:flex; gap:12px;">
-          <div style="color:var(--accent)"><i data-lucide="trending-up"></i></div>
-          <div>
-            <div style="font-weight:600; font-size:15px">Growth</div>
-            <div class="text-muted text-sm">Focus on long-term goals. Set a target date and the app will automatically generate daily tasks to help you stay on track.</div>
-          </div>
-        </div>
-
-        <div style="display:flex; gap:12px;">
-          <div style="color:var(--accent)"><i data-lucide="settings"></i></div>
-          <div>
-            <div style="font-weight:600; font-size:15px">Profile</div>
-            <div class="text-muted text-sm">Personalize your experience. Adjust themes, manage notifications, and update your course details.</div>
-          </div>
-        </div>
-
-      </div>
-
-      <button class="btn btn-primary btn-full" id="how-to-close" style="border-radius:var(--border-radius-full)">Got it!</button>
-    </div>
-  `;
-
-  backdrop.querySelector("#how-to-close").addEventListener("click", () => backdrop.remove());
-  document.body.appendChild(backdrop);
-  if (window.lucide) window.lucide.createIcons({ nodes: backdrop.querySelectorAll('[data-lucide]') });
-}
+// Legacy modal removed in favor of userGuide.js

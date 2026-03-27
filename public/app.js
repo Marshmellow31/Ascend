@@ -22,6 +22,7 @@ window.lucide = {
 };
 import { onAuthStateChanged } from "./auth.js";
 import { getUserProfile } from "./db.js";
+import { showFirstTimeGuide } from "./js/utils/userGuide.js";
 import { renderDashboard } from "./pages/dashboard.js";
 // Non-critical pages moved to dynamic imports inside navigate() and preloadRoutes()
 import { onForegroundMessage } from "./notifications.js";
@@ -452,6 +453,8 @@ async function handleUserAuth(user) {
         state.currentPageController.update(profile);
       }
     }
+
+    // User Guide is now manually accessible via Settings
   });
   
   // ── Background Preloading ──

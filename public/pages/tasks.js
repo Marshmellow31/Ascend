@@ -135,7 +135,7 @@ export async function renderTasks(container, uid, profile, initialData = null) {
               } else {
                 subSelect.textContent = `Topic: ${el.querySelector('.topic-name').textContent}`;
               }
-              renderFiltered();
+              renderFiltered(false); // No stagger on click
               sidebarList.querySelectorAll(".topic-sidebar-item").forEach(item => item.classList.toggle("active", item === el));
             });
           });
@@ -172,14 +172,14 @@ export async function renderTasks(container, uid, profile, initialData = null) {
               item.classList.add("active");
               document.getElementById("wrapper-topic").classList.remove("open");
               subMenu.classList.remove("open");
-              renderFiltered();
+              renderFiltered(false); // No stagger on dropdown change
             };
           });
           
           updateDropdownPosition("topic");
         }
         
-        renderFiltered();
+        renderFiltered(!isBackground); // use stagger only if NOT background
         cacheManager.set(cacheKey, newData);
       } else {
         console.log("[Tasks] Data unchanged, skipping refresh");
@@ -190,7 +190,7 @@ export async function renderTasks(container, uid, profile, initialData = null) {
     }
   };
 
-  const renderFiltered = () => {
+  const renderFiltered = (useStagger = true) => {
     const now   = new Date();
     const today = new Date(); today.setHours(0,0,0,0);
     const tomorrow = new Date(today); tomorrow.setDate(today.getDate()+1);
@@ -243,13 +243,16 @@ export async function renderTasks(container, uid, profile, initialData = null) {
 
     if (tasks.length === 0) {
       list.innerHTML = `<div class="empty-state"><div class="empty-icon"><i data-lucide="party-popper"></i></div><div class="empty-title">Nothing here</div><div class="empty-desc">No tasks match these filters.</div></div>`;
+      if (window.lucide) window.lucide.createIcons();
       return;
     }
 
     chunkProcess(tasks, (task, i) => {
       const card = renderTaskCard(task, uid, refreshTaskList, allTopics);
-      card.classList.add("stagger-item");
-      card.style.animationDelay = `${i * 20}ms`;
+      if (useStagger) {
+        card.classList.add("stagger-item");
+        card.style.animationDelay = `${i * 20}ms`;
+      }
       list.appendChild(card);
     }, 20).then(() => {
       if (window.lucide) {
@@ -318,10 +321,10 @@ export async function renderTasks(container, uid, profile, initialData = null) {
     });
   };
 
-  initDropdown("status", (v) => { activeStatus = v; renderFiltered(); });
-  initDropdown("priority", (v) => { activePriority = v; renderFiltered(); });
-  initDropdown("topic", (v) => { activeTopic = v; renderFiltered(); });
-  initDropdown("sort", (v) => { activeSort = v; renderFiltered(); });
+  initDropdown("status", (v) => { activeStatus = v; renderFiltered(false); });
+  initDropdown("priority", (v) => { activePriority = v; renderFiltered(false); });
+  initDropdown("topic", (v) => { activeTopic = v; renderFiltered(false); });
+  initDropdown("sort", (v) => { activeSort = v; renderFiltered(false); });
   
   // Re-init subject dropdown on refreshTaskList population
   // handled by initDropdown("subject", ...) if we ensure the structure exists
@@ -364,7 +367,7 @@ export async function renderTasks(container, uid, profile, initialData = null) {
   // SWR: Immediate render if cached
   if (initialData) {
     console.log("[Tasks] SWR: Rendering from cache");
-    requestAnimationFrame(() => renderFiltered());
+    requestAnimationFrame(() => renderFiltered(true)); // Allow stagger for first cache hit
   }
 
   // Background refresh
