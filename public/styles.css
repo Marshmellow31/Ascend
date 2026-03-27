@@ -3662,3 +3662,313 @@ h4 {
   .guide-content { justify-content: flex-start; padding-top: 20px; }
   .guide-pro-tip { margin-top: 16px; padding: 12px; }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   🎨 ANIMATED GLASSMORPHISM BACKGROUND
+   — CSS-only; GPU composited via transform-only animations
+   — Grey + light-blue palette: calm, soft, Apple-like
+   — Controlled by #app-bg.hidden / .bg-paused classes
+══════════════════════════════════════════════════════════════ */
+
+/* Container — sits behind everything in #page-app */
+.app-bg {
+  position: fixed;
+  inset: 0;
+  background: #000000;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Orbs — large soft coloured blobs */
+.app-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.24;
+  will-change: transform;
+}
+
+/* Orb 1 — warm silver-grey, top-left */
+.app-orb-1 {
+  width: 580px;
+  height: 580px;
+  background: radial-gradient(circle at 40% 40%,
+    rgba(210, 220, 230, 1)   0%,
+    rgba(170, 188, 205, 0.7) 45%,
+    rgba(130, 152, 172, 0.2) 75%,
+    transparent              100%);
+  top: -180px;
+  left: -140px;
+  animation: app-drift-a 18s infinite ease-in-out;
+}
+
+/* Orb 2 — sky blue, bottom-right */
+.app-orb-2 {
+  width: 700px;
+  height: 700px;
+  background: radial-gradient(circle at 55% 55%,
+    rgba(120, 185, 248, 1)   0%,
+    rgba(85,  158, 232, 0.6) 40%,
+    rgba(55,  118, 200, 0.2) 70%,
+    transparent              100%);
+  bottom: -220px;
+  right: -180px;
+  animation: app-drift-b 24s infinite ease-in-out;
+  animation-delay: -6s;
+}
+
+/* Orb 3 — pale ice-blue, center roaming */
+.app-orb-3 {
+  width: 460px;
+  height: 460px;
+  background: radial-gradient(circle at 45% 45%,
+    rgba(165, 212, 255, 0.95) 0%,
+    rgba(125, 182, 242, 0.52) 45%,
+    rgba( 95, 152, 218, 0.14) 70%,
+    transparent               100%);
+  top: 35%;
+  left: 38%;
+  animation: app-drift-c 30s infinite ease-in-out;
+  animation-delay: -12s;
+}
+
+/* Orb 4 — steel-grey accent, top-right */
+.app-orb-4 {
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle at 50% 45%,
+    rgba(192, 204, 218, 0.9)  0%,
+    rgba(152, 170, 188, 0.45) 50%,
+    transparent               100%);
+  top: -80px;
+  right: 8%;
+  animation: app-drift-d 22s infinite ease-in-out;
+  animation-delay: -9s;
+}
+
+/* Organic multi-waypoint drift — each orb follows its own random path.
+   Only `transform` is animated — stays entirely on the GPU compositor.  */
+
+@keyframes app-drift-a {
+  0%   { transform: translate(  0px,   0px) scale(1.00); }
+  10%  { transform: translate( 42px,  28px) scale(1.04); }
+  22%  { transform: translate( 18px,  88px) scale(0.97); }
+  35%  { transform: translate( 90px,  52px) scale(1.07); }
+  48%  { transform: translate( 38px, 118px) scale(0.95); }
+  60%  { transform: translate(112px,  34px) scale(1.06); }
+  72%  { transform: translate( 55px,  98px) scale(0.98); }
+  85%  { transform: translate( 82px,  15px) scale(1.05); }
+  100% { transform: translate( 48px,  58px) scale(1.02); }
+}
+
+@keyframes app-drift-b {
+  0%   { transform: translate(   0px,   0px) scale(1.00); }
+  12%  { transform: translate( -55px, -40px) scale(1.06); }
+  28%  { transform: translate( -20px,-105px) scale(0.94); }
+  42%  { transform: translate(-105px, -35px) scale(1.07); }
+  57%  { transform: translate( -45px, -88px) scale(0.96); }
+  70%  { transform: translate(-118px, -18px) scale(1.05); }
+  84%  { transform: translate( -62px, -72px) scale(0.98); }
+  100% { transform: translate( -38px, -52px) scale(1.03); }
+}
+
+@keyframes app-drift-c {
+  0%   { transform: translate(  0px,   0px) scale(1.00); }
+  8%   { transform: translate(-48px,  58px) scale(1.08); }
+  20%  { transform: translate( 58px, -44px) scale(0.93); }
+  35%  { transform: translate(-28px,  95px) scale(1.06); }
+  50%  { transform: translate( 75px,  22px) scale(0.97); }
+  65%  { transform: translate(-62px, -14px) scale(1.04); }
+  78%  { transform: translate( 40px,  80px) scale(0.95); }
+  90%  { transform: translate(-38px,  48px) scale(1.03); }
+  100% { transform: translate( 15px,  32px) scale(1.01); }
+}
+
+@keyframes app-drift-d {
+  0%   { transform: translate(  0px,   0px) scale(1.00); }
+  18%  { transform: translate( 48px,  72px) scale(1.07); }
+  38%  { transform: translate(-36px,  30px) scale(0.95); }
+  55%  { transform: translate( 72px, 108px) scale(1.05); }
+  72%  { transform: translate( 18px,  50px) scale(0.98); }
+  88%  { transform: translate( 55px,  85px) scale(1.04); }
+  100% { transform: translate( 30px,  62px) scale(1.02); }
+}
+
+/* Frosted glass — thin enough to let the grey/blue glow show through */
+.app-bg-frost {
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(48px) saturate(110%);
+  -webkit-backdrop-filter: blur(48px) saturate(110%);
+  background: rgba(0, 0, 0, 0.36);
+  pointer-events: none;
+}
+
+/* Light mode — lighter tint so orbs stay visible */
+[data-theme="light"] .app-bg-frost {
+  background: rgba(238, 244, 250, 0.56);
+}
+
+/* Stacking context for #page-app — keeps background behind all UI.
+   isolation: isolate creates the stacking context WITHOUT overriding
+   position: fixed on .app-header, .bottom-nav, .side-nav. */
+#page-app {
+  isolation: isolate;
+}
+
+/* Paused state — called by Page Visibility API and prefers-reduced-motion.
+   Paused CSS animations consume ZERO GPU resources. */
+.app-bg.bg-paused .app-orb {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-orb {
+    animation-play-state: paused !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ✨ GLASSMORPHISM UI SYSTEM
+   — Active only when #page-app has class .glass-ui
+   — Toggled by BgController.enable() / .disable()
+   — Consistent glass token:
+       fill   → rgba(255,255,255,0.04)
+       blur   → blur(20px) saturate(130%)
+       border → rgba(255,255,255,0.09)
+       shadow → depth + inner highlight
+   — Zero impact when background animation is OFF
+══════════════════════════════════════════════════════════════ */
+
+/* ── Cards ── */
+#page-app.glass-ui .card,
+#page-app.glass-ui .stat-card,
+#page-app.glass-ui .task-card,
+#page-app.glass-ui .btech-banner,
+#page-app.glass-ui .sched-card,
+#page-app.glass-ui .goal-card,
+#page-app.glass-ui .hd-menu {
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(28px) saturate(140%);
+  -webkit-backdrop-filter: blur(28px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Hover state — slightly more luminous glass */
+#page-app.glass-ui .card:hover,
+#page-app.glass-ui .stat-card:hover,
+#page-app.glass-ui .task-card:hover,
+#page-app.glass-ui .btech-banner:hover,
+#page-app.glass-ui .goal-card:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Inner elements inside cards should look etched or seamlessly transparent */
+#page-app.glass-ui .goal-stats-row,
+#page-app.glass-ui .goal-toggle-row,
+#page-app.glass-ui .goal-task-row,
+#page-app.glass-ui .completion-banner {
+  background: rgba(0, 0, 0, 0.25) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+#page-app.glass-ui .list-item {
+  background: transparent !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+#page-app.glass-ui .hd-trigger {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+#page-app.glass-ui .goal-push-btn {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Active / press state */
+#page-app.glass-ui .task-card:active,
+#page-app.glass-ui .card.clickable:active {
+  background: rgba(255, 255, 255, 0.09) !important;
+  transform: scale(0.98) translateY(0) !important;
+}
+
+/* ── Settings lists ── */
+#page-app.glass-ui .settings-list {
+  background: rgba(255, 255, 255, 0.04) !important;
+  backdrop-filter: blur(20px) saturate(130%);
+  -webkit-backdrop-filter: blur(20px) saturate(130%);
+  border-color: rgba(255, 255, 255, 0.09) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.32),
+              inset 0 1px 0 rgba(255, 255, 255, 0.07) !important;
+}
+
+#page-app.glass-ui .settings-item {
+  border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+#page-app.glass-ui .settings-item:active {
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* ── Priority task card glass tints (preserve colour identity) ── */
+#page-app.glass-ui .task-card.priority-high {
+  background: rgba(200, 108, 108, 0.06) !important;
+  border-color: rgba(200, 108, 108, 0.25) !important;
+}
+
+#page-app.glass-ui .task-card.priority-medium {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.09) !important;
+}
+
+#page-app.glass-ui .task-card.priority-low {
+  background: rgba(139, 203, 136, 0.05) !important;
+  border-color: rgba(139, 203, 136, 0.18) !important;
+}
+
+/* ── App Header ── */
+#page-app.glass-ui .app-header {
+  background: rgba(2, 2, 2, 0.50) !important;
+  backdrop-filter: blur(32px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(160%) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ── Bottom Navigation ── */
+#page-app.glass-ui .bottom-nav {
+  background: rgba(2, 2, 2, 0.50) !important;
+  backdrop-filter: blur(32px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(160%) !important;
+  border-top-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ── Desktop Sidebar ── */
+#page-app.glass-ui .side-nav {
+  background: rgba(2, 2, 2, 0.55) !important;
+  backdrop-filter: blur(28px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(150%) !important;
+  border-right-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+/* Sidebar active nav item glass highlight */
+#page-app.glass-ui .side-nav-btn.active {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ── Progress bars & inputs keep their base look ── */
+#page-app.glass-ui .btech-progress-bar {
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+

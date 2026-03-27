@@ -31,6 +31,40 @@ import { initAuthForms } from "./js/auth_ui.js";
 import { initLanding, triggerLandingEntrance, triggerLandingReEnter } from "./js/landing.js";
 
 import { cacheManager } from "./utils/cacheManager.js";
+
+// ── Animated Background Controller ───────────────────────────────────────────
+export const BgController = {
+  _el: null,
+  init() {
+    this._el = document.getElementById('app-bg');
+    // Pause animation when tab is hidden → zero GPU cost when not visible
+    document.addEventListener('visibilitychange', () => {
+      if (!this._el) return;
+      this._el.classList.toggle('bg-paused', document.hidden);
+    });
+  },
+  enable() {
+    if (!this._el) this._el = document.getElementById('app-bg');
+    this._el?.classList.remove('hidden');
+    document.getElementById('page-app')?.classList.add('glass-ui');
+    localStorage.setItem('animatedBg', '1');
+  },
+  disable() {
+    if (!this._el) this._el = document.getElementById('app-bg');
+    this._el?.classList.add('hidden');
+    document.getElementById('page-app')?.classList.remove('glass-ui');
+    localStorage.setItem('animatedBg', '0');
+  },
+  applyFromProfile(profile) {
+    // Firestore preference takes priority; fall back to localStorage
+    const storedLocal = localStorage.getItem('animatedBg');
+    const enabled = profile?.animatedBg !== undefined
+      ? profile.animatedBg
+      : storedLocal === '1';
+    enabled ? this.enable() : this.disable();
+  }
+};
+
 // ── Global State ──────────────────────────────────────────────────────────────
 export const state = {
   user: null,
@@ -413,6 +447,9 @@ async function handleUserAuth(user) {
   initNavigation();
   initFab();
 
+  // Apply animated background preference from cached profile immediately
+  BgController.applyFromProfile(state.profile);
+
   // 3. Foreground push message listener
   try {
     onForegroundMessage((p) => {
@@ -449,6 +486,7 @@ async function handleUserAuth(user) {
     if (hasChanged) {
       console.log("[PWA] Profile updated from server, refreshing UI");
       applyTheme(profile.theme || "dark");
+      BgController.applyFromProfile(profile);
       if (state.currentPage === "dashboard" && state.currentPageController?.update) {
         state.currentPageController.update(profile);
       }
@@ -492,6 +530,7 @@ function requestIdlePreload(factories) {
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 function main() {
+  BgController.init();
   initLanding(showAuthPage);
   initAuthForms(handleUserAuth, showLanding);
   initInstallPrompt();
