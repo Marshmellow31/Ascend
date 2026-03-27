@@ -110,11 +110,11 @@ export async function renderSettings(container, uid, profile, state) {
     </div>
 
     <div class="text-center text-muted text-sm" style="margin:var(--space-xl) 0 var(--space-md); line-height:1.6">
-      Your Day v1.0.0<br/>
+      Ascend v1.0.0<br/>
       Designed & developed by Harshil<br/>
       <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-top:4px;">
         <span>Feedback and bug reports &rarr;</span>
-        <a href="https://github.com/Marshmellow31/Planner-App-for-iphone" target="_blank" rel="noopener noreferrer" style="color:var(--text-primary); text-decoration:none; font-weight:600;">GitHub</a>
+        <a href="https://github.com/Marshmellow31/Ascend" target="_blank" rel="noopener noreferrer" style="color:var(--text-primary); text-decoration:none; font-weight:600;">GitHub</a>
         <span style="color:var(--border-active); font-size:10px;">&bull;</span>
         <a href="https://www.linkedin.com/in/harshil-patel-5a7373333/" target="_blank" rel="noopener noreferrer" style="color:var(--text-primary); text-decoration:none; font-weight:600;">LinkedIn</a>
       </div>
@@ -178,7 +178,7 @@ export async function renderSettings(container, uid, profile, state) {
   document.getElementById("btn-logout")?.addEventListener("click", async () => {
     const confirmed = await showConfirmDialog(
       "Sign Out",
-      "Are you sure you want to sign out of Your Day?",
+      "Are you sure you want to sign out of Ascend?",
       "Sign Out",
       true
     );

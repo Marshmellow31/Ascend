@@ -146,7 +146,7 @@ export async function navigate(page, params = {}) {
       growth: "Growth",
       subtopics: state.selectedTopicName || "Topics"
     };
-    headerTitle.textContent = titles[page] || "Your Day";
+    headerTitle.textContent = titles[page] || "Ascend";
   }
 
   // If no cache, show a lightweight loading shell
@@ -417,7 +417,7 @@ async function handleUserAuth(user) {
   try {
     onForegroundMessage((p) => {
       import("./notifications.js").then(({ showInAppNotification }) => {
-        showInAppNotification(p.notification?.title || "Your Day", p.notification?.body || "You have a reminder.");
+        showInAppNotification(p.notification?.title || "Ascend", p.notification?.body || "You have a reminder.");
       });
     });
   } catch (_) {}

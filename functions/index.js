@@ -147,7 +147,7 @@ exports.sendScheduledNotification = onRequest(async (req, res) => {
 
     const payload = {
       notification: {
-        title: "⏰ Task Reminder: Your Day",
+        title: "⏰ Task Reminder: Ascend",
         body: `"${task.title}" is due ${dueTimeStr}.`,
       },
       data: {

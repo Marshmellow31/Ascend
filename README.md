@@ -1,4 +1,4 @@
-# Your Day — Student Planner PWA
+# Ascend — Student Planner PWA
 
 > **Plan smarter. Grow daily. Stay on top of everything that matters.**
 
@@ -8,7 +8,7 @@ A feature-rich Progressive Web App (PWA) for students to manage tasks, track per
 
 ## 📱 Install on Your iPhone (Recommended)
 
-Your Day is designed to feel like a native iOS app when installed to your Home Screen.
+Ascend is designed to feel like a native iOS app when installed to your Home Screen.
 
 1. Open the app URL in **Safari** on your iPhone (Chrome/Firefox will not work for full PWA support on iOS).
 2. Tap the **Share** button (the square with an arrow pointing up) in the toolbar.
@@ -81,7 +81,7 @@ Track personal growth goals beyond academics.
 
 ## 🔄 Workflow Integration
 
-The power of **Your Day** lies in how its features work together to automate your productivity:
+The power of **Ascend** lies in how its features work together to automate your productivity:
 
 ### 1. The Growth Loop (Goals → Tasks)
 - When you define a **Personal Development Goal** with "Auto Add Daily" enabled, the `dailyGenerator.js` utility runs every morning (respecting the 5 AM start).
@@ -102,7 +102,7 @@ The power of **Your Day** lies in how its features work together to automate you
 
 ## ⚡ Performance & Optimization
 
-Your Day is engineered for a "native-feel" experience with a focus on **0-second perceived latency** and **60FPS smoothness**.
+Ascend is engineered for a "native-feel" experience with a focus on **0-second perceived latency** and **60FPS smoothness**.
 
 ### 🚀 Dashboard Load Strategy (LCP < 2s)
 - **Stale-While-Revalidate (SWR) Caching**: Every major tab (Tasks, Analytics, Scheduler, etc.) loads instantly from the last known data state.
@@ -190,8 +190,8 @@ app.js (navigate / state)
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/Marshmellow31/Planner-App-for-iphone.git
-cd Planner-App-for-iphone
+git clone https://github.com/Marshmellow31/Ascend.git
+cd Ascend
 npm install
 ```
 

@@ -15,10 +15,10 @@ export default defineConfig({
       // Let VitePWA fully manage the manifest so it can rewrite icon paths
       // to the correct hashed/copied output paths
       manifest: {
-        name: 'Your Day',
-        short_name: 'Your Day',
+        name: 'Ascend',
+        short_name: 'Ascend',
         id: '/',
-        description: 'Plan smarter. Grow daily. Your personal companion for productivity and growth.',
+        description: 'Plan smarter. Grow daily. Your personal companion for productivity and growth with Ascend.',
         start_url: '/',
         display: 'standalone',
         orientation: 'portrait',
