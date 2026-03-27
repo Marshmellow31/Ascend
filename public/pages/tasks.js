@@ -12,59 +12,75 @@ const PRIORITIES = ["high", "medium", "low"];
 
 export async function renderTasks(container, uid, profile, initialData = null) {
   container.innerHTML = `
-    <div id="tasks-content" style="margin-top:5px;"></div>
-    <!-- Filter bar -->
-    <div class="filter-wrapper">
-      <div class="filter-row">
-        <div class="custom-select-wrapper" id="wrapper-status">
-          <div class="filter-select ripple" id="select-status" data-value="pending">Status: Pending</div>
-          <div class="custom-dropdown-menu" id="menu-status">
-            <div class="dropdown-item" data-value="all">Status: All</div>
-            <div class="dropdown-item" data-value="today">Today</div>
-            <div class="dropdown-item active" data-value="pending">Pending</div>
-            <div class="dropdown-item" data-value="completed">Completed</div>
-            <div class="dropdown-item" data-value="overdue">Overdue</div>
-          </div>
-        </div>
-        
-        <div class="custom-select-wrapper" id="wrapper-priority">
-          <div class="filter-select ripple" id="select-priority" data-value="all">Priority: All</div>
-          <div class="custom-dropdown-menu" id="menu-priority">
-            <div class="dropdown-item active" data-value="all">Priority: All</div>
-            <div class="dropdown-item" data-value="high">High</div>
-            <div class="dropdown-item" data-value="medium">Medium</div>
-            <div class="dropdown-item" data-value="low">Low</div>
+    <div id="tasks-main-grid">
+      <div id="tasks-list-col">
+        <div id="tasks-content" style="margin-top:5px;"></div>
+        <!-- Filter bar -->
+        <div class="filter-wrapper">
+          <div class="filter-row">
+            <div class="custom-select-wrapper" id="wrapper-status">
+              <div class="filter-select ripple" id="select-status" data-value="pending">Status: Pending</div>
+              <div class="custom-dropdown-menu" id="menu-status">
+                <div class="dropdown-item" data-value="all">Status: All</div>
+                <div class="dropdown-item" data-value="today">Today</div>
+                <div class="dropdown-item active" data-value="pending">Pending</div>
+                <div class="dropdown-item" data-value="completed">Completed</div>
+                <div class="dropdown-item" data-value="overdue">Overdue</div>
+              </div>
+            </div>
+            
+            <div class="custom-select-wrapper" id="wrapper-priority">
+              <div class="filter-select ripple" id="select-priority" data-value="all">Priority: All</div>
+              <div class="custom-dropdown-menu" id="menu-priority">
+                <div class="dropdown-item active" data-value="all">Priority: All</div>
+                <div class="dropdown-item" data-value="high">High</div>
+                <div class="dropdown-item" data-value="medium">Medium</div>
+                <div class="dropdown-item" data-value="low">Low</div>
+              </div>
+            </div>
+
+            <div class="custom-select-wrapper" id="wrapper-topic">
+              <div class="filter-select ripple" id="select-topic" data-value="all">Topic: All</div>
+              <div class="custom-dropdown-menu" id="menu-topic">
+                <div class="dropdown-item active" data-value="all">Topic: All</div>
+                <!-- Dynamic topics -->
+              </div>
+            </div>
+
+            <button class="filter-pill-btn ripple hidden-desktop" id="btn-manage-topics" title="Manage Topics">
+              <i data-lucide="settings-2" style="width:14px;height:14px"></i>
+            </button>
           </div>
         </div>
 
-        <div class="custom-select-wrapper" id="wrapper-topic">
-          <div class="filter-select ripple" id="select-topic" data-value="all">Topic: All</div>
-          <div class="custom-dropdown-menu" id="menu-topic">
-            <div class="dropdown-item active" data-value="all">Topic: All</div>
-            <!-- Dynamic topics -->
+        <!-- Sort & Count -->
+        <div class="flex justify-between items-center mb-md px-md">
+          <span class="text-muted text-sm" id="task-count">${initialData ? 'Syncing...' : 'Loading…'}</span>
+          <div class="custom-select-wrapper" id="wrapper-sort">
+            <div class="filter-select ripple" id="select-sort" data-value="newest">Newest first</div>
+            <div class="custom-dropdown-menu" id="menu-sort" style="right:0; left:auto;">
+              <div class="dropdown-item active" data-value="newest">Newest first</div>
+              <div class="dropdown-item" data-value="oldest">Oldest first</div>
+              <div class="dropdown-item" data-value="due">Due date</div>
+              <div class="dropdown-item" data-value="priority">Priority Order</div>
+            </div>
           </div>
         </div>
+        <div id="tasks-list"></div>
+      </div>
 
-        <button class="filter-pill-btn ripple" id="btn-manage-topics" title="Manage Topics">
-          <i data-lucide="settings-2" style="width:14px;height:14px"></i>
-        </button>
+      <div id="tasks-topics-col" class="hidden-mobile">
+        <div class="topic-sidebar-header">
+          <div class="sidebar-label">Your Topics</div>
+          <button class="btn-manage-sidebar ripple" id="btn-sidebar-manage" title="Manage Topics">
+            <i data-lucide="settings-2" style="width:16px;height:16px"></i>
+          </button>
+        </div>
+        <div id="tasks-topics-list" class="topics-sidebar-list">
+          <!-- Dynamic topics list -->
+        </div>
       </div>
     </div>
-
-    <!-- Sort & Count -->
-    <div class="flex justify-between items-center mb-md px-md">
-      <span class="text-muted text-sm" id="task-count">${initialData ? 'Syncing...' : 'Loading…'}</span>
-      <div class="custom-select-wrapper" id="wrapper-sort">
-        <div class="filter-select ripple" id="select-sort" data-value="newest">Newest first</div>
-        <div class="custom-dropdown-menu" id="menu-sort" style="right:0; left:auto;">
-          <div class="dropdown-item active" data-value="newest">Newest first</div>
-          <div class="dropdown-item" data-value="oldest">Oldest first</div>
-          <div class="dropdown-item" data-value="due">Due date</div>
-          <div class="dropdown-item" data-value="priority">Priority Order</div>
-        </div>
-      </div>
-    </div>
-    <div id="tasks-list"></div>
   `;
 
   let activeStatus   = "pending";
@@ -97,7 +113,50 @@ export async function renderTasks(container, uid, profile, initialData = null) {
             allTopics.map(s =>
               `<div class="dropdown-item ${activeTopic === s.id ? 'active' : ''}" data-value="${s.id}">${escHtml(s.name)}</div>`
             ).join('');
+        }
+
+        const sidebarList = document.getElementById("tasks-topics-list");
+        if (sidebarList) {
+          sidebarList.innerHTML = `
+            <div class="topic-sidebar-item ripple ${activeTopic === 'all' ? 'active' : ''}" data-id="all">
+              <div class="topic-name">All Topics</div>
+            </div>
+          ` + allTopics.map(s => `
+            <div class="topic-sidebar-item ripple ${activeTopic === s.id ? 'active' : ''}" data-id="${s.id}">
+              <div class="topic-name">${escHtml(s.name)}</div>
+            </div>
+          `).join('');
           
+          sidebarList.querySelectorAll(".topic-sidebar-item").forEach(el => {
+            el.addEventListener("click", () => {
+              activeTopic = el.dataset.id;
+              if (activeTopic === 'all') {
+                subSelect.textContent = "Topic: All";
+              } else {
+                subSelect.textContent = `Topic: ${el.querySelector('.topic-name').textContent}`;
+              }
+              renderFiltered();
+              sidebarList.querySelectorAll(".topic-sidebar-item").forEach(item => item.classList.toggle("active", item === el));
+            });
+          });
+          if (window.lucide) window.lucide.createIcons();
+
+          const btnManage = document.getElementById("btn-sidebar-manage");
+          if (btnManage) {
+            btnManage.onclick = () => {
+              openTopicManagementModal(uid, () => refreshTaskList());
+            };
+          }
+
+          const btnManageMobile = document.getElementById("btn-manage-topics");
+          if (btnManageMobile) {
+            btnManageMobile.onclick = () => {
+              openTopicManagementModal(uid, () => refreshTaskList());
+            };
+          }
+        }
+
+        if (subMenu && subSelect) {
           const modalContainer = document.getElementById("modal-container");
           if (modalContainer && subMenu.parentElement !== modalContainer) {
             modalContainer.appendChild(subMenu);

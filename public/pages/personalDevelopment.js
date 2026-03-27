@@ -419,7 +419,7 @@ export async function renderPersonalDevelopment(container, uid, profile, initial
         <i data-lucide="plus" style="width:14px;height:14px;margin-right:6px"></i> Add Goal
       </button>
     </div>
-    <div id="pd-goals-list"></div>
+    <div id="pd-goals-list" class="goals-grid"></div>
 
     <div id="pd-today-tasks-section"></div>
   `;

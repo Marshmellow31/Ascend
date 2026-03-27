@@ -118,29 +118,35 @@ export async function renderSchedulerTab(container, uid, profile, initialData = 
       }
     </style>
 
-    <div class="sched-section">
-      <div class="section-header mb-md">
-        <h3 class="section-title">Pending Tasks</h3>
-        <button class="btn btn-sm btn-ghost ripple" id="btn-add-sched-task">
-          <i data-lucide="plus" style="width:14px;height:14px;margin-right:4px;"></i> Add
-        </button>
-      </div>
-      <div class="sched-card">
-        <div id="scheduler-task-list"></div>
-        
-        <div style="margin-top:var(--space-xl); display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-          <button class="btn btn-secondary btn-sm ripple" id="btn-manage-blocks" style="border-radius:var(--border-radius-full); padding:10px;">
-            <i data-lucide="clock" style="width:14px;height:14px;margin-right:6px;"></i> Edit Schedule
-          </button>
-          <button class="btn btn-primary btn-sm ripple" id="btn-generate-plan" style="border-radius:var(--border-radius-full); padding:10px;">
-            <i data-lucide="sparkles" style="width:14px;height:14px;margin-right:6px;"></i> Generate Plan
-          </button>
+    <div id="sched-main-grid">
+      <div id="sched-tasks-col">
+        <div class="sched-section">
+          <div class="section-header mb-md">
+            <h3 class="section-title">Pending Tasks</h3>
+            <button class="btn btn-sm btn-ghost ripple" id="btn-add-sched-task">
+              <i data-lucide="plus" style="width:14px;height:14px;margin-right:4px;"></i> Add
+            </button>
+          </div>
+          <div class="sched-card">
+            <div id="scheduler-task-list"></div>
+            
+            <div style="margin-top:var(--space-xl); display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+              <button class="btn btn-secondary btn-sm ripple" id="btn-manage-blocks" style="border-radius:var(--border-radius-full); padding:10px;">
+                <i data-lucide="clock" style="width:14px;height:14px;margin-right:6px;"></i> Edit Schedule
+              </button>
+              <button class="btn btn-primary btn-sm ripple" id="btn-generate-plan" style="border-radius:var(--border-radius-full); padding:10px;">
+                <i data-lucide="sparkles" style="width:14px;height:14px;margin-right:6px;"></i> Generate Plan
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Generated Plan View -->
-    <div id="generated-plan-container"></div>
+      <div id="sched-plan-col">
+        <!-- Generated Plan View -->
+        <div id="generated-plan-container"></div>
+      </div>
+    </div>
   `;
 
   // Init list

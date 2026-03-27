@@ -64,17 +64,23 @@ export function renderDashboard(container, uid, profile, initialData = null) {
          `}
       </div>
 
-      <!-- Today's Schedule (Critical) -->
-      <div class="section-header mb-md">
-        <div class="section-title">Today's Schedule</div>
-        <button class="btn btn-sm btn-ghost ripple" id="btn-see-schedule">Manage</button>
-      </div>
-      <div id="today-schedule-list" class="mb-lg">
-         ${initialData ? '' : '<div class="task-card skeleton" style="height:120px"></div>'}
-      </div>
+      <div id="dash-main-grid">
+        <div id="dash-schedule-col">
+          <!-- Today's Schedule (Critical) -->
+          <div class="section-header mb-md">
+            <div class="section-title">Today's Schedule</div>
+            <button class="btn btn-sm btn-ghost ripple" id="btn-see-schedule">Manage</button>
+          </div>
+          <div id="today-schedule-list" class="mb-lg">
+             ${initialData ? '' : '<div class="task-card skeleton" style="height:120px"></div>'}
+          </div>
+        </div>
 
-      <!-- Tasks summary -->
-      <div id="dash-tasks-section"></div>
+        <div id="dash-tasks-col">
+          <!-- Tasks summary -->
+          <div id="dash-tasks-section"></div>
+        </div>
+      </div>
     </div>
   `;
 
