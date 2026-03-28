@@ -38,7 +38,7 @@ export function renderDashboard(container, uid, profile, initialData = null) {
   };
 
   cleanup();
-  
+
   dashboardInterval = setInterval(() => {
     refreshScheduleState(uid);
   }, 60000);
@@ -102,7 +102,7 @@ export function renderDashboard(container, uid, profile, initialData = null) {
     updateDashboardState(uid, currentProfile, !initialData);
   });
 
-  return { 
+  return {
     cleanup,
     update: (newProfile) => {
       currentProfile = newProfile;
@@ -117,7 +117,7 @@ function renderBTechBanner(profile) {
   const el = document.getElementById("dash-btech-banner");
   if (!el) return;
   const { btechStart, btechEnd, btechName } = profile || {};
-  
+
   if (!btechStart || !btechEnd) {
     el.innerHTML = `
       <div class="btech-banner btech-banner-empty stagger-item" id="btn-add-focus-block">
@@ -140,7 +140,7 @@ function renderBTechBanner(profile) {
 
   const start = new Date(btechStart + "T00:00:00");
   const end = new Date(btechEnd + "T00:00:00");
-  const now = new Date(); now.setHours(0,0,0,0);
+  const now = new Date(); now.setHours(0, 0, 0, 0);
   const totalDays = Math.round((end - start) / 86400000);
   const elapsed = Math.min(Math.max(Math.round((now - start) / 86400000), 0), totalDays);
   const remaining = totalDays - elapsed;
@@ -179,13 +179,13 @@ async function updateDashboardState(uid, profile, isFirstLoad = false) {
   try {
     console.time("updateDashboardState");
     const startTime = performance.now();
-    
+
     // ── Background Data Fetching ──
     const { getWeeklySchedule } = await import("../db.js");
     const scheduleDataTask = getWeeklySchedule(uid);
     const subjectsTask = getSubjects(uid);
     const pendingTasksTask = getTasks(uid, { isCompleted: false });
-    
+
     const [scheduleData, topics, pendingTasks] = await Promise.all([scheduleDataTask, subjectsTask, pendingTasksTask]);
     const analyticsData = await computeAnalytics(uid, profile?.weekStartDay || "monday", topics);
 
@@ -200,31 +200,31 @@ async function updateDashboardState(uid, profile, isFirstLoad = false) {
     const sortedPending = pendingTasks.sort((a, b) => {
       const aDue = a.dueDate?.toDate ? a.dueDate.toDate() : (a.dueDate ? new Date(a.dueDate) : null);
       const bDue = b.dueDate?.toDate ? b.dueDate.toDate() : (b.dueDate ? new Date(b.dueDate) : null);
-      
-      if (aDue) aDue.setHours(0,0,0,0);
-      if (bDue) bDue.setHours(0,0,0,0);
+
+      if (aDue) aDue.setHours(0, 0, 0, 0);
+      if (bDue) bDue.setHours(0, 0, 0, 0);
 
       const aIsTodayOrPast = aDue && aDue <= now;
       const bIsTodayOrPast = bDue && bDue <= now;
-      
+
       // 1. Today/Overdue tasks first
       if (aIsTodayOrPast && !bIsTodayOrPast) return -1;
       if (!aIsTodayOrPast && bIsTodayOrPast) return 1;
-      
+
       // 2. Priority order (High > Medium > Low)
       const priorities = { high: 3, medium: 2, low: 1 };
       const aPrio = priorities[(a.priority || "medium").toLowerCase()] || 2;
       const bPrio = priorities[(b.priority || "medium").toLowerCase()] || 2;
-      
+
       if (aPrio !== bPrio) return bPrio - aPrio;
-      
+
       // 3. Tasks with dates before tasks without dates
       if (aDue && !bDue) return -1;
       if (!aDue && bDue) return 1;
-      
+
       // 4. Then by due date (closest first)
       if (aDue && bDue) return aDue - bDue;
-      
+
       return 0;
     });
 
@@ -232,24 +232,24 @@ async function updateDashboardState(uid, profile, isFirstLoad = false) {
     const cacheKey = `dashboard_${uid}`;
     const oldCache = cacheManager.get(cacheKey);
     const newData = { todayTasks, analyticsData, pendingTasks: sortedPending };
-    
-    const hasChanged = !oldCache || 
-                     JSON.stringify(newData.todayTasks) !== JSON.stringify(oldCache.todayTasks) ||
-                     JSON.stringify(newData.analyticsData) !== JSON.stringify(oldCache.analyticsData) ||
-                     JSON.stringify(newData.pendingTasks) !== JSON.stringify(oldCache.pendingTasks);
+
+    const hasChanged = !oldCache ||
+      JSON.stringify(newData.todayTasks) !== JSON.stringify(oldCache.todayTasks) ||
+      JSON.stringify(newData.analyticsData) !== JSON.stringify(oldCache.analyticsData) ||
+      JSON.stringify(newData.pendingTasks) !== JSON.stringify(oldCache.pendingTasks);
 
     if (hasChanged || isFirstLoad) {
       console.log("[Dashboard] Data changed or first load, updating UI");
-      
+
       // Update Schedule
       renderScheduleHtml(todayTasks, isFirstLoad);
-      
+
       // Update Stats
       renderStatsHtml(analyticsData, isFirstLoad);
 
       // Update Pending Tasks
       renderPendingTasksHtml(pendingTasks, isFirstLoad);
-      
+
       // Save to Cache
       cacheManager.set(cacheKey, newData);
     } else {
@@ -285,10 +285,10 @@ function renderPendingTasksHtml(tasks, isFirstLoad = false) {
     </div>
     <div class="tasks-grid">
       ${pending.map((task, index) => {
-        const priority = (task.priority || "medium").toLowerCase();
-        const due = task.dueDate?.toDate ? task.dueDate.toDate() : (task.dueDate ? new Date(task.dueDate) : null);
-        
-        return `
+    const priority = (task.priority || "medium").toLowerCase();
+    const due = task.dueDate?.toDate ? task.dueDate.toDate() : (task.dueDate ? new Date(task.dueDate) : null);
+
+    return `
           <div class="task-card priority-${priority} ${isFirstLoad ? 'stagger-item' : ''}" 
                style="animation-delay:${200 + (index * 40)}ms; cursor:pointer; padding: 12px 16px; margin-bottom: 8px;"
                data-id="${task.id}" class="dash-pending-task-card">
@@ -304,12 +304,12 @@ function renderPendingTasksHtml(tasks, isFirstLoad = false) {
             </div>
           </div>
         `;
-      }).join("")}
+  }).join("")}
     </div>
   `;
 
   tasksSection.innerHTML = html;
-  
+
   // Add listeners
   tasksSection.querySelector("#dash-btn-see-all-tasks")?.addEventListener("click", () => navigate("tasks"));
   tasksSection.querySelectorAll(".task-card").forEach(el => {
@@ -358,7 +358,7 @@ function renderScheduleHtml(todayTasks, isFirstLoad = false) {
   } else {
     displayTasks = nextTasks.slice(0, 3).map(t => ({ ...t, _state: "next" }));
   }
-  
+
   if (displayTasks.length === 0 && todayTasks.length > 0) {
     displayTasks.push({ ...todayTasks[todayTasks.length - 1], _state: "prev" });
   }
@@ -371,21 +371,21 @@ function renderScheduleHtml(todayTasks, isFirstLoad = false) {
           <div class="empty-desc">No more tasks scheduled for today.</div>
         </div>
       </div>` : displayTasks.map((task, index) => {
-      let badgeStyle = "background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border-subtle);";
-      let stateLabel = "";
+    let badgeStyle = "background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border-subtle);";
+    let stateLabel = "";
 
-      if (task._state === "curr") {
-        badgeStyle = "background: rgba(255, 255, 255, 0.05); color: var(--text-primary); border: 1px solid var(--border-active); animation: pulse 2s infinite;";
-        stateLabel = "HAPPENING NOW";
-      } else if (task._state === "prev") {
-        stateLabel = "COMPLETED";
-      } else if (task._state === "next") {
-        stateLabel = "UPCOMING";
-      }
+    if (task._state === "curr") {
+      badgeStyle = "background: rgba(255, 255, 255, 0.05); color: var(--text-primary); border: 1px solid var(--border-active); animation: pulse 2s infinite;";
+      stateLabel = "HAPPENING NOW";
+    } else if (task._state === "prev") {
+      stateLabel = "COMPLETED";
+    } else if (task._state === "next") {
+      stateLabel = "UPCOMING";
+    }
 
-      const priority = (task.priority || 'medium').toLowerCase();
+    const priority = (task.priority || 'medium').toLowerCase();
 
-      return `
+    return `
         <div class="task-card priority-${priority} ${isFirstLoad ? 'stagger-item' : ''}" style="animation-delay:${100 + (index * 40)}ms; cursor:default; padding: 14px 18px;">
           <div class="task-body" style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 12px;">
             <div class="task-content-left" style="flex: 1; min-width: 0;">
@@ -404,7 +404,7 @@ function renderScheduleHtml(todayTasks, isFirstLoad = false) {
           </div>
         </div>
       `;
-    }).join("");
+  }).join("");
 
   requestAnimationFrame(() => {
     schedList.innerHTML = html;
