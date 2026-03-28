@@ -6,7 +6,7 @@ import { updateUserProfile } from "../db.js";
 import { logOut, resetPassword } from "../auth.js";
 import { showSnackbar, showConfirmDialog } from "../snackbar.js";
 import { initNotifications, disableNotifications, isNotificationSupported, getNotificationPermission } from "../notifications.js";
-import { applyTheme, navigate, BgController } from "../app.js";
+import { applyTheme, navigate } from "../app.js";
 import { escHtml } from "../js/utils.js";
 import { showFirstTimeGuide } from "../js/utils/userGuide.js";
 
@@ -67,14 +67,6 @@ export async function renderSettings(container, uid, profile, state) {
         <span class="settings-item-label">Dark Mode (Beta)</span>
         <label class="toggle">
           <input type="checkbox" id="toggle-theme" ${p.theme !== "light" ? "checked" : ""} />
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-      <div class="settings-item">
-        <span class="settings-item-icon"><i data-lucide="sparkles" style="width:18px;height:18px"></i></span>
-        <span class="settings-item-label">Animated Background (Beta)</span>
-        <label class="toggle">
-          <input type="checkbox" id="toggle-animated-bg" ${p.animatedBg ? "checked" : ""} />
           <span class="toggle-slider"></span>
         </label>
       </div>
@@ -139,13 +131,6 @@ export async function renderSettings(container, uid, profile, state) {
     await updateUserProfile(uid, { theme });
   });
 
-  // ── Animated background toggle ──────────────────────────────────
-  document.getElementById('toggle-animated-bg')?.addEventListener('change', async (e) => {
-    const animatedBg = e.target.checked;
-    animatedBg ? BgController.enable() : BgController.disable();
-    state.profile = { ...state.profile, animatedBg };
-    await updateUserProfile(uid, { animatedBg });
-  });
 
   // ── Notification toggle ───────────────────────────────────────
   document.getElementById("toggle-notif")?.addEventListener("change", async (e) => {
