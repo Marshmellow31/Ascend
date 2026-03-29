@@ -67,9 +67,7 @@ export async function showFirstTimeGuide(uid, onComplete) {
             <i data-lucide="bar-chart-2"></i> Analytics
           </button>
         </div>
-        <div class="guide-sidebar-footer">
-          Access this later in Settings
-        </div>
+        <div class="guide-sidebar-footer"></div>
       </div>
       <div class="guide-body">
         <button class="guide-close-btn" id="guide-close">&times;</button>

@@ -1,85 +1,50 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // ── Helper functions ─────────────────────────────────────────────
+    function isEmailVerified() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
 
-    // ── Users ────────────────────────────────────────────────────────
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // ── User Profiles ────────────────────────────────────────────────
     match /users/{userId} {
-      allow read, update, delete: if request.auth != null
-                                  && request.auth.uid == userId;
-      allow create: if request.auth != null
-                    && request.resource.data.uid == request.auth.uid;
-
-      // FCM tokens subcollection (device push tokens)
-      match /fcmTokens/{tokenId} {
-        allow read, write: if request.auth != null
-                           && request.auth.uid == userId;
-      }
+      allow read, update, delete: if isOwner(userId);
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
 
       // Diary subcollection (daily entries)
       match /diary/{dateId} {
-        allow read, write: if request.auth != null
-                           && request.auth.uid == userId;
+        allow read, write: if isEmailVerified() && isOwner(userId);
       }
 
-      // Planner subcollection (semester data, custom events)
+      // Planner subcollection (semester data, schedule, generated plan)
       match /planner/{docId} {
-        allow read, write: if request.auth != null
-                           && request.auth.uid == userId;
+        allow read, write: if isEmailVerified() && isOwner(userId);
       }
     }
 
-    // ── Subjects ─────────────────────────────────────────────────────
-    match /subjects/{docId} {
-      allow read, update, delete: if request.auth != null
-                                  && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.userId is string
-                    && request.resource.data.name is string;
+    // ── Global Collections (Owned by userId) ─────────────────────────
+    // Subjects, Topics, Tasks, SchedulerTasks, PersonalGoals, GoalTasks
+    
+    match /{collectionName}/{docId} {
+      allow read, update, delete: if collectionName in [
+        'subjects', 'topics', 'tasks', 'schedulerTasks', 'personalGoals', 'goalTasks'
+      ] && isEmailVerified() && resource.data.userId == request.auth.uid;
+
+      allow create: if collectionName in [
+        'subjects', 'topics', 'tasks', 'schedulerTasks', 'personalGoals', 'goalTasks'
+      ] && isEmailVerified() && request.resource.data.userId == request.auth.uid;
     }
 
-    // ── Topics ───────────────────────────────────────────────────────
-    match /topics/{docId} {
-      allow read, update, delete: if request.auth != null
-                                  && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.subjectId is string
-                    && request.resource.data.name is string;
-    }
-
-    // ── Tasks ────────────────────────────────────────────────────────
-    match /tasks/{docId} {
-      allow read, update, delete: if request.auth != null
-                                  && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.title is string;
-    }
-
-    // ── Scheduler Tasks ──────────────────────────────────────────────
-    match /schedulerTasks/{docId} {
-      allow read, update, delete: if request.auth != null
-                                  && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid;
-    }
-
-    // ── Personal Goals ───────────────────────────────────────────────
-    match /personalGoals/{docId} {
-      allow read, update, delete: if request.auth != null
-                                  && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.title is string;
-    }
-
-    // ── Goal Tasks (auto-generated daily tasks) ──────────────────────
-    match /goalTasks/{docId} {
-      allow read, update, delete: if request.auth != null
-                                  && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid;
+    // ── Security Logs (Audit Trail) ──────────────────────────────────
+    match /securityLogs/{logId} {
+      // Allow authenticated users to create logs (but never read/edit/delete)
+      // This ensures an immutable trail of events.
+      allow create: if request.auth != null;
+      allow read, update, delete: if false;
     }
 
     // Deny everything else by default

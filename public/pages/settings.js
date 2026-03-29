@@ -5,15 +5,12 @@
 import { updateUserProfile } from "../db.js";
 import { logOut, resetPassword } from "../auth.js";
 import { showSnackbar, showConfirmDialog } from "../snackbar.js";
-import { initNotifications, disableNotifications, isNotificationSupported, getNotificationPermission } from "../notifications.js";
 import { applyTheme, navigate } from "../app.js";
 import { escHtml } from "../js/utils.js";
 import { showFirstTimeGuide } from "../js/utils/userGuide.js";
 
 export async function renderSettings(container, uid, profile, state) {
   const p = profile || {};
-  const notifSupported = isNotificationSupported();
-  const notifPerm = getNotificationPermission();
 
   container.innerHTML = `
     <div style="margin-top:20px;"></div>
@@ -72,28 +69,7 @@ export async function renderSettings(container, uid, profile, state) {
       </div>
     </div>
 
-    <!-- Notifications -->
-    <div class="text-muted text-sm font-bold mb-sm" style="text-transform:uppercase;letter-spacing:.5px">Notifications</div>
-    <div class="settings-list mb-md">
-      <div class="settings-item">
-        <span class="settings-item-icon"><i data-lucide="bell" style="width:18px;height:18px"></i></span>
-        <span class="settings-item-label">Push Notifications (Beta)</span>
-        <label class="toggle">
-          <input type="checkbox" id="toggle-notif" ${p.notificationEnabled ? "checked" : ""} ${!notifSupported ? "disabled" : ""} />
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-      ${!notifSupported ? `
-      <div class="settings-item" style="cursor:default">
-        <span class="settings-item-icon"><i data-lucide="info" style="width:18px;height:18px"></i></span>
-        <span class="settings-item-label text-muted text-sm">Install app to Home Screen for notifications (iOS 16.4+)</span>
-      </div>` : ""}
-      ${notifSupported && notifPerm === "denied" ? `
-      <div class="settings-item" style="cursor:default">
-        <span class="settings-item-icon"><i data-lucide="alert-triangle" style="width:18px;height:18px"></i></span>
-        <span class="settings-item-label text-muted text-sm">Notifications blocked in browser settings. Please allow manually.</span>
-      </div>` : ""}
-    </div>
+    <!-- Account -->
 
     <!-- Account -->
     <div class="text-muted text-sm font-bold mb-sm" style="text-transform:uppercase;letter-spacing:.5px">Account</div>
@@ -132,20 +108,7 @@ export async function renderSettings(container, uid, profile, state) {
   });
 
 
-  // ── Notification toggle ───────────────────────────────────────
-  document.getElementById("toggle-notif")?.addEventListener("change", async (e) => {
-    if (e.target.checked) {
-      const token = await initNotifications(uid);
-      const enabled = !!token;
-      e.target.checked = enabled;
-      state.profile = { ...state.profile, notificationEnabled: enabled };
-      await updateUserProfile(uid, { notificationEnabled: enabled });
-    } else {
-      await disableNotifications(uid);
-      state.profile = { ...state.profile, notificationEnabled: false };
-      await updateUserProfile(uid, { notificationEnabled: false });
-    }
-  });
+  // ── Planner logic ─────────────────────────────────────────────
 
   // ── Planner logic ─────────────────────────────────────────────
   document.getElementById("sel-week-start")?.addEventListener("change", async (e) => {

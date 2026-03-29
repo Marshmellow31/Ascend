@@ -25,7 +25,6 @@ import { getUserProfile } from "./db.js";
 import { showFirstTimeGuide } from "./js/utils/userGuide.js";
 import { renderDashboard } from "./pages/dashboard.js";
 // Non-critical pages moved to dynamic imports inside navigate() and preloadRoutes()
-import { onForegroundMessage } from "./notifications.js";
 import { $, showEl, hideEl, initRipples } from "./js/utils.js";
 import { initAuthForms } from "./js/auth_ui.js";
 import { initLanding, triggerLandingEntrance, triggerLandingReEnter } from "./js/landing.js";
@@ -55,8 +54,8 @@ function showLanding(animateIn = false) {
 function showAuthPage(view = "auth-login") {
   hideEl("page-landing", "page-app");
   showEl("page-auth", "landing-bg");
-  // Slider logic handles the specific view (login/signup/forgot)
-  ["auth-login", "auth-signup", "auth-forgot"].forEach(id => {
+  // Slider logic handles the specific view (login/signup/forgot/verify)
+  ["auth-login", "auth-signup", "auth-forgot", "auth-verify"].forEach(id => {
     const el = $(id);
     if (!el) return;
     el.classList.toggle("hidden", id !== view);
@@ -399,6 +398,14 @@ function renderLoadingShell(pageName) {
 }
 
 async function handleUserAuth(user) {
+  // 0. Security: Enforce email verification for password-based users
+  const isPasswordUser = user.providerData.some(p => p.providerId === "password");
+  if (isPasswordUser && !user.emailVerified) {
+    console.log("[PWA] User not verified. Showing verification screen.");
+    showAuthPage("auth-verify");
+    return;
+  }
+
   state.user = user;
 
   // 1. SWR: Initial profile from cache for instant transition
@@ -416,15 +423,6 @@ async function handleUserAuth(user) {
   initFab();
 
 
-  // 3. Foreground push message listener
-  try {
-    onForegroundMessage((p) => {
-      import("./notifications.js").then(({ showInAppNotification }) => {
-        showInAppNotification(p.notification?.title || "Ascend", p.notification?.body || "You have a reminder.");
-      });
-    });
-  } catch (_) {}
-
   // 4. Background: Navigation and Fresh Profile Fetch
   // Determine initial page from hash or default to dashboard
   const hash = window.location.hash.slice(1);
@@ -441,13 +439,6 @@ async function handleUserAuth(user) {
     const hasChanged = JSON.stringify(profile) !== JSON.stringify(oldProfile);
     state.profile = profile;
     cacheManager.set(profileCacheKey, profile);
-
-    // Initialise notifications if enabled in profile
-    if (profile.notificationEnabled) {
-      import("./notifications.js").then(({ initNotifications }) => {
-        initNotifications(user.uid).catch(err => console.warn("[PWA] Auto-init notifications failed", err));
-      });
-    }
 
     if (hasChanged) {
       console.log("[PWA] Profile updated from server, refreshing UI");

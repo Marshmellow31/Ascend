@@ -19,10 +19,21 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 import { showSnackbar } from "./snackbar.js";
+import { logSecurityEvent } from "./js/utils/logger.js";
 
 function handleError(err, context = "operation") {
   console.error(`DB Error (${context}):`, err);
-  if (err.message && err.message.toLowerCase().includes("permission")) {
+  
+  const isPermissionError = err.message && err.message.toLowerCase().includes("permission");
+  
+  // Log the security event
+  logSecurityEvent(isPermissionError ? "DB_PERMISSION_DENIED" : "DB_ERROR", {
+    context,
+    code: err.code || "unknown",
+    message: err.message
+  });
+
+  if (isPermissionError) {
     showSnackbar("Permission denied. Check database rules.", "error");
   } else {
     showSnackbar(`Failed to sync ${context}.`, "error");
@@ -176,13 +187,8 @@ export async function createTask(uid, taskData) {
       topicId,
       title,
       description,
-      priority,
-      dueDate: dueDate ? Timestamp.fromDate(new Date(dueDate)) : null,
-      reminderTime: reminderTime ? Timestamp.fromDate(new Date(reminderTime)) : null,
       isCompleted: false,
       completedAt: null,
-      reminderSent: false,
-      snoozedUntil: null,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -218,7 +224,6 @@ export async function updateTask(id, data) {
   try {
     const update = { ...data, updatedAt: serverTimestamp() };
     if (data.dueDate) update.dueDate = Timestamp.fromDate(new Date(data.dueDate));
-    if (data.reminderTime) update.reminderTime = Timestamp.fromDate(new Date(data.reminderTime));
     await updateDoc(doc(db, "tasks", id), update);
   } catch (err) {
     handleError(err, "update task");
@@ -242,24 +247,10 @@ export async function reopenTask(id) {
     await updateDoc(doc(db, "tasks", id), {
       isCompleted: false,
       completedAt: null,
-      reminderSent: false,
       updatedAt: serverTimestamp(),
     });
   } catch (err) {
     handleError(err, "reopen task");
-  }
-}
-
-export async function snoozeTask(id, minutes = 15) {
-  try {
-    const snoozedUntil = new Date(Date.now() + minutes * 60 * 1000);
-    await updateDoc(doc(db, "tasks", id), {
-      snoozedUntil: Timestamp.fromDate(snoozedUntil),
-      reminderSent: false,
-      updatedAt: serverTimestamp(),
-    });
-  } catch (err) {
-    handleError(err, "snooze task");
   }
 }
 
@@ -271,28 +262,7 @@ export async function deleteTask(id) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-//  FCM TOKENS
-// ─────────────────────────────────────────────────────────────
-export async function saveFcmToken(uid, token) {
-  try {
-    await setDoc(doc(db, "users", uid, "fcmTokens", token), {
-      token,
-      createdAt: serverTimestamp(),
-      platform: navigator.platform || "unknown",
-    });
-  } catch (err) {
-    handleError(err, "save token");
-  }
-}
-
-export async function removeFcmToken(uid, token) {
-  try {
-    await deleteDoc(doc(db, "users", uid, "fcmTokens", token));
-  } catch (err) {
-    handleError(err, "remove token");
-  }
-}
+// snoozeTask, saveFcmToken, removeFcmToken etc. REMOVED as notifications are deprecated.
 
 // ─────────────────────────────────────────────────────────────
 //  WEEKLY SCHEDULE
