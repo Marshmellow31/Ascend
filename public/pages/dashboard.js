@@ -2,7 +2,7 @@
 // pages/dashboard.js — Dashboard page renderer
 // ============================================================
 
-import { getTasks, completeTask, snoozeTask, getSubjects } from "../db.js";
+import { getTasks, completeTask, getSubjects } from "../db.js";
 import { computeAnalytics } from "../analytics.js";
 import { navigate } from "../app.js";
 import { showSnackbar } from "../snackbar.js";

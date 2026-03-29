@@ -2,7 +2,7 @@
  * auth_ui.js — Auth form submission and screen transition logic
  */
 import { $ } from "./utils.js";
-import { logIn, signUp, resetPassword, logInWithGoogle } from "../auth.js";
+import { logIn, signUp, resetPassword, logInWithGoogle, sendVerification, reloadUser, logOut } from "../auth.js";
 
 export function initAuthForms(onSuccess, showLanding) {
   // ── Login ─────────────────────────────────────────────────
@@ -82,9 +82,63 @@ export function initAuthForms(onSuccess, showLanding) {
   $("btn-google-login")?.addEventListener("click", handleGoogleAuth);
   $("btn-google-signup")?.addEventListener("click", handleGoogleAuth);
 
+  // ── Verification Screen ──────────────────────────────────
+  $("btn-resend-verify")?.addEventListener("click", async () => {
+    const btn = $("btn-resend-verify");
+    const originalText = btn.textContent;
+    btn.textContent = "Sending…";
+    btn.disabled = true;
+    try {
+      const { auth } = await import("../firebase-config.js");
+      await sendVerification(auth.currentUser);
+      btn.textContent = "✓ Sent! Check inbox";
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }, 5000);
+    } catch (err) {
+      btn.textContent = "Error. Try again?";
+      btn.disabled = false;
+    }
+  });
+
+  $("btn-check-verify")?.addEventListener("click", async () => {
+    const btn = $("btn-check-verify");
+    btn.textContent = "Checking…";
+    btn.disabled = true;
+    try {
+      const { auth } = await import("../firebase-config.js");
+      const user = await reloadUser(auth.currentUser);
+      if (user?.emailVerified) {
+        await onSuccess(user);
+      } else {
+        const subtitle = document.querySelector("#auth-verify .auth-subtitle");
+        if (subtitle) {
+          subtitle.textContent = "Not verified yet. Please click the link in your email.";
+          subtitle.style.color = "var(--error)";
+          setTimeout(() => {
+            subtitle.textContent = "We've sent a verification link to your inbox. Please click it to continue.";
+            subtitle.style.color = "";
+          }, 3000);
+        }
+        btn.textContent = "I've Verified My Email";
+        btn.disabled = false;
+      }
+    } catch (err) {
+      btn.textContent = "I've Verified My Email";
+      btn.disabled = false;
+    }
+  });
+
+  $("link-verify-to-login")?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    await logOut();
+    showSubPage("auth-login");
+  });
+
   // ── Navigation between auth screens ──────────────────────
   const showSubPage = (id) => {
-    ["auth-login","auth-signup","auth-forgot"].forEach((x) =>
+    ["auth-login", "auth-signup", "auth-forgot", "auth-verify"].forEach((x) =>
       document.getElementById(x)?.classList.toggle("hidden", x !== id)
     );
   };
@@ -96,7 +150,7 @@ export function initAuthForms(onSuccess, showLanding) {
   // ── Close auth (Symmetric Exit Animation) ────────────────
   document.querySelectorAll(".auth-close-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const visibleAuth = ["auth-login","auth-signup","auth-forgot"]
+      const visibleAuth = ["auth-login", "auth-signup", "auth-forgot", "auth-verify"]
         .map(id => $(id))
         .find(el => el && !el.classList.contains("hidden"));
 

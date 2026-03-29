@@ -633,14 +633,10 @@ export async function openTaskModal(uid, profile, onSave, existing = null) {
           ${topics.map((t) => `<option value="${t.id}" data-sub="${t.subjectId}" ${existing?.topicId===t.id?"selected":""}>${escHtml(t.name)}</option>`).join("")}
         </select>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="display:grid;grid-template-columns:1fr;gap:12px">
         <div class="form-group">
           <label class="form-label">Due Date</label>
           <input class="form-input" type="datetime-local" id="task-due" value="${fmt(existing?.dueDate)}" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Reminder</label>
-          <input class="form-input" type="datetime-local" id="task-reminder" value="${fmt(existing?.reminderTime)}" />
         </div>
       </div>
       <div id="task-modal-err" class="form-error hidden"></div>
@@ -716,7 +712,6 @@ export async function openTaskModal(uid, profile, onSave, existing = null) {
         topicId:    backdrop.querySelector("#task-subtopic").value    || null,
         priority:   backdrop.querySelector("#task-priority").value || "medium",
         dueDate:    backdrop.querySelector("#task-due").value      || null,
-        reminderTime: backdrop.querySelector("#task-reminder").value || null,
       };
 
       try {

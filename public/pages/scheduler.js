@@ -11,6 +11,7 @@ import { generateStudyPlan } from "../utils/taskScheduler.js";
 import { showSnackbar } from "../snackbar.js";
 import { escHtml } from "../js/utils.js";
 import { cacheManager } from "../utils/cacheManager.js";
+import { checkRateLimit } from "../utils/rateLimiter.js";
 
 let tasks = [];
 let weeklySchedule = null;
@@ -160,8 +161,14 @@ export async function renderSchedulerTab(container, uid, profile, initialData = 
 
   // Bind Generate Plan
   const genBtn = container.querySelector("#btn-generate-plan");
-  if (genBtn) {
+if (genBtn) {
     genBtn.addEventListener("click", async () => {
+      const { allowed, remainingSeconds } = checkRateLimit("generate_plan", 15);
+      if (!allowed) {
+        showSnackbar(`Please wait ${remainingSeconds}s before regenerating.`, "warning");
+        return;
+      }
+
       const originalText = genBtn.innerHTML;
       genBtn.innerHTML = `<i data-lucide="loader-2" class="icon-spin"></i> Processing...`;
       genBtn.disabled = true;

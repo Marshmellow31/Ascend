@@ -19,10 +19,22 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 import { showSnackbar } from "./snackbar.js";
+import { logSecurityEvent } from "./js/utils/logger.js";
+import { sanitizeString, sanitizeNumber, sanitizeEnum, isValidDateStr } from "./js/utils/sanitizer.js";
 
 function handleError(err, context = "operation") {
   console.error(`DB Error (${context}):`, err);
-  if (err.message && err.message.toLowerCase().includes("permission")) {
+  
+  const isPermissionError = err.message && err.message.toLowerCase().includes("permission");
+  
+  // Log the security event
+  logSecurityEvent(isPermissionError ? "DB_PERMISSION_DENIED" : "DB_ERROR", {
+    context,
+    code: err.code || "unknown",
+    message: err.message
+  });
+
+  if (isPermissionError) {
     showSnackbar("Permission denied. Check database rules.", "error");
   } else {
     showSnackbar(`Failed to sync ${context}.`, "error");
@@ -44,7 +56,11 @@ export async function getUserProfile(uid) {
 
 export async function updateUserProfile(uid, data) {
   try {
-    await updateDoc(doc(db, "users", uid), { ...data, updatedAt: serverTimestamp() });
+    const cleanData = {};
+    if (data.displayName !== undefined) cleanData.displayName = sanitizeString(data.displayName, 50);
+    if (data.photoURL !== undefined) cleanData.photoURL = sanitizeString(data.photoURL, 2048);
+    
+    await updateDoc(doc(db, "users", uid), { ...cleanData, updatedAt: serverTimestamp() });
   } catch (err) {
     handleError(err, "update profile");
   }
@@ -57,9 +73,9 @@ export async function createSubject(uid, { name, color, order = 0 }) {
   try {
     return await addDoc(collection(db, "subjects"), {
       userId: uid,
-      name,
-      color: color || "#6c63ff",
-      order,
+      name: sanitizeString(name, 50),
+      color: sanitizeString(color, 20) || "#6c63ff",
+      order: sanitizeNumber(order, 0, 100, 0),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -89,7 +105,12 @@ export async function getSubjects(uid) {
 
 export async function updateSubject(id, data) {
   try {
-    await updateDoc(doc(db, "subjects", id), { ...data, updatedAt: serverTimestamp() });
+    const update = { updatedAt: serverTimestamp() };
+    if (data.name !== undefined) update.name = sanitizeString(data.name, 50);
+    if (data.color !== undefined) update.color = sanitizeString(data.color, 20);
+    if (data.order !== undefined) update.order = sanitizeNumber(data.order, 0, 100, 0);
+
+    await updateDoc(doc(db, "subjects", id), update);
   } catch (err) {
     handleError(err, "update subject");
   }
@@ -110,9 +131,9 @@ export async function createTopic(uid, { subjectId, name, order = 0 }) {
   try {
     return await addDoc(collection(db, "topics"), {
       userId: uid,
-      subjectId,
-      name,
-      order,
+      subjectId: sanitizeString(subjectId, 100),
+      name: sanitizeString(name, 50),
+      order: sanitizeNumber(order, 0, 100, 0),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -141,7 +162,12 @@ export async function getTopics(uid, subjectId = null) {
 
 export async function updateTopic(id, data) {
   try {
-    await updateDoc(doc(db, "topics", id), { ...data, updatedAt: serverTimestamp() });
+    const update = { updatedAt: serverTimestamp() };
+    if (data.name !== undefined) update.name = sanitizeString(data.name, 50);
+    if (data.order !== undefined) update.order = sanitizeNumber(data.order, 0, 100, 0);
+    if (data.subjectId !== undefined) update.subjectId = sanitizeString(data.subjectId, 100);
+
+    await updateDoc(doc(db, "topics", id), update);
   } catch (err) {
     handleError(err, "update topic");
   }
@@ -166,23 +192,19 @@ export async function createTask(uid, taskData) {
     description = "",
     priority = "medium",
     dueDate = null,
-    reminderTime = null,
   } = taskData;
 
   try {
     return await addDoc(collection(db, "tasks"), {
       userId: uid,
-      subjectId,
-      topicId,
-      title,
-      description,
-      priority,
-      dueDate: dueDate ? Timestamp.fromDate(new Date(dueDate)) : null,
-      reminderTime: reminderTime ? Timestamp.fromDate(new Date(reminderTime)) : null,
+      subjectId: sanitizeString(subjectId, 100),
+      topicId: sanitizeString(topicId, 100),
+      title: sanitizeString(title, 100),
+      description: sanitizeString(description, 1000),
+      priority: sanitizeEnum(priority?.toLowerCase(), ["high", "medium", "low"], "medium"),
+      dueDate: isValidDateStr(dueDate) ? Timestamp.fromDate(new Date(dueDate)) : null,
       isCompleted: false,
       completedAt: null,
-      reminderSent: false,
-      snoozedUntil: null,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -216,9 +238,19 @@ export async function getTasks(uid, filters = {}) {
 
 export async function updateTask(id, data) {
   try {
-    const update = { ...data, updatedAt: serverTimestamp() };
-    if (data.dueDate) update.dueDate = Timestamp.fromDate(new Date(data.dueDate));
-    if (data.reminderTime) update.reminderTime = Timestamp.fromDate(new Date(data.reminderTime));
+    const update = { updatedAt: serverTimestamp() };
+    if (data.title !== undefined) update.title = sanitizeString(data.title, 100);
+    if (data.description !== undefined) update.description = sanitizeString(data.description, 1000);
+    if (data.priority !== undefined) update.priority = sanitizeEnum(data.priority?.toLowerCase(), ["high", "medium", "low"], "medium");
+    if (data.dueDate !== undefined) update.dueDate = isValidDateStr(data.dueDate) ? Timestamp.fromDate(new Date(data.dueDate)) : null;
+    if (data.isCompleted !== undefined) update.isCompleted = !!data.isCompleted;
+    if (data.subjectId !== undefined) update.subjectId = sanitizeString(data.subjectId, 100);
+    if (data.topicId !== undefined) update.topicId = sanitizeString(data.topicId, 100);
+    if (data.isScheduled !== undefined) update.isScheduled = !!data.isScheduled;
+    if (data.status !== undefined) update.status = sanitizeString(data.status, 20);
+    if (data.scheduledStart !== undefined) update.scheduledStart = sanitizeString(data.scheduledStart, 20);
+    if (data.scheduledEnd !== undefined) update.scheduledEnd = sanitizeString(data.scheduledEnd, 20);
+
     await updateDoc(doc(db, "tasks", id), update);
   } catch (err) {
     handleError(err, "update task");
@@ -242,24 +274,10 @@ export async function reopenTask(id) {
     await updateDoc(doc(db, "tasks", id), {
       isCompleted: false,
       completedAt: null,
-      reminderSent: false,
       updatedAt: serverTimestamp(),
     });
   } catch (err) {
     handleError(err, "reopen task");
-  }
-}
-
-export async function snoozeTask(id, minutes = 15) {
-  try {
-    const snoozedUntil = new Date(Date.now() + minutes * 60 * 1000);
-    await updateDoc(doc(db, "tasks", id), {
-      snoozedUntil: Timestamp.fromDate(snoozedUntil),
-      reminderSent: false,
-      updatedAt: serverTimestamp(),
-    });
-  } catch (err) {
-    handleError(err, "snooze task");
   }
 }
 
@@ -271,28 +289,7 @@ export async function deleteTask(id) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-//  FCM TOKENS
-// ─────────────────────────────────────────────────────────────
-export async function saveFcmToken(uid, token) {
-  try {
-    await setDoc(doc(db, "users", uid, "fcmTokens", token), {
-      token,
-      createdAt: serverTimestamp(),
-      platform: navigator.platform || "unknown",
-    });
-  } catch (err) {
-    handleError(err, "save token");
-  }
-}
-
-export async function removeFcmToken(uid, token) {
-  try {
-    await deleteDoc(doc(db, "users", uid, "fcmTokens", token));
-  } catch (err) {
-    handleError(err, "remove token");
-  }
-}
+// snoozeTask, saveFcmToken, removeFcmToken etc. REMOVED as notifications are deprecated.
 
 // ─────────────────────────────────────────────────────────────
 //  WEEKLY SCHEDULE
@@ -332,12 +329,12 @@ export async function createSchedulerTask(uid, taskData) {
   try {
     return await addDoc(collection(db, "schedulerTasks"), {
       userId: uid,
-      title: taskData.title,
-      subject: taskData.subject || "",
-      estimatedTime: parseInt(taskData.estimatedTime, 10) || 60,
-      deadline: taskData.deadline || null,
-      priority: taskData.priority || "medium",
-      notes: taskData.notes || "",
+      title: sanitizeString(taskData.title, 100),
+      subject: sanitizeString(taskData.subject, 100) || "",
+      estimatedTime: sanitizeNumber(taskData.estimatedTime, 1, 1440, 60),
+      deadline: isValidDateStr(taskData.deadline) ? taskData.deadline : null,
+      priority: sanitizeEnum(taskData.priority?.toLowerCase(), ["high", "medium", "low"], "medium"),
+      notes: sanitizeString(taskData.notes, 500) || "",
       status: "pending",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -400,20 +397,20 @@ export async function createGoal(uid, goalData) {
   try {
     return await addDoc(collection(db, "personalGoals"), {
       userId: uid,
-      title: goalData.title,
-      category: goalData.category || "custom",
-      totalTarget: goalData.totalTarget,
-      unit: goalData.unit || "sessions",
-      durationDays: goalData.durationDays,
-      startDate: goalData.startDate,
-      endDate: goalData.endDate || null,
-      dailyTarget: goalData.dailyTarget,
-      priority: goalData.priority || "medium",
+      title: sanitizeString(goalData.title, 100),
+      category: sanitizeString(goalData.category, 50) || "custom",
+      totalTarget: sanitizeNumber(goalData.totalTarget, 1, 10000, 10),
+      unit: sanitizeString(goalData.unit, 30) || "sessions",
+      durationDays: sanitizeNumber(goalData.durationDays, 1, 3650, 30),
+      startDate: isValidDateStr(goalData.startDate) ? goalData.startDate : new Date().toISOString().split("T")[0],
+      endDate: isValidDateStr(goalData.endDate) ? goalData.endDate : null,
+      dailyTarget: sanitizeNumber(goalData.dailyTarget, 1, 1000, 1),
+      priority: sanitizeEnum(goalData.priority?.toLowerCase(), ["high", "medium", "low"], "medium"),
       autoAddDaily: goalData.autoAddDaily !== false,
       status: "active",
       totalProgress: 0,
       lastGeneratedDate: null,
-      notes: goalData.notes || "",
+      notes: sanitizeString(goalData.notes, 500) || "",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
