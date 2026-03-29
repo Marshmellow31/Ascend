@@ -11,7 +11,6 @@ import {
   persistentLocalCache,
   persistentMultipleTabManager
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js";
 
 // Vite environment variables (prefixed with VITE_) are injected at build time.
 // For local development, create a .env file. For Vercel, set these in Project Settings.
@@ -29,12 +28,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
-
-// Initialize App Check (Abuse Protection)
-initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
-  isTokenAutoRefreshEnabled: true
-});
 
 // Modern way to enable offline persistence (v10.3+)
 export const db = initializeFirestore(app, {
