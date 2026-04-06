@@ -75,6 +75,7 @@ function showAppPage() {
 // ── Theme Application ─────────────────────────────────────────────────────────
 export function applyTheme(theme = "dark") {
   document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem("theme", theme);
 }
 
 // ── Navigation Logic ──────────────────────────────────────────────────────────
@@ -411,10 +412,18 @@ async function handleUserAuth(user) {
   // 1. SWR: Initial profile from cache for instant transition
   const profileCacheKey = `profile_${user.uid}`;
   const cachedProfile = cacheManager.get(profileCacheKey);
+  
+  // High-priority: Restore from localStorage first for immediate consistency
+  const savedTheme = localStorage.getItem("theme");
+  if (savedTheme) {
+    applyTheme(savedTheme);
+  } else if (cachedProfile) {
+    applyTheme(cachedProfile.theme || "dark");
+  }
+
   if (cachedProfile) {
     console.log("[PWA] SWR: Instant profile from cache");
     state.profile = cachedProfile;
-    applyTheme(cachedProfile.theme || "dark");
   }
 
   // 2. Show app shell immediately (even if profile is just from cache)

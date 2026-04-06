@@ -1589,9 +1589,9 @@ h4 {
 }
 
 .premium-name {
-  font-size: var(--font-size-h1);
-  font-weight: var(--font-weight-heading);
-  letter-spacing: var(--letter-spacing-heading, -1px);
+  font-size: clamp(36px, 10vw, 48px);
+  font-weight: 800;
+  letter-spacing: var(--letter-spacing-heading, -1.5px);
   background: var(--premium-shimmer);
   -webkit-background-clip: text;
   background-clip: text;
