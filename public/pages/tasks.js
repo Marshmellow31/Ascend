@@ -610,10 +610,9 @@ export async function openTaskModal(uid, profile, onSave, existing = null) {
   };
 
   const backdrop = document.createElement("div");
-  backdrop.className = "modal-backdrop";
+  backdrop.className = "modal-backdrop centered";
   backdrop.innerHTML = `
-    <div class="drawer" style="max-width:480px;margin:0 auto">
-      <div class="drawer-handle"></div>
+    <div class="modal-box" style="max-width:480px;">
       <h3 class="modal-title">${isEdit ? "Edit Task" : "New Task"}</h3>
 
       <div class="form-group">
@@ -761,10 +760,9 @@ export async function openTaskModal(uid, profile, onSave, existing = null) {
 async function openTopicManagementModal(uid, onUpdate) {
   const topics = await getSubjects(uid);
   const backdrop = document.createElement("div");
-  backdrop.className = "modal-backdrop";
+  backdrop.className = "modal-backdrop centered";
   backdrop.innerHTML = `
-    <div class="drawer" style="max-width:480px;margin:0 auto">
-      <div class="drawer-handle"></div>
+    <div class="modal-box" style="max-width:480px;">
       <div class="flex justify-between items-center mb-md">
         <h3 class="modal-title" style="margin:0">Manage Topics</h3>
         <button class="btn btn-primary btn-sm ripple" id="btn-new-topic">
@@ -858,10 +856,9 @@ async function openTopicManagementModal(uid, onUpdate) {
 async function openTopicEditModal(uid, existing, onSave) {
   const isEdit = !!existing;
   const subBackdrop = document.createElement("div");
-  subBackdrop.className = "modal-backdrop sub-modal";
+  subBackdrop.className = "modal-backdrop centered sub-modal";
   subBackdrop.innerHTML = `
-    <div class="drawer" style="max-width:400px;margin:0 auto;z-index:11000">
-      <div class="drawer-handle"></div>
+    <div class="modal-box" style="max-width:400px;z-index:11000">
       <h3 class="modal-title">${isEdit ? "Edit Topic" : "New Topic"}</h3>
       <div class="form-group">
         <label class="form-label">Name</label>

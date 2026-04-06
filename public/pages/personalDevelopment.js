@@ -965,15 +965,14 @@ export async function openGoalForm(uid, existingGoal, onSave) {
   const today = new Date().toISOString().split("T")[0];
 
   const backdrop = document.createElement("div");
-  backdrop.className = "modal-backdrop";
+  backdrop.className = "modal-backdrop centered";
 
   const priorityOptions = ["high", "medium", "low"].map(p =>
     `<option value="${p}" ${(existingGoal?.priority || "medium") === p ? "selected" : ""}>${p.charAt(0).toUpperCase() + p.slice(1)}</option>`
   ).join("");
 
   backdrop.innerHTML = `
-    <div class="drawer" style="max-width:480px;margin:0 auto;">
-      <div class="drawer-handle"></div>
+    <div class="modal-box" style="max-width:480px;">
       <h3 class="modal-title">${isEdit ? "Edit Goal" : "New Goal"}</h3>
 
       <div class="form-group">

@@ -398,8 +398,7 @@ function openAddTaskModal(uid, onTaskAdded) {
   const futureDateStr = tempDate.toISOString().split("T")[0];
 
   backdrop.innerHTML = `
-    <div class="drawer" style="max-width:400px; margin:0 auto;">
-      <div class="drawer-handle"></div>
+    <div class="modal-box" style="max-width:400px;">
       <h3 class="modal-title">New AI Task</h3>
       
       <div class="form-group">
@@ -465,10 +464,9 @@ function openWeeklyTimetableModal(uid, currentSchedule, onUpdate) {
   backdrop.className = "modal-backdrop centered";
 
   backdrop.innerHTML = `
-    <div class="drawer" style="max-width:600px; margin:0 auto; height:80vh;">
-      <div class="drawer-handle"></div>
+    <div class="modal-box" style="max-width:600px; height:80vh; display:flex; flex-direction:column;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <h3 class="modal-title">Availability</h3>
+        <h3 class="modal-title" style="margin:0">Availability</h3>
         <button class="btn-circle btn-ghost ripple" id="close-tt" style="margin-top:-10px"><i data-lucide="x"></i></button>
       </div>
       
@@ -545,7 +543,7 @@ function openAddBlockModal(day, onAdd) {
   backdrop.style.zIndex = "30001";
 
   backdrop.innerHTML = `
-    <div class="drawer" style="max-width:350px; margin:0 auto;">
+    <div class="modal-box" style="max-width:350px;">
       <h3 class="modal-title">Block for ${day}</h3>
       <div class="form-group">
         <label class="form-label">Title</label>

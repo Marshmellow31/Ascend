@@ -142,10 +142,9 @@ function bindListEvents(container, uid, topicId, topicName, subtopics) {
 function openSubtopicModal(uid, topicId, existing, onSave) {
   const isEdit = !!existing;
   const backdrop = document.createElement("div");
-  backdrop.className = "modal-backdrop";
+  backdrop.className = "modal-backdrop centered";
   backdrop.innerHTML = `
-    <div class="drawer" style="max-width:480px;margin:0 auto">
-      <div class="drawer-handle"></div>
+    <div class="modal-box" style="max-width:480px;">
       <h3 class="modal-title">${isEdit ? "Edit Sub-topic" : "New Sub-topic"}</h3>
       <div class="form-group">
         <label class="form-label">Sub-topic Name</label>
