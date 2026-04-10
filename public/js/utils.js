@@ -8,6 +8,18 @@ export function showEl(...ids) { ids.forEach((id) => $(id)?.classList.remove("hi
 export function hideEl(...ids) { ids.forEach((id) => $(id)?.classList.add("hidden")); }
 
 /**
+ * Safely parses Firebase Timestamps, handling objects stored in localStorage 
+ * that lost the `.toDate()` method.
+ */
+export function parseFbDate(v) {
+  if (!v) return null;
+  if (v.toDate) return v.toDate();
+  if (v.seconds !== undefined) return new Date(v.seconds * 1000);
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+/**
  * Friendly Firebase error mapper
  */
 export function friendlyError(code) {

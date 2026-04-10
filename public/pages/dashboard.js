@@ -6,7 +6,7 @@ import { getTasks, completeTask, getSubjects, getScheduleBlocks, updateScheduleB
 import { computeAnalytics } from "../analytics.js";
 import { navigate } from "../app.js";
 import { showSnackbar } from "../snackbar.js";
-import { escHtml, formatDate, scheduleTask, perfLog } from "../js/utils.js";
+import { escHtml, formatDate, scheduleTask, perfLog, parseFbDate } from "../js/utils.js";
 import { startFocusSession } from "../utils/focusEngine.js";
 
 import { cacheManager } from "../utils/cacheManager.js";
@@ -86,6 +86,12 @@ export function renderDashboard(container, uid, profile, initialData = null) {
       if (currentProfile) renderBTechBanner(currentProfile);
 
       renderStatsHtml(initialData.analyticsData || {});
+      if (initialData.scheduleBlocks) {
+        renderFocusPipelineHtml(uid, initialData.scheduleBlocks, true);
+      }
+      if (initialData.pendingTasks) {
+        renderPendingTasksHtml(initialData.pendingTasks, true);
+      }
     });
   }
 
@@ -189,8 +195,8 @@ async function updateDashboardState(uid, profile, isFirstLoad = false) {
     now.setHours(0, 0, 0, 0);
 
     const sortedPending = pendingTasks.sort((a, b) => {
-      const aDue = a.dueDate?.toDate ? a.dueDate.toDate() : (a.dueDate ? new Date(a.dueDate) : null);
-      const bDue = b.dueDate?.toDate ? b.dueDate.toDate() : (b.dueDate ? new Date(b.dueDate) : null);
+      const aDue = parseFbDate(a.dueDate);
+      const bDue = parseFbDate(b.dueDate);
 
       if (aDue) aDue.setHours(0, 0, 0, 0);
       if (bDue) bDue.setHours(0, 0, 0, 0);
@@ -261,19 +267,27 @@ function renderPendingTasksHtml(tasks, isFirstLoad = false) {
 
   const pending = tasks.slice(0, 3);
   if (pending.length === 0) {
-    tasksSection.innerHTML = "";
+    tasksSection.innerHTML = `
+      <div class="section-header mb-md mt-lg">
+        <div class="section-title">Today's Tasks</div>
+      </div>
+      <div class="empty-state" style="padding:var(--space-lg);text-align:center;background:var(--bg-elevated);border-radius:var(--border-radius-lg);border:1px dashed var(--border)">
+        <div style="color:var(--text-muted);font-size:13px"><i data-lucide="check-circle" style="width:24px;height:24px;margin-bottom:5px;opacity:0.5;display:block;margin:0 auto 12px"></i>Awesome! You're all caught up for today.</div>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons({ nodes: tasksSection.querySelectorAll('[data-lucide]') });
     return;
   }
 
   const html = `
     <div class="section-header mb-md mt-lg">
-      <div class="section-title">Pending Tasks</div>
+      <div class="section-title">Today's Tasks</div>
       <button class="btn btn-sm btn-ghost ripple" id="dash-btn-see-all-tasks">See All</button>
     </div>
     <div class="tasks-grid">
       ${pending.map((task, index) => {
     const priority = (task.priority || "medium").toLowerCase();
-    const due = task.dueDate?.toDate ? task.dueDate.toDate() : (task.dueDate ? new Date(task.dueDate) : null);
+    const due = parseFbDate(task.dueDate);
 
     return `
           <div class="task-card dash-pending-task-card priority-${priority} ${isFirstLoad ? 'stagger-item' : ''}" 
@@ -438,7 +452,7 @@ export function buildTaskCard(task, uid, onUpdate) {
   const card = document.createElement("div");
   const isDone = task.isCompleted;
   const priority = task.priority || "medium";
-  const due = task.dueDate?.toDate ? task.dueDate.toDate() : (task.dueDate ? new Date(task.dueDate) : null);
+  const due = parseFbDate(task.dueDate);
   const isOverdue = due && due < new Date() && !isDone;
 
   card.className = `task-card priority-${priority}${isDone ? " completed" : ""}`;

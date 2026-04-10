@@ -55,7 +55,7 @@ export async function renderSchedule(container, uid, profile, cachedData) {
           <div class="modal-footer">
             <button class="btn btn-ghost ripple btn-modal-cancel" id="btn-block-delete" style="color:#ef4444; border-color:rgba(239,68,68,0.2); display:none;">Delete</button>
             <div style="flex:1"></div>
-            <button class="btn btn-accent ripple" id="btn-block-save">Save Block</button>
+            <button class="btn btn-primary ripple" id="btn-block-save">Save Block</button>
           </div>
         </div>
       </div>

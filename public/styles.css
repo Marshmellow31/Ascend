@@ -2863,7 +2863,7 @@ h4 {
 }
 
 .btech-count-label {
-  font-size: var(--font-size-xs);
+  font-size: 10px;
   font-weight: 600;
   color: var(--text-muted);
   letter-spacing: 1px;
@@ -3776,7 +3776,7 @@ h4 {
 /* ── Digital Obsidian 3.0 Execution Engine ──────────────────── */
 :root {
   --hour-height: 100px;
-  --timeline-line-color: rgba(255, 255, 255, 0.05);
+  --timeline-line-color: var(--border-subtle);
 }
 
 .schedule-tab-container {
@@ -3895,7 +3895,7 @@ h4 {
   letter-spacing: 0.5px;
   padding: 2px 6px;
   border-radius: 6px;
-  background: rgba(255,255,255,0.05);
+  background: rgba(128,128,128,0.1);
 }
 
 /* Active State */
@@ -3973,7 +3973,7 @@ h4 {
 .modal-card {
   width: 100%;
   max-width: 440px;
-  background: #0A0A0A;
+  background: var(--bg-card);
   border: 1px solid var(--border-active);
   border-radius: 28px;
   overflow: hidden;
@@ -4018,7 +4018,7 @@ h4 {
 
 .modal-input {
   width: 100%;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-input);
   border: 1px solid var(--border-subtle);
   border-radius: 14px;
   padding: 14px 16px;

@@ -4,7 +4,7 @@ import {
   getTopics, getGoal, getGoalTask
 } from "../db.js";
 import { markGoalProgress } from "../utils/personalDevelopment.js";
-import { escHtml, formatDate, chunkProcess } from "../js/utils.js";
+import { escHtml, formatDate, chunkProcess, parseFbDate } from "../js/utils.js";
 import { showSnackbar, showConfirmDialog } from "../snackbar.js";
 import { cacheManager } from "../utils/cacheManager.js";
 
@@ -200,15 +200,15 @@ export async function renderTasks(container, uid, profile, initialData = null) {
     if (activeStatus === "today")
       tasks = tasks.filter((t) => {
         if (!t.dueDate) return false;
-        const d = t.dueDate.toDate ? t.dueDate.toDate() : new Date(t.dueDate);
-        return d >= today && d < tomorrow;
+        const d = parseFbDate(t.dueDate);
+        return d && d >= today && d < tomorrow;
       });
     else if (activeStatus === "pending")   tasks = tasks.filter((t) => !t.isCompleted);
     else if (activeStatus === "completed") tasks = tasks.filter((t) => t.isCompleted);
     else if (activeStatus === "overdue")   tasks = tasks.filter((t) => {
       if (t.isCompleted || !t.dueDate) return false;
-      const d = t.dueDate.toDate ? t.dueDate.toDate() : new Date(t.dueDate);
-      return d < now;
+      const d = parseFbDate(t.dueDate);
+      return d && d < now;
     });
 
     // Priority Filter
@@ -224,8 +224,8 @@ export async function renderTasks(container, uid, profile, initialData = null) {
     // Sort
     const priorityOrder = { high:0, medium:1, low:2 };
     const ts = (v) => {
-      if (!v) return 0;
-      return (v.toDate ? v.toDate() : new Date(v)).getTime();
+      const d = parseFbDate(v);
+      return d ? d.getTime() : 0;
     };
 
     if (activeSort === "newest")   tasks.sort((a,b) => ts(b.createdAt) - ts(a.createdAt));
@@ -417,7 +417,7 @@ function renderTaskCard(task, uid, onUpdate, allTopics = []) {
   const card = document.createElement("div");
   const isDone = task.isCompleted;
   const priority = task.priority || "medium";
-  const due = task.dueDate?.toDate ? task.dueDate.toDate() : (task.dueDate ? new Date(task.dueDate) : null);
+  const due = parseFbDate(task.dueDate);
   const isOverdue = due && due < new Date() && !isDone;
 
   card.className = `task-card priority-${priority}${isDone ? " completed" : ""}`;
@@ -578,9 +578,11 @@ export async function openTaskModal(uid, profile, onSave, existing = null) {
   const [subjects, topics] = await Promise.all([getSubjects(uid), getTopics(uid)]);
 
   const fmt = (ts) => {
-    if (!ts) return "";
-    const d = ts.toDate ? ts.toDate() : new Date(ts);
-    return d.toISOString().slice(0, 16);
+    const d = parseFbDate(ts);
+    if (!d) return "";
+    
+    const tzoffset = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - tzoffset).toISOString().slice(0, 16);
   };
 
   const backdrop = document.createElement("div");
@@ -865,7 +867,7 @@ async function openTopicEditModal(uid, existing, onSave) {
 }
 
 // helpers
-function ts(v) {
-  if (!v) return 0;
-  return (v.toDate ? v.toDate() : new Date(v)).getTime();
-}
+const ts = (v) => {
+    const d = parseFbDate(v);
+    return d ? d.getTime() : 0;
+  };

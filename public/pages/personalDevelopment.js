@@ -707,7 +707,7 @@ function renderGoalCardHTML(goal) {
           <div class="goal-stat-lbl">Days left</div>
         </div>
         <div class="goal-stat">
-          <div class="goal-stat-val" style="font-size:12px; color:${goal.priority === "high" ? "#FCA5A5" : goal.priority === "medium" ? "#FDE047" : "#86EFAC"}">
+          <div class="goal-stat-val" style="font-size:12px; color:var(--badge-${goal.priority}-text, ${goal.priority === "high" ? "#EF4444" : goal.priority === "medium" ? "#F59E0B" : "#22C55E"})">
             ${goal.priority.charAt(0).toUpperCase() + goal.priority.slice(1)}
           </div>
           <div class="goal-stat-lbl">Priority</div>

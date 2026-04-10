@@ -22,8 +22,8 @@ export function initFocusEngineOverlay() {
         <button id="focus-pause-btn" class="btn btn-secondary ripple outline-btn">
           <i data-lucide="pause"></i> Pause
         </button>
-        <button id="focus-complete-btn" class="btn btn-accent ripple">
-          <i data-lucide="check"></i> Complete
+        <button id="focus-complete-btn" class="btn btn-primary ripple">
+          <i data-lucide="check" style="width:16px;height:16px"></i> Complete Session
         </button>
       </div>
 
