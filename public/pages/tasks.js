@@ -733,7 +733,7 @@ export async function openTaskModal(uid, profile, onSave, existing = null) {
 }
 
 // ── Topic Management Modal ────────────────────────────────
-async function openTopicManagementModal(uid, onUpdate) {
+export async function openTopicManagementModal(uid, onUpdate) {
   const topics = await getSubjects(uid);
   const backdrop = document.createElement("div");
   backdrop.className = "modal-backdrop centered";

@@ -39,7 +39,10 @@ export async function renderSchedule(container, uid, profile, cachedData) {
           </div>
           <div class="modal-body">
             <div class="modal-input-group">
-              <label class="modal-label">Topic / Subject</label>
+              <label class="modal-label" style="display:flex; justify-content:space-between; align-items:center;">
+                Topic / Subject
+                <button id="btn-schedule-manage-topics" class="btn btn-ghost btn-xs ripple" style="font-size:11px; padding:2px 6px; height:auto; color:var(--text-secondary);">Manage</button>
+              </label>
               <select id="select-block-topic" class="modal-input" style="width:100%; border-radius:12px; border:1px solid var(--border); padding:12px 14px; background:var(--surface);">
                 <option value="">-- Custom Target --</option>
               </select>
@@ -326,6 +329,25 @@ export async function renderSchedule(container, uid, profile, cachedData) {
   modalOverlay.addEventListener("click", (e) => { if (e.target === modalOverlay) closeModal(); });
   btnSave.addEventListener("click", handleSave);
   btnDelete.addEventListener("click", handleDelete);
+  
+  const btnManageTopics = document.getElementById("btn-schedule-manage-topics");
+  if (btnManageTopics) {
+    btnManageTopics.addEventListener("click", (e) => {
+      e.preventDefault();
+      import("./tasks.js").then(m => {
+        m.openTopicManagementModal(uid, async () => {
+          const { getSubjects } = await import("../db.js");
+          subjects = await getSubjects(uid);
+          if (selectTopic) {
+            const currentVal = selectTopic.value;
+            selectTopic.innerHTML = `<option value="">-- Custom Target --</option>` + 
+              subjects.map(s => `<option value="${s.id}" data-name="${escHtml(s.name)}">${escHtml(s.name)}</option>`).join("");
+            selectTopic.value = currentVal;
+          }
+        });
+      });
+    });
+  }
   
   if (selectTopic) {
     selectTopic.addEventListener("change", () => {
