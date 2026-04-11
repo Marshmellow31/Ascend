@@ -313,6 +313,7 @@ export async function createScheduleBlock(uid, data) {
     return await addDoc(collection(db, "scheduleBlocks"), {
       userId: uid,
       taskId: data.taskId || null,
+      subjectId: data.subjectId || null,
       title: sanitizeString(data.title, 100),
       date: sanitizeString(data.date, 20), // YYYY-MM-DD
       startTime: sanitizeString(data.startTime, 10), // HH:MM

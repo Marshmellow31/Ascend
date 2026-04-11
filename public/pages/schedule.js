@@ -1,4 +1,4 @@
-import { getScheduleBlocks, updateScheduleBlock, createScheduleBlock, deleteScheduleBlock } from "../db.js";
+import { getScheduleBlocks, updateScheduleBlock, createScheduleBlock, deleteScheduleBlock, getSubjects } from "../db.js";
 import { showSnackbar, showConfirmDialog } from "../snackbar.js";
 import { startFocusSession } from "../utils/focusEngine.js";
 
@@ -8,6 +8,7 @@ const TIMELINE_LEFT_OFFSET = 70; // Must match .hour-label + padding in CSS
 
 export async function renderSchedule(container, uid, profile, cachedData) {
   let blocks = cachedData || [];
+  let subjects = [];
   const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
 
   // 1. Initial Shell
@@ -38,6 +39,12 @@ export async function renderSchedule(container, uid, profile, cachedData) {
           </div>
           <div class="modal-body">
             <div class="modal-input-group">
+              <label class="modal-label">Topic / Subject</label>
+              <select id="select-block-topic" class="modal-input" style="width:100%; border-radius:12px; border:1px solid var(--border); padding:12px 14px; background:var(--surface);">
+                <option value="">-- Custom Target --</option>
+              </select>
+            </div>
+            <div class="modal-input-group">
               <label class="modal-label">Execution Target</label>
               <input type="text" id="input-block-title" class="modal-input" placeholder="e.g. System Design, Math, Deep Work">
             </div>
@@ -67,6 +74,7 @@ export async function renderSchedule(container, uid, profile, cachedData) {
   const gridEl = document.getElementById("timeline-grid");
   const modalOverlay = document.getElementById("block-modal-overlay");
   const inputTitle = document.getElementById("input-block-title");
+  const selectTopic = document.getElementById("select-block-topic");
   const inputStart = document.getElementById("input-block-start");
   const inputEnd = document.getElementById("input-block-end");
   const btnSave = document.getElementById("btn-block-save");
@@ -156,11 +164,13 @@ export async function renderSchedule(container, uid, profile, cachedData) {
 
     const displayStart = formatTime(block.startTime);
     const displayEnd = formatTime(block.endTime);
+    const blockSubject = subjects.find(s => s.id === block.subjectId);
 
     card.innerHTML = `
       <div>
         <div class="block-card-status">${block.status === 'active' ? 'Active' : block.status}</div>
         <div class="block-card-title">${escHtml(block.title)}</div>
+        ${blockSubject ? `<div style="font-size:11px; margin-top:2px; margin-bottom:4px; color:var(--text-muted); display:flex; align-items:center; gap:4px;"><i data-lucide="tag" style="width:10px;height:10px;"></i> ${escHtml(blockSubject.name)}</div>` : ''}
         <div class="block-card-time"><i data-lucide="clock" style="width:10px;height:10px"></i> ${displayStart} - ${displayEnd}</div>
       </div>
       <div class="block-card-footer">
@@ -177,15 +187,23 @@ export async function renderSchedule(container, uid, profile, cachedData) {
     editingBlockId = block ? block.id : null;
     modalOverlay.classList.add("active");
     
+    // Populate subjects
+    if (selectTopic && subjects) {
+      selectTopic.innerHTML = `<option value="">-- Custom Target --</option>` + 
+        subjects.map(s => `<option value="${s.id}" data-name="${escHtml(s.name)}">${escHtml(s.name)}</option>`).join("");
+    }
+
     if (block) {
       document.getElementById("modal-title-text").textContent = "Edit Block";
       inputTitle.value = block.title;
+      if (selectTopic) selectTopic.value = block.subjectId || "";
       inputStart.value = block.startTime;
       inputEnd.value = block.endTime;
       btnDelete.style.display = "block";
     } else {
       document.getElementById("modal-title-text").textContent = "New Execution Block";
       inputTitle.value = "";
+      if (selectTopic) selectTopic.value = "";
       
       // Default duration 30 mins
       const now = new Date();
@@ -210,6 +228,7 @@ export async function renderSchedule(container, uid, profile, cachedData) {
     const title = inputTitle.value.trim();
     const start = inputStart.value;
     const end = inputEnd.value;
+    const targetSubjectId = selectTopic ? selectTopic.value : "";
 
     if (!title || !start || !end) {
       showSnackbar("Please fill all fields", "warning");
@@ -224,10 +243,10 @@ export async function renderSchedule(container, uid, profile, cachedData) {
     btnSave.disabled = true;
     try {
       if (editingBlockId) {
-        await updateScheduleBlock(editingBlockId, { title, startTime: start, endTime: end });
+        await updateScheduleBlock(editingBlockId, { title, subjectId: targetSubjectId, startTime: start, endTime: end });
         showSnackbar("Block updated", "success");
       } else {
-        await createScheduleBlock(uid, { title, startTime: start, endTime: end, date: todayStr });
+        await createScheduleBlock(uid, { title, subjectId: targetSubjectId, startTime: start, endTime: end, date: todayStr });
         showSnackbar("Execution block scheduled", "success");
       }
       closeModal();
@@ -258,7 +277,12 @@ export async function renderSchedule(container, uid, profile, cachedData) {
 
   async function loadData() {
     try {
-      blocks = await getScheduleBlocks(uid, todayStr);
+      const [newBlocks, newSubjects] = await Promise.all([
+        getScheduleBlocks(uid, todayStr),
+        getSubjects(uid)
+      ]);
+      blocks = newBlocks;
+      subjects = newSubjects;
       renderGrid();
     } catch (err) {
       showSnackbar("Failed to load execution stack", "error");
@@ -302,6 +326,15 @@ export async function renderSchedule(container, uid, profile, cachedData) {
   modalOverlay.addEventListener("click", (e) => { if (e.target === modalOverlay) closeModal(); });
   btnSave.addEventListener("click", handleSave);
   btnDelete.addEventListener("click", handleDelete);
+  
+  if (selectTopic) {
+    selectTopic.addEventListener("change", () => {
+      if (selectTopic.value) {
+        const selectedOption = selectTopic.options[selectTopic.selectedIndex];
+        inputTitle.value = selectedOption.dataset.name;
+      }
+    });
+  }
   
   // Auto-reload on session end
   window.addEventListener("focus-session-ended", loadData);
