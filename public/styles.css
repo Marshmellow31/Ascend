@@ -4271,3 +4271,450 @@ h4 {
   animation: none !important;
 }
 
+
+/* ══════════════════════════════════════════════════════════════
+   NOTES FEATURE — Quick Notes Widget + Modal
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Notes Grid ─────────────────────────────────────────────── */
+.notes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 480px) {
+  .notes-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* On desktop the notes col is already the right grid column,
+   so we keep 2 note-cards per row for a nice look */
+@media (min-width: 1024px) {
+  .notes-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+}
+
+/* ── Note Card ──────────────────────────────────────────────── */
+.note-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle, transparent);
+  border-left: 3px solid var(--note-color, var(--primary));
+  border-radius: var(--border-radius-sm);
+  padding: 12px 14px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  min-height: 72px;
+  box-shadow: var(--shadow-card);
+}
+
+.note-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--note-color, var(--primary));
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.note-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  border-left-color: var(--note-color, var(--primary));
+}
+
+.note-card:hover::after { opacity: 0.04; }
+
+.note-card:active {
+  transform: translateY(-1px) scale(0.98);
+}
+
+.note-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 5px;
+  line-height: 1.3;
+  /* Clamp to 2 lines */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.note-card-excerpt {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  /* Keep to 2 lines */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Pin badge */
+.note-pin-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: var(--note-color, var(--primary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+}
+
+/* Empty state */
+.note-empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 16px;
+  background: var(--bg-elevated);
+  border: 1.5px dashed var(--border-active);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.note-empty-state:hover {
+  border-color: var(--primary);
+  background: rgba(var(--primary-rgb), 0.05);
+  color: var(--primary);
+}
+
+/* ── Note Modal — Always centered popup ──────────────────────── */
+.note-modal-backdrop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.note-modal {
+  background: var(--bg-card);
+  border-radius: var(--border-radius-xl);
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--border-active);
+  border: 1px solid var(--border-active);
+  animation: noteModalIn 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes noteModalIn {
+  from { transform: scale(0.93) translateY(8px); opacity: 0; }
+  to   { transform: scale(1)    translateY(0);   opacity: 1; }
+}
+
+.note-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.note-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.2px;
+}
+
+.note-modal-close {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+
+.note-modal-close:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-active);
+  color: var(--text-primary);
+}
+
+.note-modal-close:active {
+  transform: scale(0.92);
+}
+
+.note-modal-body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+}
+
+.note-modal-input {
+  width: 100%;
+  background: var(--bg-elevated);
+  border: 1.5px solid var(--border);
+  border-radius: var(--border-radius-sm);
+  padding: 11px 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+
+.note-modal-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.12);
+}
+
+.note-modal-input::placeholder { color: var(--text-muted); font-weight: 400; }
+
+.note-modal-textarea {
+  width: 100%;
+  background: var(--bg-elevated);
+  border: 1.5px solid var(--border);
+  border-radius: var(--border-radius-sm);
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-primary);
+  line-height: 1.65;
+  resize: vertical;
+  min-height: 130px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+  font-family: var(--font-family);
+}
+
+.note-modal-textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.12);
+}
+
+.note-modal-textarea::placeholder { color: var(--text-muted); }
+
+/* ── Color + Pin Row ────────────────────────────────────────── */
+.note-modal-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-sm);
+  padding: 12px 14px;
+}
+
+.note-meta-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-right: 10px;
+  white-space: nowrap;
+}
+
+.note-color-row {
+  display: flex;
+  align-items: center;
+}
+
+.note-color-swatches {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.note-color-swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--swatch);
+  border: 2.5px solid transparent;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  cursor: pointer;
+  transition: transform 0.15s, outline-color 0.15s;
+}
+
+.note-color-swatch:hover {
+  transform: scale(1.18);
+}
+
+.note-color-swatch.active {
+  outline-color: var(--swatch);
+  transform: scale(1.1);
+}
+
+.note-pin-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+  padding: 2px 0;
+}
+
+.note-pin-toggle input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.note-pin-toggle:hover { color: var(--primary); }
+
+/* ── Footer Buttons ─────────────────────────────────────────── */
+.note-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px 18px;
+  border-top: 1px solid var(--border);
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Delete button — ghost danger style, consistent with app patterns */
+.note-btn-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1.5px solid rgba(239, 68, 68, 0.35);
+  color: var(--danger);
+  border-radius: var(--border-radius-full);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  transition: background 0.18s, border-color 0.18s, transform 0.1s;
+  cursor: pointer;
+  font-family: var(--font-family);
+}
+
+.note-btn-delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.55);
+}
+
+.note-btn-delete:active { transform: scale(0.96); }
+
+/* Right-side action buttons */
+.note-modal-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ── Light Theme Overrides ──────────────────────────────────── */
+[data-theme="light"] .note-modal {
+  background: #FFFFFF;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(0,0,0,0.06);
+  border-color: #E2E8F0;
+}
+
+[data-theme="light"] .note-modal-header {
+  border-bottom-color: #E2E8F0;
+  background: #FAFBFC;
+  border-radius: var(--border-radius-xl) var(--border-radius-xl) 0 0;
+}
+
+[data-theme="light"] .note-modal-footer {
+  border-top-color: #E2E8F0;
+  background: #FAFBFC;
+}
+
+[data-theme="light"] .note-modal-input,
+[data-theme="light"] .note-modal-textarea {
+  background: #F8FAFC;
+  border-color: #CBD5E1;
+  color: #0F172A;
+}
+
+[data-theme="light"] .note-modal-input:focus,
+[data-theme="light"] .note-modal-textarea:focus {
+  background: #FFFFFF;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+[data-theme="light"] .note-modal-meta {
+  background: #F8FAFC;
+  border-color: #E2E8F0;
+}
+
+[data-theme="light"] .note-modal-close {
+  border-color: #E2E8F0;
+  color: #64748B;
+}
+
+[data-theme="light"] .note-modal-close:hover {
+  background: #F1F5F9;
+  border-color: #CBD5E1;
+  color: #0F172A;
+}
+
+[data-theme="light"] .note-color-swatch.active {
+  outline-color: var(--swatch);
+}
+
+[data-theme="light"] .note-btn-delete {
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+[data-theme="light"] .note-btn-delete:hover {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* ── Note card light theme ──────────────────────────────────── */
+[data-theme="light"] .note-card {
+  background: #FFFFFF;
+  border-color: #E2E8F0;
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.06), 0 2px 12px rgba(15, 23, 42, 0.04);
+}
+
+[data-theme="light"] .note-card:hover {
+  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.1);
+  border-color: #CBD5E1;
+}
+
+[data-theme="light"] .note-empty-state {
+  background: #F8FAFC;
+  border-color: #CBD5E1;
+}
+
+[data-theme="light"] .note-empty-state:hover {
+  background: rgba(37, 99, 235, 0.04);
+  border-color: var(--primary);
+}
+

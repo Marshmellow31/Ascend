@@ -586,3 +586,61 @@ export function subscribeToSchedule(uid, callback) {
   });
 }
 
+// ─────────────────────────────────────────────────────────────
+//  NOTES
+// ─────────────────────────────────────────────────────────────
+
+export async function createNote(uid, noteData) {
+  try {
+    return await addDoc(collection(db, "notes"), {
+      userId: uid,
+      title: sanitizeString(noteData.title || "", 100),
+      content: sanitizeString(noteData.content || "", 2000),
+      color: sanitizeString(noteData.color || "#5B8CFF", 20),
+      pinned: !!noteData.pinned,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (err) {
+    return handleError(err, "create note");
+  }
+}
+
+export async function getNotes(uid) {
+  try {
+    const q = query(collection(db, "notes"), where("userId", "==", uid));
+    const snap = await getDocs(q);
+    const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    // Sort: pinned first, then by updatedAt desc
+    return data.sort((a, b) => {
+      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+      const tA = a.updatedAt?.toMillis ? a.updatedAt.toMillis() : 0;
+      const tB = b.updatedAt?.toMillis ? b.updatedAt.toMillis() : 0;
+      return tB - tA;
+    });
+  } catch (err) {
+    return handleError(err, "load notes");
+  }
+}
+
+export async function updateNote(id, data) {
+  try {
+    const update = { updatedAt: serverTimestamp() };
+    if (data.title !== undefined) update.title = sanitizeString(data.title, 100);
+    if (data.content !== undefined) update.content = sanitizeString(data.content, 2000);
+    if (data.color !== undefined) update.color = sanitizeString(data.color, 20);
+    if (data.pinned !== undefined) update.pinned = !!data.pinned;
+    await updateDoc(doc(db, "notes", id), update);
+  } catch (err) {
+    handleError(err, "update note");
+  }
+}
+
+export async function deleteNote(id) {
+  try {
+    await deleteDoc(doc(db, "notes", id));
+  } catch (err) {
+    handleError(err, "delete note");
+  }
+}
+

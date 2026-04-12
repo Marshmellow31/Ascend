@@ -2,7 +2,7 @@
 // pages/dashboard.js — Dashboard page renderer
 // ============================================================
 
-import { getTasks, completeTask, getSubjects, getScheduleBlocks, updateScheduleBlock } from "../db.js";
+import { getTasks, completeTask, getSubjects, getScheduleBlocks, updateScheduleBlock, getNotes, createNote, updateNote, deleteNote } from "../db.js";
 import { computeAnalytics } from "../analytics.js";
 import { navigate } from "../app.js";
 import { showSnackbar } from "../snackbar.js";
@@ -73,6 +73,12 @@ export function renderDashboard(container, uid, profile, initialData = null) {
           <!-- Tasks summary -->
           <div id="dash-tasks-section"></div>
         </div>
+
+        <div id="dash-notes-col">
+          <!-- Quick Notes -->
+          <div id="dash-notes-section"></div>
+        </div>
+
       </div>
     </div>
   `;
@@ -91,6 +97,15 @@ export function renderDashboard(container, uid, profile, initialData = null) {
       }
       if (initialData.pendingTasks) {
         renderPendingTasksHtml(initialData.pendingTasks, true);
+      }
+
+      // Load notes from their own dedicated cache key (avoids false empty state)
+      const cachedNotes = cacheManager.get(`notes_${uid}`);
+      if (cachedNotes) {
+        renderNotesHtml(uid, cachedNotes, true);
+      } else {
+        // Show skeleton — real data will arrive from Firestore shortly
+        renderNotesLoadingSkeleton();
       }
     });
   }
@@ -185,7 +200,13 @@ async function updateDashboardState(uid, profile, isFirstLoad = false) {
     const pendingTasksTask = getTasks(uid, { isCompleted: false });
     const scheduleBlocksTask = getScheduleBlocks(uid, new Date().toLocaleDateString('en-CA'));
 
-    const [topics, pendingTasks, scheduleBlocks] = await Promise.all([subjectsTask, pendingTasksTask, scheduleBlocksTask]);
+    // Notes fetched independently — isolated so a permission error doesn't crash the whole dashboard
+    const notesTask = getNotes(uid).catch(err => {
+      console.warn('[Dashboard] Notes fetch failed (check Firestore rules deployment):', err.message);
+      return cacheManager.get(`notes_${uid}`) || []; // fall back to cache
+    });
+
+    const [topics, pendingTasks, scheduleBlocks, notes] = await Promise.all([subjectsTask, pendingTasksTask, scheduleBlocksTask, notesTask]);
     const analyticsData = await computeAnalytics(uid, profile?.weekStartDay || "monday", topics);
 
 
@@ -228,7 +249,7 @@ async function updateDashboardState(uid, profile, isFirstLoad = false) {
     // ── Revision-based Change Detection (replaces JSON.stringify) ──
     const cacheKey = `dashboard_${uid}`;
     const previousRevision = cacheManager.getRevision(cacheKey);
-    const newData = { analyticsData, pendingTasks: sortedPending };
+    const newData = { analyticsData, pendingTasks: sortedPending, notes };
 
     // Always update on first load; otherwise check revision
     if (isFirstLoad || cacheManager.hasChanged(cacheKey, previousRevision) || !previousRevision) {
@@ -248,6 +269,10 @@ async function updateDashboardState(uid, profile, isFirstLoad = false) {
     } else {
       console.log("[Dashboard] Data unchanged, skipping UI update");
     }
+
+    // Notes always re-render + stored in their own dedicated cache key
+    cacheManager.set(`notes_${uid}`, notes);
+    renderNotesHtml(uid, notes, isFirstLoad);
 
     perfLog("Dashboard Update Complete", startTime);
     isDashboardRendering = false;
@@ -322,9 +347,255 @@ function renderPendingTasksHtml(tasks, isFirstLoad = false) {
   }
 }
 
+// ── NOTE COLORS ────────────────────────────────────────────────
+const NOTE_COLORS = [
+  { hex: '#5B8CFF', label: 'Blue' },
+  { hex: '#22D3EE', label: 'Cyan' },
+  { hex: '#22C55E', label: 'Green' },
+  { hex: '#F59E0B', label: 'Amber' },
+  { hex: '#EF4444', label: 'Red' },
+  { hex: '#A78BFA', label: 'Violet' },
+];
+
 /**
- * Render Focus Pipeline section
+ * Show skeleton placeholders in the notes section while loading from Firestore
  */
+function renderNotesLoadingSkeleton() {
+  const notesSection = document.getElementById('dash-notes-section');
+  if (!notesSection) return;
+  notesSection.innerHTML = `
+    <div class="section-header mb-md">
+      <h2 class="section-title">Quick Notes</h2>
+    </div>
+    <div class="notes-grid">
+      <div class="skeleton" style="height:80px;border-radius:var(--border-radius-sm)"></div>
+      <div class="skeleton" style="height:80px;border-radius:var(--border-radius-sm)"></div>
+    </div>
+  `;
+}
+
+/**
+ * Render Quick Notes section
+ */
+function renderNotesHtml(uid, notes, isFirstLoad = false) {
+  const notesSection = document.getElementById('dash-notes-section');
+  if (!notesSection) return;
+
+  const preview = notes.slice(0, 4);
+
+  const emptyState = preview.length === 0 ? `
+    <div class="note-empty-state" id="dash-note-empty-add">
+      <i data-lucide="sticky-note" style="width:22px;height:22px;margin-bottom:8px;opacity:0.4"></i>
+      <div style="font-size:13px;color:var(--text-muted)">Tap to jot a quick note</div>
+    </div>
+  ` : '';
+
+  const noteCardsHtml = preview.map((note, idx) => `
+    <div class="note-card ${isFirstLoad ? 'stagger-item' : ''}" 
+         style="--note-color:${escHtml(note.color || '#5B8CFF')};animation-delay:${100 + idx * 40}ms"
+         data-id="${note.id}">
+      ${note.pinned ? `<div class="note-pin-badge"><i data-lucide="pin" style="width:11px;height:11px"></i></div>` : ''}
+      <div class="note-card-title">${escHtml(note.title || 'Untitled')}</div>
+      ${note.content ? `<div class="note-card-excerpt">${escHtml(note.content.slice(0, 80))}${note.content.length > 80 ? '…' : ''}</div>` : ''}
+    </div>
+  `).join('');
+
+  notesSection.innerHTML = `
+    <div class="section-header mb-md mt-lg">
+      <div class="section-title">Quick Notes</div>
+      <button class="btn btn-sm btn-ghost ripple" id="dash-btn-add-note">
+        <i data-lucide="plus" style="width:14px;height:14px"></i> New
+      </button>
+    </div>
+    <div class="notes-grid">
+      ${noteCardsHtml}
+      ${emptyState}
+    </div>
+    ${notes.length > 4 ? `<div style="text-align:center;margin-top:10px"><span style="font-size:12px;color:var(--text-muted)">${notes.length - 4} more note${notes.length - 4 > 1 ? 's' : ''}</span></div>` : ''}
+  `;
+
+  if (window.lucide) window.lucide.createIcons({ nodes: notesSection.querySelectorAll('[data-lucide]') });
+
+  // Listeners
+  notesSection.querySelector('#dash-btn-add-note')?.addEventListener('click', () => openNoteModal(uid, null, () => updateDashboardNotes(uid)));
+  notesSection.querySelector('#dash-note-empty-add')?.addEventListener('click', () => openNoteModal(uid, null, () => updateDashboardNotes(uid)));
+  notesSection.querySelectorAll('.note-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const noteId = card.dataset.id;
+      const note = notes.find(n => n.id === noteId);
+      if (note) openNoteModal(uid, note, () => updateDashboardNotes(uid));
+    });
+  });
+}
+
+/** Lightweight re-fetch + re-render of just the notes section */
+async function updateDashboardNotes(uid) {
+  try {
+    const notes = await getNotes(uid);
+    // Keep dedicated notes cache in sync — this is what prevents the empty flash on next reload
+    cacheManager.set(`notes_${uid}`, notes);
+    renderNotesHtml(uid, notes, false);
+  } catch (err) {
+    console.error('[Dashboard] Notes refresh failed', err);
+  }
+}
+
+/**
+ * Open a create/edit modal for a note
+ * @param {string} uid
+ * @param {object|null} existingNote — null for create
+ * @param {function} onSave — callback after save/delete
+ */
+function openNoteModal(uid, existingNote, onSave) {
+  // Prevent duplicate modals
+  if (document.querySelector('.note-modal-backdrop')) return;
+
+  const isEdit = !!existingNote;
+  const currentColor = existingNote?.color || '#5B8CFF';
+  const currentPinned = existingNote?.pinned || false;
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop note-modal-backdrop';
+
+  backdrop.innerHTML = `
+    <div class="note-modal" role="dialog" aria-modal="true" aria-label="${isEdit ? 'Edit' : 'New'} Note">
+      <div class="note-modal-header">
+        <div class="note-modal-title">
+          <i data-lucide="sticky-note" style="width:18px;height:18px;color:var(--primary)"></i>
+          ${isEdit ? 'Edit Note' : 'New Note'}
+        </div>
+        <button class="note-modal-close" id="note-modal-close" aria-label="Close">
+          <i data-lucide="x" style="width:18px;height:18px"></i>
+        </button>
+      </div>
+
+      <div class="note-modal-body">
+        <input 
+          class="note-modal-input" 
+          id="note-modal-title" 
+          placeholder="Title (optional)"
+          maxlength="100"
+          value="${escHtml(existingNote?.title || '')}"
+        />
+        <textarea 
+          class="note-modal-textarea" 
+          id="note-modal-content" 
+          placeholder="Start writing…"
+          maxlength="2000"
+          rows="6"
+        >${escHtml(existingNote?.content || '')}</textarea>
+
+        <div class="note-modal-meta">
+          <div class="note-color-row">
+            <span class="note-meta-label">Color</span>
+            <div class="note-color-swatches" id="note-color-swatches">
+              ${NOTE_COLORS.map(c => `
+                <button 
+                  class="note-color-swatch ${c.hex === currentColor ? 'active' : ''}" 
+                  style="--swatch:${c.hex}" 
+                  data-color="${c.hex}" 
+                  title="${c.label}"
+                  aria-label="${c.label}"
+                ></button>
+              `).join('')}
+            </div>
+          </div>
+
+          <label class="note-pin-toggle">
+            <input type="checkbox" id="note-modal-pinned" ${currentPinned ? 'checked' : ''} />
+            <i data-lucide="pin" style="width:14px;height:14px"></i>
+            Pin to top
+          </label>
+        </div>
+      </div>
+
+      <div class="note-modal-footer">
+        ${isEdit ? `<button class="note-btn-delete ripple" id="note-modal-delete"><i data-lucide="trash-2" style="width:14px;height:14px"></i> Delete</button>` : '<div></div>'}
+        <div class="note-modal-actions">
+          <button class="btn btn-ghost ripple" id="note-modal-cancel" style="padding:9px 18px;font-size:13px">Cancel</button>
+          <button class="btn btn-primary ripple" id="note-modal-save" style="padding:9px 20px;font-size:13px">${isEdit ? 'Save changes' : 'Create note'}</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(backdrop);
+  if (window.lucide) window.lucide.createIcons({ nodes: backdrop.querySelectorAll('[data-lucide]') });
+
+  // Focus title
+  const titleInput = backdrop.querySelector('#note-modal-title');
+  const contentInput = backdrop.querySelector('#note-modal-content');
+  setTimeout(() => (existingNote?.title ? contentInput.focus() : titleInput.focus()), 80);
+
+  // Color swatch selection
+  let selectedColor = currentColor;
+  backdrop.querySelector('#note-color-swatches').addEventListener('click', (e) => {
+    const btn = e.target.closest('.note-color-swatch');
+    if (!btn) return;
+    selectedColor = btn.dataset.color;
+    backdrop.querySelectorAll('.note-color-swatch').forEach(s => s.classList.toggle('active', s === btn));
+  });
+
+  const closeModal = () => backdrop.remove();
+
+  // Close on backdrop click
+  backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeModal(); });
+  backdrop.querySelector('#note-modal-close').addEventListener('click', closeModal);
+  backdrop.querySelector('#note-modal-cancel').addEventListener('click', closeModal);
+
+  // Delete
+  backdrop.querySelector('#note-modal-delete')?.addEventListener('click', async () => {
+    const btn = backdrop.querySelector('#note-modal-delete');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="spinner-sm"></i>';
+    try {
+      await deleteNote(existingNote.id);
+      closeModal();
+      onSave?.();
+    } catch (err) {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="trash-2" style="width:14px;height:14px"></i> Delete';
+      if (window.lucide) window.lucide.createIcons({ nodes: btn.querySelectorAll('[data-lucide]') });
+    }
+  });
+
+  // Save
+  backdrop.querySelector('#note-modal-save').addEventListener('click', async () => {
+    const saveBtn = backdrop.querySelector('#note-modal-save');
+    const title = titleInput.value.trim();
+    const content = contentInput.value.trim();
+    const pinned = backdrop.querySelector('#note-modal-pinned').checked;
+
+    if (!title && !content) {
+      contentInput.focus();
+      contentInput.style.borderColor = 'var(--danger)';
+      setTimeout(() => contentInput.style.borderColor = '', 1200);
+      return;
+    }
+
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="spinner-sm"></i>';
+
+    try {
+      if (isEdit) {
+        await updateNote(existingNote.id, { title, content, color: selectedColor, pinned });
+      } else {
+        await createNote(uid, { title, content, color: selectedColor, pinned });
+      }
+      closeModal();
+      onSave?.();
+    } catch (err) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = isEdit ? 'Save' : 'Create';
+    }
+  });
+
+  // ESC key
+  const escHandler = (e) => { if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', escHandler); } };
+  document.addEventListener('keydown', escHandler);
+}
+
+
 function renderFocusPipelineHtml(uid, blocks, isFirstLoad = false) {
   const pipelineEl = document.getElementById("dash-focus-pipeline");
   if (!pipelineEl) return;
