@@ -47,7 +47,7 @@ export async function renderTasks(container, uid, profile, initialData = null) {
               </div>
             </div>
 
-            <button class="filter-pill-btn ripple hidden-desktop" id="btn-manage-topics" title="Manage Topics" style="padding:0 12px; font-weight:600; font-size:12px; height:28px;">
+            <button class="filter-select ripple hidden-desktop" id="btn-manage-topics" title="Manage Topics" style="padding-right: 14px; padding-left: 14px; width: auto; font-weight: 600;">
               Manage Topics
             </button>
           </div>
