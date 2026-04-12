@@ -46,16 +46,12 @@ export async function renderTasks(container, uid, profile, initialData = null) {
                 <!-- Dynamic topics -->
               </div>
             </div>
-
-            <button class="filter-select ripple hidden-desktop" id="btn-manage-topics" title="Manage Topics" style="padding-right: 14px; padding-left: 14px; width: auto; font-weight: 600;">
-              Manage Topics
-            </button>
           </div>
         </div>
 
         <!-- Sort & Count -->
         <div class="flex justify-between items-center mb-md px-md">
-          <span class="text-muted text-sm" id="task-count">${initialData ? 'Syncing...' : 'Loading…'}</span>
+          <div style="display:flex; align-items:center; gap:10px;"><button class="btn btn-secondary btn-sm ripple hidden-desktop" id="btn-manage-topics" title="Manage Topics" style="padding:4px 12px; font-size:12px; border-radius:8px;">Manage Topics</button><span class="text-muted text-sm" id="task-count">${initialData ? 'Syncing...' : 'Loading…'}</span></div>
           <div class="custom-select-wrapper" id="wrapper-sort">
             <div class="filter-select ripple" id="select-sort" data-value="newest">Newest first</div>
             <div class="custom-dropdown-menu" id="menu-sort" style="right:0; left:auto;">
@@ -871,3 +867,4 @@ const ts = (v) => {
     const d = parseFbDate(v);
     return d ? d.getTime() : 0;
   };
+
