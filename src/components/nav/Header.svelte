@@ -19,8 +19,8 @@
         <Icon name="plus" size={23} />
       </button>
       <button class="avatar" onclick={() => navigate('profile')} aria-label="Profile">
-        {#if profile?.photoURL}
-          <img src={profile.photoURL} alt="DP" class="avatar-img" />
+        {#if profile?.photoURL || authStore.user?.photoURL}
+          <img src={profile?.photoURL || authStore.user?.photoURL} alt="DP" class="avatar-img" />
         {:else}
           {g.level}
         {/if}

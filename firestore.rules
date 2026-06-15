@@ -43,6 +43,11 @@ service cloud.firestore {
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['priority']) || (request.resource.data.priority in ['high', 'medium', 'low']));
     }
 
+    match /focusSessions/{docId} {
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
 
     match /notes/{docId} {
       allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;

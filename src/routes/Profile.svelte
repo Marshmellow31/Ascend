@@ -62,8 +62,8 @@
 
 <div class="hero glass">
   <button class="ring-badge" onclick={() => (selectingDP = !selectingDP)} aria-label="Change Avatar">
-    {#if profile?.photoURL}
-      <img src={profile.photoURL} alt="Avatar" class="avatar-img" />
+    {#if profile?.photoURL || authStore.user?.photoURL}
+      <img src={profile?.photoURL || authStore.user?.photoURL} alt="Avatar" class="avatar-img" />
     {:else}
       {g.level}
     {/if}
