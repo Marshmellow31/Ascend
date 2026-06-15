@@ -1,0 +1,99 @@
+<script>
+  import Modal from '../ui/Modal.svelte';
+  import Button from '../ui/Button.svelte';
+  import SegmentedControl from '../ui/SegmentedControl.svelte';
+  import { createTask, updateTask, deleteTask, getTopics } from '../../lib/db.js';
+  import { parseFbDate, toDateKey } from '../../lib/utils/dates.js';
+  import { cache } from '../../lib/utils/swrCache.js';
+  import { toast } from '../../lib/stores/ui.svelte.js';
+
+  let { open = false, task = null, uid, topics = [], onclose = () => {}, onsaved = () => {} } = $props();
+
+  let title = $state('');
+  let description = $state('');
+  let priority = $state('medium');
+  let due = $state('');
+  let subjectId = $state('');
+  let topicId = $state('');
+  let subtopics = $state([]);
+  let busy = $state(false);
+
+  $effect(() => {
+    if (open) {
+      title = task?.title || '';
+      description = task?.description || '';
+      priority = (task?.priority || 'medium').toLowerCase();
+      const d = parseFbDate(task?.dueDate);
+      due = d ? toDateKey(d) : (task ? '' : toDateKey(new Date()));
+      subjectId = task?.subjectId || '';
+      topicId = task?.topicId || '';
+    }
+  });
+
+  // Load subtopics when a topic (subject) is chosen
+  $effect(() => {
+    if (subjectId && uid) getTopics(uid, subjectId).then((t) => (subtopics = t || []));
+    else subtopics = [];
+  });
+
+  async function save() {
+    if (!title.trim()) return toast('Give your task a title', 'warning');
+    busy = true;
+    const payload = { title, description, priority, dueDate: due || null, subjectId: subjectId || null, topicId: topicId || null };
+    try {
+      if (task) await updateTask(task.id, payload);
+      else await createTask(uid, payload);
+      cache.invalidatePrefix('tasks_');
+      onsaved();
+      onclose();
+    } finally { busy = false; }
+  }
+  async function remove() {
+    busy = true;
+    try { await deleteTask(task.id); cache.invalidatePrefix('tasks_'); onsaved(); onclose(); }
+    finally { busy = false; }
+  }
+</script>
+
+<Modal {open} {onclose} title={task ? 'Edit task' : 'New task'} maxWidth="460px">
+  <div class="field"><label for="t-title">Title</label><input id="t-title" class="input" bind:value={title} placeholder="What needs doing?" /></div>
+  <div class="field"><label for="t-desc">Details</label><textarea id="t-desc" class="textarea" bind:value={description} placeholder="Optional notes…" rows="3"></textarea></div>
+
+  <div class="field">
+    <label>Priority</label>
+    <SegmentedControl options={[{ value: 'high', label: 'High' }, { value: 'medium', label: 'Medium' }, { value: 'low', label: 'Low' }]} value={priority} onchange={(v) => (priority = v)} />
+  </div>
+
+  <div class="row">
+    <div class="field" style="flex:1"><label for="t-due">Due date</label><input id="t-due" class="input" type="date" bind:value={due} /></div>
+    <div class="field" style="flex:1">
+      <label for="t-topic">Topic</label>
+      <select id="t-topic" class="select" bind:value={subjectId}>
+        <option value="">None</option>
+        {#each topics as t (t.id)}<option value={t.id}>{t.name}</option>{/each}
+      </select>
+    </div>
+  </div>
+
+  {#if subtopics.length}
+    <div class="field">
+      <label for="t-sub">Subtopic</label>
+      <select id="t-sub" class="select" bind:value={topicId}>
+        <option value="">None</option>
+        {#each subtopics as s (s.id)}<option value={s.id}>{s.name}</option>{/each}
+      </select>
+    </div>
+  {/if}
+
+  <div class="actions">
+    {#if task}<Button variant="danger" onclick={remove} icon="trash-2">Delete</Button>{/if}
+    <div class="grow"></div>
+    <Button variant="glass" onclick={onclose}>Cancel</Button>
+    <Button variant="primary" loading={busy} onclick={save}>{task ? 'Save' : 'Create'}</Button>
+  </div>
+</Modal>
+
+<style>
+  .row { display: flex; gap: 12px; }
+  .actions { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+</style>

@@ -82,6 +82,11 @@ service cloud.firestore {
         && request.resource.data.content is string && request.resource.data.content.size() <= 2000;
     }
 
+    // ── Gamification (one doc per user, doc id == uid) ───────────────
+    match /gamification/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
     // ── Security Logs (Audit Trail) ──────────────────────────────────
     match /securityLogs/{logId} {
       allow create: if request.auth != null;
