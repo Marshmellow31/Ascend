@@ -19,7 +19,7 @@
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div
-  class="tcard glass"
+  class="tcard"
   class:done={task.isCompleted}
   class:clickable={onopen}
   onclick={() => onopen?.(task)}
@@ -44,9 +44,10 @@
 </div>
 
 <style>
-  .tcard { display: flex; align-items: center; gap: 13px; padding: 13px 14px; border-radius: var(--r-md); }
-  .clickable { cursor: pointer; transition: background var(--t-fast); }
-  .clickable:active { background: var(--glass-bg-strong); }
+  .tcard { display: flex; align-items: center; gap: 14px; padding: 14px 4px; border-bottom: 1px solid var(--glass-border); }
+  .tcard:last-child { border-bottom: none; }
+  .clickable { cursor: pointer; transition: opacity var(--t-fast); }
+  .clickable:active { opacity: 0.6; }
   .check {
     flex-shrink: 0; width: 25px; height: 25px; border-radius: 50%;
     border: 2px solid var(--text-3); display: grid; place-items: center; color: #fff;

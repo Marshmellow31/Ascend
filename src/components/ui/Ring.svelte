@@ -23,12 +23,16 @@
         <stop offset="0" stop-color="var(--accent)" />
         <stop offset="1" stop-color="var(--accent-2)" />
       </linearGradient>
+      <filter id="{id}-glow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="var(--accent)" flood-opacity="0.4" />
+      </filter>
     </defs>
     <circle cx={size / 2} cy={size / 2} {r} fill="none" stroke={trackColor} stroke-width={stroke} />
     <circle
       cx={size / 2} cy={size / 2} {r} fill="none" stroke="url(#{id})" stroke-width={stroke}
       stroke-linecap="round" stroke-dasharray={circ} stroke-dashoffset={offset}
       transform="rotate(-90 {size / 2} {size / 2})"
+      filter="url(#{id}-glow)"
     />
   </svg>
   <div class="ring-center">{@render children?.()}</div>

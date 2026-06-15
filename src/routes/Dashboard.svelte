@@ -9,10 +9,7 @@
   import { cache } from '../lib/utils/swrCache.js';
   import { parseFbDate } from '../lib/utils/dates.js';
 
-  import XpBar from '../components/gamification/XpBar.svelte';
   import DailyGoalRing from '../components/gamification/DailyGoalRing.svelte';
-  import StreakFlame from '../components/gamification/StreakFlame.svelte';
-  import StatCard from '../components/ui/StatCard.svelte';
   import TaskCard from '../components/cards/TaskCard.svelte';
   import NoteCard from '../components/cards/NoteCard.svelte';
   import NoteModal from '../components/cards/NoteModal.svelte';
@@ -92,28 +89,37 @@
 </script>
 
 <header class="greet">
-  <div class="g-sub">{greetText}{greetSep}</div>
+  <div class="g-date">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</div>
   <h1 class="g-name">{profile?.displayName || 'Student'}</h1>
-  <div class="g-line text-2">Let’s make today count.</div>
 </header>
 
-<div class="mobile-only" style="margin-bottom:16px"><XpBar /></div>
-
 {#if loading}
-  <Skeleton height="120px" />
-  <div class="stats"><Skeleton height="74px" /><Skeleton height="74px" /><Skeleton height="74px" /><Skeleton height="74px" /></div>
+  <Skeleton height="160px" />
+  <div class="grid2"><Skeleton height="80px" /><Skeleton height="80px" /></div>
 {:else}
-  <div class="top-grid">
+  <!-- Hero Daily Progress -->
+  <div style="margin-bottom: 12px;">
     <DailyGoalRing completed={a?.todayCompleted || 0} target={g.dailyGoalTarget} />
-    <div class="stats">
-      <StatCard value={a?.completed || 0} label="Done" />
-      <StatCard value={a?.completionRate || 0} suffix="%" label="Rate" />
-      <button class="stat-streak glass" onclick={() => navigate('profile')}>
-        <StreakFlame count={a?.streak || 0} size="lg" />
-        <span class="text-xs muted">streak</span>
-      </button>
-      <StatCard value={a?.overdue || 0} label="Overdue" danger={(a?.overdue || 0) > 0} />
-    </div>
+  </div>
+
+  <div class="grid2">
+    <!-- Streak Card -->
+    <button class="action-card glass" onclick={() => navigate('analytics')}>
+      <div class="ac-ic streak"><Icon name="flame" size={20} /></div>
+      <div class="ac-text">
+        <span class="ac-title">{a?.streak || 0} Day Streak</span>
+        <span class="ac-sub text-xs muted">Keep it up!</span>
+      </div>
+    </button>
+
+    <!-- Focus Card -->
+    <button class="action-card glass" onclick={() => navigate('focus')}>
+      <div class="ac-ic focus"><Icon name="timer" size={20} /></div>
+      <div class="ac-text">
+        <span class="ac-title">Focus</span>
+        <span class="ac-sub text-xs muted">Start session</span>
+      </div>
+    </button>
   </div>
 
   {#if btech}
@@ -123,18 +129,11 @@
     </button>
   {/if}
 
-  <!-- Focus CTA -->
-  <button class="focus-cta glass" onclick={() => navigate('focus')}>
-    <div class="fc-ic"><Icon name="timer" size={20} /></div>
-    <div class="fc-txt"><div class="fc-t">Start a focus session</div><div class="fc-s text-xs muted">Earn XP and build your streak</div></div>
-    <Icon name="chevron-right" size={18} />
-  </button>
-
   <!-- Today's tasks -->
-  <div class="section-head"><h2>Today’s tasks</h2><button class="link" onclick={() => navigate('tasks')}>See all</button></div>
+  <div class="section-head"><h2>Today</h2><button class="link" onclick={() => navigate('tasks')}>See all</button></div>
   {#if pending.length}
-    <div class="stack">
-      {#each pending.slice(0, 4) as task (task.id)}
+    <div class="tasks-list glass">
+      {#each pending.slice(0, 5) as task (task.id)}
         <TaskCard {task} oncomplete={complete} onopen={() => navigate('tasks')} />
       {/each}
     </div>
@@ -156,31 +155,34 @@
 <NoteModal open={noteOpen} note={editingNote} {uid} onclose={() => (noteOpen = false)} onsaved={load} />
 
 <style>
-  .greet { padding: 10px 2px 18px; }
-  .g-sub { color: var(--text-3); font-weight: 600; }
-  .g-name { font-size: var(--fs-display); font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; color: var(--text); }
-  .g-line { margin-top: 2px; }
-  .top-grid { display: grid; gap: 12px; }
-  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  .stat-streak { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 14px 12px; border-radius: var(--r-md); }
+  .greet { padding: 10px 2px 24px; }
+  .g-name { font-size: 34px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; color: var(--text); margin-top: 4px; }
+  .g-date { color: var(--text-3); font-weight: 700; text-transform: uppercase; font-size: 12px; letter-spacing: 0.05em; }
+  
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  
+  .action-card { display: flex; align-items: center; gap: 12px; padding: 16px; border-radius: var(--r-lg); text-align: left; width: 100%; transition: transform var(--t-fast); }
+  .action-card:active { transform: scale(0.96); }
+  .ac-ic { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: #fff; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+  .ac-ic.streak { background: linear-gradient(135deg, #FF9F0A, #FFD60A); }
+  .ac-ic.focus { background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+  .ac-text { display: flex; flex-direction: column; }
+  .ac-title { font-weight: 600; font-size: 15px; }
+  
+  .tasks-list { padding: 4px 16px; }
+  
   .btech { display: block; width: 100%; text-align: left; padding: 14px 16px; border-radius: var(--r-lg); margin-top: 12px; }
   .bt-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
   .bt-name { font-weight: 700; font-size: var(--fs-sm); }
   .bt-m { font-size: var(--fs-xs); color: var(--accent); font-weight: 700; }
   .bt-bar { height: 7px; background: var(--glass-border); border-radius: 999px; overflow: hidden; }
   .bt-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 999px; }
-  .focus-cta { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 14px 16px; border-radius: var(--r-lg); margin-top: 12px; }
-  .fc-ic { width: 40px; height: 40px; flex-shrink: 0; display: grid; place-items: center; border-radius: var(--r-md); background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--text-on-accent); }
-  .fc-txt { flex: 1; }
-  .fc-t { font-weight: 700; font-size: var(--fs-sm); }
-  .focus-cta :global(svg:last-child) { color: var(--text-3); }
-  .link { color: var(--accent); font-weight: 650; font-size: var(--fs-sm); display: inline-flex; align-items: center; gap: 4px; }
+  .link { color: var(--accent); font-weight: 600; font-size: var(--fs-sm); }
   .empty-block { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 20px; border-radius: var(--r-md); color: var(--text-3); border: 1px dashed var(--glass-border); background: transparent; font-size: var(--fs-sm); }
   .notes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .mobile-only { display: block; }
+  
   @media (min-width: 1024px) {
-    .mobile-only { display: none; }
-    .top-grid { grid-template-columns: 1.1fr 1.4fr; align-items: center; }
+    .grid2 { grid-template-columns: 1fr 1fr 1fr; }
     .notes-grid { grid-template-columns: repeat(4, 1fr); }
   }
 </style>

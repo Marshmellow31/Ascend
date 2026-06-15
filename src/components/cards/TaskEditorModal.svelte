@@ -60,8 +60,12 @@
   <div class="field"><label for="t-desc">Details</label><textarea id="t-desc" class="textarea" bind:value={description} placeholder="Optional notes…" rows="3"></textarea></div>
 
   <div class="field">
-    <label>Priority</label>
-    <SegmentedControl options={[{ value: 'high', label: 'High' }, { value: 'medium', label: 'Medium' }, { value: 'low', label: 'Low' }]} value={priority} onchange={(v) => (priority = v)} />
+    <label for="t-prio">Priority</label>
+    <select id="t-prio" class="select" bind:value={priority}>
+      <option value="high">High</option>
+      <option value="medium">Medium</option>
+      <option value="low">Low</option>
+    </select>
   </div>
 
   <div class="row">

@@ -86,7 +86,7 @@
   <Button variant="primary" size="sm" icon="plus" onclick={openNew}>New</Button>
 </header>
 
-<div class="search glass">
+<div class="search">
   <Icon name="search" size={17} />
   <input bind:value={search} placeholder="Search tasks…" aria-label="Search tasks" />
 </div>
@@ -124,10 +124,11 @@
 <style>
   .ph { display: flex; align-items: center; justify-content: space-between; padding: 8px 2px 16px; }
   .ph h1 { font-size: var(--fs-display); }
-  .search { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: var(--r-md); margin-bottom: 12px; color: var(--text-2); }
+  .search { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--r-md); margin-bottom: 16px; background: var(--fill-secondary); color: var(--text-2); }
   .search input { flex: 1; background: none; border: none; outline: none; color: var(--text); }
-  .filters { display: flex; gap: 8px; margin: 12px 0; }
-  .filters .select { flex: 1; padding: 9px 10px; font-size: var(--fs-xs); }
-  .manage { flex-shrink: 0; width: 40px; border-radius: var(--r-md); background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-2); display: grid; place-items: center; }
+  .filters { display: flex; gap: 8px; margin: 16px 0; overflow-x: auto; padding-bottom: 4px; }
+  .filters::-webkit-scrollbar { display: none; }
+  .filters .select { padding: 8px 12px; font-size: 13px; font-weight: 500; border-radius: var(--r-full); background: var(--fill-secondary); color: var(--text); border: none; outline: none; appearance: none; -webkit-appearance: none; }
+  .manage { flex-shrink: 0; width: 34px; height: 34px; border-radius: var(--r-full); background: var(--fill-secondary); border: none; color: var(--text); display: grid; place-items: center; }
   .count { margin-bottom: 8px; }
 </style>

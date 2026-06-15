@@ -69,7 +69,9 @@
       <div class="field" style="flex:1">
         <label for="qc-prio">Priority</label>
         <select id="qc-prio" class="select" bind:value={priority}>
-          <option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
         </select>
       </div>
       <div class="field" style="flex:1">

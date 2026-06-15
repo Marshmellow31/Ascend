@@ -8,6 +8,7 @@
   import StatCard from '../components/ui/StatCard.svelte';
   import ProgressBar from '../components/ui/ProgressBar.svelte';
   import Skeleton from '../components/ui/Skeleton.svelte';
+  import XpBar from '../components/gamification/XpBar.svelte';
   import Icon from '../components/ui/Icon.svelte';
 
   const uid = authStore.uid;
@@ -40,12 +41,13 @@
   const focusM = $derived(focus.focusMinutes % 60);
 </script>
 
-<header class="ph"><h1>Analytics</h1></header>
+<header class="ph"><h1>Insights</h1></header>
 
 {#if loading}
   <div class="grid2"><Skeleton height="80px" /><Skeleton height="80px" /><Skeleton height="80px" /><Skeleton height="80px" /></div>
   <Skeleton height="150px" />
 {:else}
+  <div style="margin-bottom: 24px;"><XpBar /></div>
   <div class="grid2">
     <StatCard value={a.completionRate} suffix="%" label="Completion" />
     <StatCard value={a.completed} label="Done this week" />

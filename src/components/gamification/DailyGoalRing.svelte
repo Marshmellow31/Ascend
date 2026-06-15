@@ -7,7 +7,7 @@
 </script>
 
 <div class="dgr glass">
-  <Ring value={pct} size={104} stroke={10}>
+  <Ring value={pct} size={112} stroke={14} trackColor="rgba(10, 132, 255, 0.15)">
     <span class="num">{completed}<span class="den">/{target}</span></span>
     <span class="lbl">today</span>
   </Ring>
