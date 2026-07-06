@@ -14,6 +14,7 @@
   import NoteCard from '../components/cards/NoteCard.svelte';
   import NoteModal from '../components/cards/NoteModal.svelte';
   import Skeleton from '../components/ui/Skeleton.svelte';
+  import StatCard from '../components/ui/StatCard.svelte';
   import Icon from '../components/ui/Icon.svelte';
 
   const uid = authStore.uid;
@@ -71,118 +72,101 @@
   }
   const greetText = greeting();
   const greetSep = greetText.endsWith('?') ? '' : ',';
+  const dateLine = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).replace(',', ' ·').toUpperCase();
 
   const a = $derived(data?.analytics);
   const pending = $derived(data?.pending || []);
   const notes = $derived(data?.notes || []);
-
-  const btech = $derived.by(() => {
-    const p = profile;
-    if (!p?.btechStart || !p?.btechEnd) return null;
-    const start = new Date(p.btechStart + 'T00:00:00');
-    const end = new Date(p.btechEnd + 'T00:00:00');
-    const now = new Date(); now.setHours(0, 0, 0, 0);
-    const total = Math.round((end - start) / 864e5);
-    const elapsed = Math.min(Math.max(Math.round((now - start) / 864e5), 0), total);
-    return { name: p.btechName || 'Long-term focus', pct: total ? Math.round((elapsed / total) * 100) : 0, monthsLeft: Math.round((total - elapsed) / 30.44) };
+  const focusStats = $derived(data?.focusStats);
+  const focusLabel = $derived.by(() => {
+    const m = focusStats?.focusMinutes || 0;
+    return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}` : `${m}`;
   });
+  const focusUnit = $derived((focusStats?.focusMinutes || 0) >= 60 ? 'm' : 'min');
 </script>
 
-<header class="greet">
-  <div class="g-date">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</div>
-  <h1 class="g-name">{profile?.displayName || 'Student'}</h1>
-</header>
-
-{#if loading}
-  <Skeleton height="160px" />
-  <div class="grid2"><Skeleton height="80px" /><Skeleton height="80px" /></div>
-{:else}
-  <!-- Hero Daily Progress -->
-  <div style="margin-bottom: 12px;">
-    <DailyGoalRing completed={a?.todayCompleted || 0} target={g.dailyGoalTarget} />
-  </div>
-
-  <div class="grid2">
-    <!-- Streak Card -->
-    <button class="action-card glass" onclick={() => navigate('analytics')}>
-      <div class="ac-ic streak"><Icon name="flame" size={20} /></div>
-      <div class="ac-text">
-        <span class="ac-title">{a?.streak || 0} Day Streak</span>
-        <span class="ac-sub text-xs muted">Keep it up!</span>
-      </div>
-    </button>
-
-    <!-- Focus Card -->
-    <button class="action-card glass" onclick={() => navigate('focus')}>
-      <div class="ac-ic focus"><Icon name="timer" size={20} /></div>
-      <div class="ac-text">
-        <span class="ac-title">Focus</span>
-        <span class="ac-sub text-xs muted">Start session</span>
-      </div>
-    </button>
-  </div>
-
-  {#if btech}
-    <button class="btech glass" onclick={() => navigate('settings')}>
-      <div class="bt-row"><span class="bt-name">{btech.name}</span><span class="bt-m">{btech.monthsLeft} mo left</span></div>
-      <div class="bt-bar"><div class="bt-fill" style="width:{btech.pct}%"></div></div>
-    </button>
-  {/if}
-
-  <!-- Today's tasks -->
-  <div class="section-head"><h2>Today</h2><button class="link" onclick={() => navigate('tasks')}>See all</button></div>
-  {#if pending.length}
-    <div class="tasks-list glass">
-      {#each pending.slice(0, 5) as task (task.id)}
-        <TaskCard {task} oncomplete={complete} onopen={() => navigate('tasks')} />
-      {/each}
+<section class="fade-up">
+  <header class="greet">
+    <div>
+      <div class="eyebrow">{dateLine}</div>
+      <h1 class="g-name">{greetText}{greetSep}<br>{profile?.displayName?.split(' ')[0] || 'Student'}.</h1>
     </div>
-  {:else}
-    <div class="empty"><div class="empty-icon"><Icon name="circle-check" size={22} /></div>You're all caught up. Nice.</div>
-  {/if}
+    <button class="startfocus" onclick={() => navigate('focus')}>
+      <Icon name="play" size={16} stroke={3} /> START FOCUS
+    </button>
+  </header>
 
-  <!-- Quick notes -->
-  <div class="section-head"><h2>Quick notes</h2><button class="link" onclick={newNote}><Icon name="plus" size={14} /> New</button></div>
-  {#if notes.length}
-    <div class="notes-grid">
-      {#each notes.slice(0, 4) as note (note.id)}<NoteCard {note} onopen={openNote} />{/each}
-    </div>
+  {#if loading}
+    <Skeleton height="240px" />
+    <div class="hero-grid" style="margin-top:14px"><Skeleton height="110px" /><Skeleton height="110px" /></div>
   {:else}
-    <button class="empty-block glass" onclick={newNote}><Icon name="sticky-note" size={18} /> Jot a quick note</button>
+    <div class="hero-grid">
+      <div class="goal-cell"><DailyGoalRing completed={a?.todayCompleted || 0} target={g.dailyGoalTarget} /></div>
+      <StatCard icon="flame" label="Streak" value={a?.streak || 0} unit="days" iconColor="var(--accent)" delta={a?.streak ? 'Keep it up!' : 'Complete a task to start'} />
+      <StatCard icon="timer" label="Focus time" value={focusLabel} unit={focusUnit} iconColor="var(--hue-violet)" animate={false} delta="{focusStats?.focusSessions || 0} sessions" />
+      <StatCard icon="zap" label="Completion" value={a?.completionRate || 0} suffix="%" iconColor="var(--hue-amber)" delta="all time" />
+      <StatCard icon="check-check" label="Completed" value={a?.completed || 0} unit="this wk" iconColor="var(--hue-green)" delta="{pending.length} pending" />
+    </div>
+
+    <!-- Today's tasks -->
+    <div class="section-head">
+      <h2>Up next</h2>
+      <button class="alllink" onclick={() => navigate('tasks')}>All tasks <Icon name="chevron-right" size={15} /></button>
+    </div>
+    {#if pending.length}
+      <div class="stack">
+        {#each pending.slice(0, 5) as task (task.id)}
+          <TaskCard {task} oncomplete={complete} onopen={() => navigate('tasks')} />
+        {/each}
+      </div>
+    {:else}
+      <div class="empty"><div class="empty-icon"><Icon name="circle-check" size={22} /></div>You're all caught up. Nice.</div>
+    {/if}
+
+    <!-- Quick notes -->
+    <div class="section-head"><h2>Quick notes</h2><button class="alllink" onclick={newNote}><Icon name="plus" size={14} /> New</button></div>
+    {#if notes.length}
+      <div class="notes-grid">
+        {#each notes.slice(0, 4) as note (note.id)}<NoteCard {note} onopen={openNote} />{/each}
+      </div>
+    {:else}
+      <button class="empty-block" onclick={newNote}><Icon name="sticky-note" size={18} /> Jot a quick note</button>
+    {/if}
   {/if}
-{/if}
+</section>
 
 <NoteModal open={noteOpen} note={editingNote} {uid} onclose={() => (noteOpen = false)} onsaved={load} />
 
 <style>
-  .greet { padding: 10px 2px 24px; }
-  .g-name { font-size: 34px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; color: var(--text); margin-top: 4px; }
-  .g-date { color: var(--text-3); font-weight: 700; text-transform: uppercase; font-size: 12px; letter-spacing: 0.05em; }
-  
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-  
-  .action-card { display: flex; align-items: center; gap: 12px; padding: 16px; border-radius: var(--r-lg); text-align: left; width: 100%; transition: transform var(--t-fast); }
-  .action-card:active { transform: scale(0.96); }
-  .ac-ic { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: #fff; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-  .ac-ic.streak { background: linear-gradient(135deg, #FF9F0A, #FFD60A); }
-  .ac-ic.focus { background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
-  .ac-text { display: flex; flex-direction: column; }
-  .ac-title { font-weight: 600; font-size: 15px; }
-  
-  .tasks-list { padding: 4px 16px; }
-  
-  .btech { display: block; width: 100%; text-align: left; padding: 14px 16px; border-radius: var(--r-lg); margin-top: 12px; }
-  .bt-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
-  .bt-name { font-weight: 700; font-size: var(--fs-sm); }
-  .bt-m { font-size: var(--fs-xs); color: var(--accent); font-weight: 700; }
-  .bt-bar { height: 7px; background: var(--glass-border); border-radius: 999px; overflow: hidden; }
-  .bt-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 999px; }
-  .link { color: var(--accent); font-weight: 600; font-size: var(--fs-sm); }
-  .empty-block { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 20px; border-radius: var(--r-md); color: var(--text-3); border: 1px dashed var(--glass-border); background: transparent; font-size: var(--fs-sm); }
+  .greet { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding: 10px 0 28px; }
+  .greet .eyebrow { margin-bottom: 6px; }
+  .g-name { font-size: var(--fs-display); font-weight: 900; letter-spacing: -1.5px; line-height: 1; }
+  .startfocus {
+    display: flex; align-items: center; gap: 10px; padding: 14px 24px; border-radius: var(--r-full);
+    background: var(--accent); color: var(--text-on-accent);
+    font-size: 15px; font-weight: 900; letter-spacing: 0.3px;
+    box-shadow: 0 8px 32px var(--accent-shadow); transition: transform var(--t-fast);
+  }
+  .startfocus:hover { transform: scale(1.04); }
+  .startfocus:active { transform: scale(0.97); }
+
+  .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .goal-cell { grid-column: span 2; }
+  .goal-cell :global(.dgr) { height: 100%; }
+
+  .alllink { display: flex; align-items: center; gap: 4px; color: var(--text-2); font-size: 13px; font-weight: 700; transition: color var(--t-fast); }
+  .alllink:hover { color: var(--text); }
+
+  .empty-block {
+    width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 20px;
+    border-radius: var(--r-md); color: var(--text-3); border: 1px dashed var(--border-strong);
+    background: transparent; font-size: var(--fs-sm); font-weight: 700;
+  }
   .notes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  
+
   @media (min-width: 1024px) {
-    .grid2 { grid-template-columns: 1fr 1fr 1fr; }
+    .hero-grid { grid-template-columns: 1.4fr 1fr 1fr; }
+    .goal-cell { grid-column: 1; grid-row: span 2; }
     .notes-grid { grid-template-columns: repeat(4, 1fr); }
   }
 </style>

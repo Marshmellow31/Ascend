@@ -76,57 +76,98 @@
   }
 </script>
 
-<div class="focus">
+<div class="focus fade-up">
+  <div class="eyebrow">Focus session</div>
+  <h1 class="f-title">{mode === 'work' ? 'Deep work mode' : (mode === 'short' ? 'Short break' : 'Long break')}</h1>
+
   <div class="f-head">
     <SegmentedControl
       options={[{ value: 'work', label: 'Focus' }, { value: 'short', label: 'Break' }, { value: 'long', label: 'Long' }]}
-      value={mode} onchange={(v) => { if (!running) mode = v; }}
+      value={mode} onchange={(v) => { if (!running) mode = v; }} size="sm"
     />
   </div>
 
-  <div class="label">{mode === 'work' ? label : (mode === 'short' ? 'Short break' : 'Long break')}</div>
-
-  <div class="ringwrap">
-    <Ring value={pct} size={260} stroke={14} animate={false}>
+  <div class="ringwrap" class:running>
+    <div class="glow"></div>
+    <Ring value={pct} size={300} stroke={16} animate={false} trackColor="var(--border)">
       <span class="clock">{formatClock(remainingMs)}</span>
-      <span class="cyc text-xs muted">{cyclesDone} session{cyclesDone === 1 ? '' : 's'} today</span>
+      <span class="cyc">{running ? 'stay in the zone' : remainingMs === total ? 'ready when you are' : 'paused'}</span>
     </Ring>
+  </div>
+
+  <div class="controls">
+    <button class="ctl ghost" onclick={reset} aria-label="Reset"><Icon name="rotate-ccw" size={20} /></button>
+    {#if running}
+      <button class="ctl main" onclick={pause} aria-label="Pause"><Icon name="pause" size={28} stroke={2.5} /></button>
+    {:else}
+      <button class="ctl main" onclick={start} aria-label="Start"><Icon name="play" size={28} stroke={2.5} /></button>
+    {/if}
+    <button class="ctl ghost" onclick={finish} aria-label="Skip" title="Skip"><Icon name="check-check" size={20} /></button>
   </div>
 
   {#if mode === 'work' && !running && remainingMs === total}
     <div class="lens">
       {#each [15, 25, 50] as L (L)}
-        <button class="lenbtn" class:active={workLen === L} onclick={() => (workLen = L)}>{L}m</button>
+        <button class="lenbtn" class:active={workLen === L} onclick={() => (workLen = L)}>{L} min</button>
       {/each}
     </div>
   {/if}
 
-  <div class="controls">
-    <button class="ctl ghost" onclick={reset} aria-label="Reset"><Icon name="rotate-ccw" size={20} /></button>
-    {#if running}
-      <button class="ctl main" onclick={pause} aria-label="Pause"><Icon name="pause" size={26} /></button>
-    {:else}
-      <button class="ctl main" onclick={start} aria-label="Start"><Icon name="play" size={26} /></button>
-    {/if}
-    <button class="ctl ghost" onclick={finish} aria-label="Skip" title="Skip"><Icon name="check-check" size={20} /></button>
+  <div class="strip">
+    <div class="cell"><div class="v">{cyclesDone}</div><div class="l">Sessions today</div></div>
+    <div class="div"></div>
+    <div class="cell"><div class="v accent">+{cyclesDone * Math.round(workLen)}</div><div class="l">Focus minutes</div></div>
   </div>
 
-  <p class="hint text-xs muted center">Focus sessions earn XP and feed your streak.</p>
+  <p class="hint">Focus sessions earn XP and feed your streak.</p>
 </div>
 
 <style>
-  .focus { display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 14px 0 30px; }
-  .f-head { width: 100%; max-width: 320px; display: flex; justify-content: center; }
-  .f-head :global(.seg) { width: 100%; }
-  .label { font-weight: 700; font-size: 18px; }
-  .ringwrap { margin: 6px 0; }
-  .clock { font-size: 46px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-  .cyc { margin-top: 6px; }
-  .lens { display: flex; gap: 8px; }
-  .lenbtn { padding: 7px 16px; border-radius: var(--r-full); background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-2); font-weight: 650; font-size: var(--fs-sm); }
-  .lenbtn.active { background: linear-gradient(120deg, var(--accent), var(--accent-2)); color: var(--text-on-accent); border-color: transparent; }
-  .controls { display: flex; align-items: center; gap: 18px; }
-  .ctl { width: 56px; height: 56px; border-radius: var(--r-full); display: grid; place-items: center; color: var(--text-2); background: var(--glass-bg); border: 1px solid var(--glass-border); }
-  .ctl.main { width: 76px; height: 76px; color: var(--text-on-accent); background: linear-gradient(135deg, var(--accent), var(--accent-2)); border: none; box-shadow: 0 10px 30px rgba(var(--accent-rgb), 0.45); }
+  .focus { display: flex; flex-direction: column; align-items: center; gap: 0; padding: 16px 0 30px; text-align: center; }
+  .eyebrow { margin-bottom: 8px; }
+  .f-title { margin: 0 0 22px; font-size: 38px; font-weight: 900; letter-spacing: -1.5px; }
+  .f-head { margin-bottom: 30px; }
+
+  .ringwrap { position: relative; margin-bottom: 34px; }
+  .glow {
+    position: absolute; inset: 20px; border-radius: 50%; background: var(--accent-glow);
+    filter: blur(50px); opacity: 0.35; transition: opacity 0.5s; pointer-events: none;
+  }
+  .ringwrap.running .glow { opacity: 1; }
+  .clock { font-size: 64px; font-weight: 900; letter-spacing: -2px; font-variant-numeric: tabular-nums; }
+  .cyc { font-size: 13px; font-weight: 700; color: var(--text-2); margin-top: 4px; }
+
+  .controls { display: flex; align-items: center; gap: 14px; margin-bottom: 30px; }
+  .ctl {
+    width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center;
+    color: var(--text-2); background: var(--bg-2); border: 1px solid var(--border-strong);
+    transition: color var(--t-fast), transform var(--t-fast);
+  }
+  .ctl.ghost:hover { color: var(--text); }
+  .ctl.main {
+    width: 76px; height: 76px; color: var(--text-on-accent); background: var(--accent); border: none;
+    box-shadow: 0 8px 32px var(--accent-shadow);
+  }
+  .ctl.main:hover { transform: scale(1.06); }
   .ctl:active { transform: scale(0.94); }
+
+  .lens { display: flex; gap: 8px; margin-bottom: 8px; }
+  .lenbtn {
+    padding: 10px 20px; border-radius: var(--r-full); background: transparent;
+    border: 1px solid var(--border-strong); color: var(--text-nav); font-weight: 800; font-size: 13.5px;
+    transition: all var(--t-fast);
+  }
+  .lenbtn.active { background: var(--accent); color: var(--text-on-accent); border-color: var(--accent); }
+
+  .strip {
+    margin-top: 32px; display: flex; gap: 28px; padding: 18px 30px; border-radius: 18px;
+    background: var(--bg-1); border: 1px solid var(--border);
+  }
+  .cell { text-align: center; }
+  .cell .v { font-size: 24px; font-weight: 900; }
+  .cell .v.accent { color: var(--accent); }
+  .cell .l { font-size: 11px; font-weight: 700; color: var(--text-2); letter-spacing: 0.8px; text-transform: uppercase; }
+  .div { width: 1px; background: var(--track); }
+
+  .hint { margin-top: 18px; font-size: 12px; color: var(--text-3); font-weight: 600; }
 </style>

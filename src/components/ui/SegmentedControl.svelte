@@ -1,5 +1,6 @@
 <script>
   // options: [{ value, label }]  ·  value: bound current value  ·  onchange(value)
+  // Restyled as pill filter chips (active = accent bg, near-black text).
   let { options = [], value = '', onchange = () => {}, size = 'md' } = $props();
 </script>
 
@@ -18,16 +19,13 @@
 </div>
 
 <style>
-  .seg {
-    display: inline-flex; padding: 2px; gap: 2px; border-radius: var(--r-md);
-    background: var(--fill-secondary); border: none; width: 100%;
-  }
+  .seg { display: inline-flex; gap: 8px; flex-wrap: wrap; }
   .seg-btn {
-    flex: 1; padding: 8px 16px; border-radius: calc(var(--r-md) - 2px); font-size: var(--fs-sm);
-    font-weight: 600; color: var(--text-2); white-space: nowrap;
-    transition: color var(--t-fast), background var(--t-fast), transform var(--t-fast);
+    padding: 9px 18px; border-radius: var(--r-full); font-size: 13px; font-weight: 800;
+    border: 1px solid var(--border-strong); background: transparent; color: var(--text-nav);
+    white-space: nowrap; transition: all var(--t-fast);
   }
-  .seg-sm .seg-btn { padding: 6px 12px; font-size: 13px; font-weight: 500; }
+  .seg-sm .seg-btn { padding: 8px 15px; font-size: 12.5px; }
   .seg-btn:active { transform: scale(0.96); }
-  .seg-btn.active { color: var(--text); background: var(--glass-bg-strong); box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+  .seg-btn.active { background: var(--accent); color: var(--text-on-accent); border-color: var(--accent); }
 </style>

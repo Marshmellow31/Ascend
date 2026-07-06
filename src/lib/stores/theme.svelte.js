@@ -5,17 +5,23 @@ import { cache } from '../utils/swrCache.js';
 import { setFxPrefs } from '../utils/feedback.js';
 
 export const ACCENTS = [
-  { id: 'indigo', label: 'Indigo', from: '#6E8BFF', to: '#22D3EE' },
-  { id: 'violet', label: 'Violet', from: '#A78BFA', to: '#F0ABFC' },
-  { id: 'emerald', label: 'Emerald', from: '#34D399', to: '#A7F3D0' },
-  { id: 'rose', label: 'Rose', from: '#FB7185', to: '#FDA4AF' },
-  { id: 'amber', label: 'Amber', from: '#FBBF24', to: '#FCD34D' },
-  { id: 'cyan', label: 'Cyan', from: '#22D3EE', to: '#67E8F9' },
+  { id: 'lime', label: 'Lime', from: '#CDFF4A', to: '#CDFF4A' },
+  { id: 'violet', label: 'Violet', from: '#7C5CFF', to: '#7C5CFF' },
+  { id: 'pink', label: 'Pink', from: '#FF5C8A', to: '#FF5C8A' },
+  { id: 'cyan', label: 'Cyan', from: '#3DDCFF', to: '#3DDCFF' },
+  { id: 'amber', label: 'Amber', from: '#FFB13D', to: '#FFB13D' },
 ];
+
+/** Map legacy accent ids (pre-redesign) to the closest new hue. */
+const LEGACY_ACCENTS = { indigo: 'cyan', emerald: 'lime', rose: 'pink' };
+export function normalizeAccent(id) {
+  if (ACCENTS.some((a) => a.id === id)) return id;
+  return LEGACY_ACCENTS[id] || 'lime';
+}
 
 class ThemeStore {
   mode = $state(cache.get('theme_mode') || 'dark');     // 'dark' | 'light'
-  accent = $state(cache.get('theme_accent') || 'indigo');
+  accent = $state(normalizeAccent(cache.get('theme_accent') || 'lime'));
   glass = $state(cache.get('theme_glass') || 'on');      // 'on' | 'off'
   fx = $state(cache.get('theme_fx') || { haptics: true, sound: true, confetti: true });
 
@@ -31,13 +37,13 @@ class ThemeStore {
     if (this.glass === 'off') root.setAttribute('data-glass', 'off');
     else root.removeAttribute('data-glass');
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', this.mode === 'light' ? '#EEF2FB' : '#06070C');
+    if (meta) meta.setAttribute('content', '#0A0A0E');
     setFxPrefs(this.fx);
   }
 
   setMode(mode) { this.mode = mode; cache.set('theme_mode', mode); this.apply(); }
   toggleMode() { this.setMode(this.mode === 'dark' ? 'light' : 'dark'); }
-  setAccent(accent) { this.accent = accent; cache.set('theme_accent', accent); this.apply(); }
+  setAccent(accent) { this.accent = normalizeAccent(accent); cache.set('theme_accent', this.accent); this.apply(); }
   setGlass(on) { this.glass = on ? 'on' : 'off'; cache.set('theme_glass', this.glass); this.apply(); }
   setFx(patch) { this.fx = { ...this.fx, ...patch }; cache.set('theme_fx', this.fx); setFxPrefs(this.fx); }
 

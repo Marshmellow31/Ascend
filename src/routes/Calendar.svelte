@@ -63,25 +63,24 @@
   }
 </script>
 
-<header class="ph">
-  <h1>Calendar</h1>
+<header class="ph fade-up">
+  <h1>{monthLabel}</h1>
   <div class="nav">
     <button class="navb" onclick={prev} aria-label="Previous month"><Icon name="chevron-left" size={18} /></button>
-    <span class="mlabel">{monthLabel}</span>
     <button class="navb" onclick={next} aria-label="Next month"><Icon name="chevron-right" size={18} /></button>
   </div>
 </header>
 
-<div class="cal glass">
+<div class="cal">
   <div class="wd">{#each WD as d}<span>{d}</span>{/each}</div>
   <div class="days">
     {#each grid as cell, i (i)}
       {#if cell}
         {@const key = toDateKey(cell)}
         {@const count = byDate[key]?.length || 0}
-        <button class="day" class:today={key === todayKey} class:sel={key === selected} onclick={() => (selected = key)}>
+        <button class="day" class:today={key === todayKey} class:sel={key === selected} class:past={key < todayKey} onclick={() => (selected = key)}>
           <span class="dnum">{cell.getDate()}</span>
-          <span class="dots">{#if count}<span class="dot"></span>{/if}</span>
+          <span class="dots">{#if count && key !== todayKey}<span class="dot"></span>{/if}{#if count > 2 && key !== todayKey}<span class="dot d2"></span>{/if}</span>
         </button>
       {:else}<span class="day empty"></span>{/if}
     {/each}
@@ -100,23 +99,30 @@
 </div>
 
 <style>
-  .ph { display: flex; align-items: center; justify-content: space-between; padding: 8px 2px 16px; flex-wrap: wrap; gap: 10px; }
-  .ph h1 { font-size: var(--fs-display); }
+  .ph { display: flex; align-items: center; justify-content: space-between; padding: 8px 0 20px; flex-wrap: wrap; gap: 10px; }
   .nav { display: flex; align-items: center; gap: 8px; }
-  .navb { width: 36px; height: 36px; display: grid; place-items: center; border-radius: var(--r-full); background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-2); }
-  .mlabel { font-weight: 700; font-size: var(--fs-sm); min-width: 130px; text-align: center; }
-  .cal { padding: 14px; border-radius: var(--r-lg); }
-  .wd { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 8px; }
-  .wd span { text-align: center; font-size: 10px; font-weight: 700; color: var(--text-3); text-transform: uppercase; }
-  .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
-  .day { aspect-ratio: 1; border-radius: var(--r-sm); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--text-2); font-size: var(--fs-sm); transition: background var(--t-fast); }
-  .day.empty { background: none; }
-  .day:not(.empty):hover { background: var(--bg-2); }
-  .day.today { color: var(--accent); font-weight: 800; }
-  .day.sel { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--text-on-accent); }
+  .navb {
+    width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px;
+    background: var(--bg-2); border: 1px solid var(--border-strong); color: var(--text-2);
+    transition: color var(--t-fast);
+  }
+  .navb:hover { color: var(--text); }
+  .wd { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 8px; }
+  .wd span { text-align: center; font-size: 11px; font-weight: 800; letter-spacing: 1px; color: var(--text-4); text-transform: uppercase; padding: 6px 0; }
+  .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 26px; }
+  .day {
+    aspect-ratio: 1; border-radius: 14px; background: var(--bg-1); border: 1px solid var(--border);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    color: var(--text); font-size: 14px; font-weight: 800; transition: border-color var(--t-fast);
+  }
+  .day.empty { background: none; border-color: transparent; }
+  .day:not(.empty):hover { border-color: #3A3A44; }
+  .day.past { color: var(--text-4); }
+  .day.sel { border-color: var(--border-hover); background: var(--bg-active); }
+  .day.today { background: var(--accent); border-color: var(--accent); color: var(--text-on-accent); }
   .dnum { line-height: 1; }
-  .dots { height: 5px; }
+  .dots { height: 5px; display: flex; gap: 3px; }
   .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); display: inline-block; }
-  .day.sel .dot { background: var(--text-on-accent); }
+  .dot.d2 { background: var(--hue-violet); }
   .agenda { margin-top: 8px; }
 </style>

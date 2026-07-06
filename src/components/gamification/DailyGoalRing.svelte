@@ -6,25 +6,29 @@
   const left = $derived(Math.max(0, target - completed));
 </script>
 
-<div class="dgr glass">
-  <Ring value={pct} size={112} stroke={14} trackColor="rgba(10, 132, 255, 0.15)">
+<div class="dgr">
+  <div class="glow"></div>
+  <div class="microlabel">Daily goal</div>
+  <Ring value={pct} size={170} stroke={14}>
     <span class="num">{completed}<span class="den">/{target}</span></span>
-    <span class="lbl">today</span>
+    <span class="lbl">tasks done</span>
   </Ring>
-  <div class="info">
-    <div class="t">{done ? 'Ring closed!' : 'Daily goal'}</div>
-    <div class="s text-sm text-2">
-      {done ? 'Nice work — you hit today’s goal.' : `${left} more task${left === 1 ? '' : 's'} to close your ring.`}
-    </div>
-  </div>
+  <div class="msg">{done ? 'Goal crushed! 🎯' : `${left} more to hit your goal`}</div>
 </div>
 
 <style>
-  .dgr { display: flex; align-items: center; gap: 18px; padding: 16px; border-radius: var(--r-lg); }
-  .num { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
-  .den { font-size: 14px; color: var(--text-3); font-weight: 700; }
-  .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); margin-top: 2px; }
-  .info { flex: 1; }
-  .t { font-weight: 800; font-size: 17px; }
-  .s { margin-top: 2px; }
+  .dgr {
+    position: relative; overflow: hidden;
+    border-radius: 24px; background: var(--grad-card); border: 1px solid var(--border-raised);
+    padding: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+  }
+  .glow {
+    position: absolute; top: -60px; right: -60px; width: 200px; height: 200px; border-radius: 50%;
+    background: var(--accent-glow); filter: blur(60px); animation: pulse-glow 4s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .num { font-size: 44px; font-weight: 900; letter-spacing: -2px; line-height: 1; }
+  .den { font-size: 22px; color: var(--text-4); }
+  .lbl { font-size: 11.5px; font-weight: 700; color: var(--text-2); margin-top: 4px; }
+  .msg { font-size: 13px; font-weight: 700; color: var(--accent); position: relative; }
 </style>

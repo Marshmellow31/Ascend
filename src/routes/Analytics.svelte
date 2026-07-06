@@ -39,33 +39,66 @@
   function level(c) { return c === 0 ? 0 : c < 2 ? 1 : c < 4 ? 2 : c < 6 ? 3 : 4; }
   const focusH = $derived(Math.floor(focus.focusMinutes / 60));
   const focusM = $derived(focus.focusMinutes % 60);
+
+  // Last 7 days → weekly bar chart (today = accent bar)
+  const DAY_LBL = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  const weekBars = $derived.by(() => {
+    if (!a?.heatmapData?.length) return [];
+    const last7 = a.heatmapData.slice(-7);
+    const max = Math.max(1, ...last7.map((d) => d.count));
+    return last7.map((d, i) => ({
+      n: d.count,
+      h: Math.round((d.count / max) * 100),
+      day: DAY_LBL[new Date(d.date + 'T00:00:00').getDay()],
+      today: i === last7.length - 1,
+    }));
+  });
+  const weekTotal = $derived(weekBars.reduce((s, b) => s + b.n, 0));
+  const TOPIC_COLORS = ['var(--hue-violet)', 'var(--accent)', 'var(--hue-green)', 'var(--hue-red)', 'var(--hue-amber)'];
 </script>
 
-<header class="ph"><h1>Insights</h1></header>
+<header class="ph fade-up"><h1>Analytics</h1></header>
 
 {#if loading}
-  <div class="grid2"><Skeleton height="80px" /><Skeleton height="80px" /><Skeleton height="80px" /><Skeleton height="80px" /></div>
-  <Skeleton height="150px" />
+  <div class="grid2"><Skeleton height="110px" /><Skeleton height="110px" /><Skeleton height="110px" /><Skeleton height="110px" /></div>
+  <Skeleton height="200px" />
 {:else}
-  <div style="margin-bottom: 24px;"><XpBar /></div>
+  <div style="margin-bottom: 14px;"><XpBar /></div>
   <div class="grid2">
-    <StatCard value={a.completionRate} suffix="%" label="Completion" />
-    <StatCard value={a.completed} label="Done this week" />
-    <StatCard value={a.streak} label="Day streak" icon="flame" />
-    <StatCard value={focusH > 0 ? `${focusH}h ${focusM}m` : `${focusM}m`} label="Focus time" animate={false} />
+    <StatCard value={a.completed} label="Tasks / week" icon="check-check" iconColor="var(--hue-green)" delta={`${a.completionRate}% completion`} deltaPositive />
+    <StatCard value={focusH > 0 ? `${focusH}h ${focusM}m` : `${focusM}m`} label="Focus time" icon="timer" iconColor="var(--hue-violet)" animate={false} delta={`${focus.focusSessions} sessions`} />
+    <StatCard value={a.streak} label="Consistency" unit="day streak" icon="flame" iconColor="var(--accent)" />
   </div>
+
+  {#if weekBars.length}
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">Tasks completed — this week</div>
+        <div class="panel-total">{weekTotal} total</div>
+      </div>
+      <div class="bars">
+        {#each weekBars as b}
+          <div class="barcol">
+            <div class="barnum" class:on={b.today}>{b.n}</div>
+            <div class="bar" class:on={b.today} style="height:{Math.max(4, b.h)}%"></div>
+            <div class="barday">{b.day}</div>
+          </div>
+        {/each}
+      </div>
+    </div>
+  {/if}
 
   {#if a.insights?.length}
     <div class="section-head"><h2>Key insights</h2></div>
     <div class="insights">
       {#each a.insights as ins (ins)}
-        <div class="ins glass"><Icon name="sparkles" size={15} /><span>{ins}</span></div>
+        <div class="ins"><Icon name="sparkles" size={15} /><span>{ins}</span></div>
       {/each}
     </div>
   {/if}
 
-  <div class="section-head"><h2>Consistency</h2><span class="text-xs muted">last 24 weeks</span></div>
-  <div class="heat glass">
+  <div class="section-head"><h2>Consistency</h2><span class="microlabel">last 24 weeks</span></div>
+  <div class="heat">
     <div class="heat-grid">
       {#each weeks as week, wi (wi)}
         <div class="hcol">
@@ -82,11 +115,11 @@
 
   {#if a.topicBreakdown?.some((t) => t.total > 0)}
     <div class="section-head"><h2>Focus by topic</h2></div>
-    <div class="topics glass">
-      {#each a.topicBreakdown.filter((t) => t.total > 0) as t (t.id)}
+    <div class="topics">
+      {#each a.topicBreakdown.filter((t) => t.total > 0) as t, i (t.id)}
         <div class="trow">
-          <div class="tinfo"><span>{t.name}</span><span class="text-xs muted">{t.completed}/{t.total}</span></div>
-          <ProgressBar value={t.rate} height={6} />
+          <div class="tinfo"><span>{t.name}</span><span class="tcount">{t.completed}/{t.total}</span></div>
+          <ProgressBar value={t.rate} height={8} gradient={false} color={TOPIC_COLORS[i % TOPIC_COLORS.length]} track="var(--track)" />
         </div>
       {/each}
     </div>
@@ -94,23 +127,41 @@
 {/if}
 
 <style>
-  .ph { padding: 8px 2px 16px; }
-  .ph h1 { font-size: var(--fs-display); }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 6px; }
+  .ph { padding: 8px 0 20px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+
+  .panel { border-radius: 24px; background: var(--bg-1); border: 1px solid var(--border); padding: 24px; margin-bottom: 14px; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+  .panel-title { font-size: 15px; font-weight: 900; letter-spacing: -0.3px; }
+  .panel-total { font-size: 12px; font-weight: 700; color: var(--accent); }
+  .bars { display: flex; align-items: flex-end; gap: 12px; height: 160px; }
+  .barcol { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; justify-content: flex-end; }
+  .barnum { font-size: 12px; font-weight: 800; color: var(--text-2); }
+  .barnum.on { color: var(--accent); }
+  .bar { width: 100%; max-width: 44px; border-radius: 10px; background: var(--bar-inactive); transition: height 0.6s var(--ease); }
+  .bar.on { background: var(--accent); }
+  .barday { font-size: 11px; font-weight: 800; letter-spacing: 0.5px; color: var(--text-4); }
+
   .insights { display: grid; gap: 8px; }
-  .ins { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: var(--r-md); font-size: var(--fs-sm); }
+  .ins {
+    display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-radius: var(--r-md);
+    background: var(--bg-1); border: 1px solid var(--border); font-size: var(--fs-sm); font-weight: 600;
+  }
   .ins :global(svg) { color: var(--accent); flex-shrink: 0; }
-  .heat { padding: 16px; border-radius: var(--r-lg); overflow-x: auto; }
+
+  .heat { padding: 20px; border-radius: 24px; background: var(--bg-1); border: 1px solid var(--border); overflow-x: auto; }
   .heat-grid { display: flex; gap: 3px; min-width: max-content; }
   .hcol { display: flex; flex-direction: column; gap: 3px; }
   .hcell { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
-  .l0 { background: var(--glass-border); }
+  .l0 { background: var(--track); }
   .l1 { background: rgba(var(--accent-rgb), 0.32); }
   .l2 { background: rgba(var(--accent-rgb), 0.55); }
   .l3 { background: rgba(var(--accent-rgb), 0.78); }
   .l4 { background: var(--accent); }
-  .legend { display: flex; align-items: center; gap: 4px; margin-top: 12px; justify-content: flex-end; }
-  .topics { padding: 16px; border-radius: var(--r-lg); display: grid; gap: 14px; }
-  .tinfo { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: var(--fs-sm); font-weight: 600; }
-  @media (min-width: 1024px) { .grid2 { grid-template-columns: repeat(4, 1fr); } }
+  .legend { display: flex; align-items: center; gap: 4px; margin-top: 12px; justify-content: flex-end; font-weight: 600; }
+
+  .topics { padding: 24px; border-radius: 24px; background: var(--bg-1); border: 1px solid var(--border); display: grid; gap: 14px; }
+  .tinfo { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; font-weight: 700; }
+  .tcount { color: var(--text-2); }
+  @media (min-width: 1024px) { .grid2 { grid-template-columns: repeat(3, 1fr); } }
 </style>

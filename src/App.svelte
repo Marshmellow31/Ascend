@@ -56,10 +56,10 @@
 <style>
   .app-main {
     margin: 0 auto; max-width: var(--maxw);
-    padding: 6px 16px calc(var(--nav-h) + env(safe-area-inset-bottom, 0) + 28px);
+    padding: 10px 16px calc(var(--nav-h) + env(safe-area-inset-bottom, 0) + 56px);
   }
   @media (min-width: 1024px) {
-    .app-main { margin-left: var(--sidebar-w); max-width: none; padding: 28px 48px 56px; }
-    .app-main > :global(.route) { max-width: 1060px; margin: 0 auto; }
+    .app-main { margin-left: var(--sidebar-w); max-width: none; padding: 32px 32px 110px; }
+    .app-main > :global(.route) { max-width: 980px; margin: 0 auto; }
   }
 </style>

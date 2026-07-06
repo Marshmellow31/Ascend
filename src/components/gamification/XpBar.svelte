@@ -1,32 +1,31 @@
 <script>
   import { gamification as g } from '../../lib/stores/gamification.svelte.js';
   import { navigate } from '../../lib/router.svelte.js';
-  import ProgressBar from '../ui/ProgressBar.svelte';
   import AnimatedNumber from '../ui/AnimatedNumber.svelte';
 
   const p = $derived(g.progress);
 </script>
 
-<button class="xpbar glass" onclick={() => navigate('profile')} aria-label="Open profile">
-  <div class="lvl">
-    <span class="lvl-num">{p.level}</span>
-    <span class="lvl-cap">LV</span>
+<button class="xpbar" onclick={() => navigate('profile')} aria-label="Open profile">
+  <div class="row">
+    <span class="lvl">LEVEL {p.level}</span>
+    <span class="title">{g.title}</span>
   </div>
-  <div class="mid">
-    <div class="row">
-      <span class="title">{g.title}</span>
-      <span class="xp text-xs muted"><AnimatedNumber value={p.into} />/{p.span} XP</span>
-    </div>
-    <ProgressBar value={p.pct} height={7} />
-  </div>
+  <div class="track"><div class="fill" style="width:{p.pct}%"></div></div>
+  <div class="nums"><AnimatedNumber value={p.into} /> / {p.span} XP</div>
 </button>
 
 <style>
-  .xpbar { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border-radius: var(--r-lg); text-align: left; }
-  .lvl { position: relative; flex-shrink: 0; width: 42px; height: 42px; display: grid; place-items: center; border-radius: var(--r-full); background: var(--accent); color: #fff; }
-  .lvl-num { font-size: 18px; font-weight: 800; line-height: 1; }
-  .lvl-cap { position: absolute; bottom: 5px; font-size: 7px; font-weight: 800; letter-spacing: 0.1em; opacity: 0.8; }
-  .mid { flex: 1; min-width: 0; }
-  .row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
-  .title { font-size: var(--fs-sm); font-weight: 700; }
+  .xpbar {
+    display: block; width: 100%; padding: 14px; border-radius: 16px; text-align: left;
+    background: linear-gradient(135deg, #17171E, #111116); border: 1px solid #22222A;
+    transition: border-color var(--t-fast);
+  }
+  .xpbar:hover { border-color: var(--border-hover); }
+  .row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .lvl { font-size: 11px; font-weight: 800; letter-spacing: 1.2px; color: var(--text-2); }
+  .title { font-size: 12px; font-weight: 800; color: var(--accent); }
+  .track { height: 7px; border-radius: 99px; background: var(--track); overflow: hidden; margin-bottom: 7px; }
+  .fill { height: 100%; border-radius: 99px; background: var(--accent); transition: width 0.6s var(--ease); }
+  .nums { font-size: 11.5px; color: var(--text-2); font-weight: 600; }
 </style>

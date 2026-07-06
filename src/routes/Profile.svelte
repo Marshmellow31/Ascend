@@ -9,8 +9,6 @@
   import { navigate } from '../lib/router.svelte.js';
   import { cache } from '../lib/utils/swrCache.js';
 
-  import ProgressBar from '../components/ui/ProgressBar.svelte';
-  import StreakFlame from '../components/gamification/StreakFlame.svelte';
   import AchievementCard from '../components/gamification/AchievementCard.svelte';
   import Icon from '../components/ui/Icon.svelte';
   import Button from '../components/ui/Button.svelte';
@@ -60,19 +58,28 @@
   }
 </script>
 
-<div class="hero glass">
+<div class="hero fade-up">
+  <div class="hero-glow"></div>
   <button class="ring-badge" onclick={() => (selectingDP = !selectingDP)} aria-label="Change Avatar">
     {#if profile?.photoURL || authStore.user?.photoURL}
       <img src={profile?.photoURL || authStore.user?.photoURL} alt="Avatar" class="avatar-img" />
     {:else}
-      {g.level}
+      {(profile?.displayName || 'S')[0].toUpperCase()}
     {/if}
   </button>
   <div class="hero-info">
-    <div class="title gradient-text">{g.title}</div>
-    <div class="text-sm muted">{profile?.displayName || 'Student'} · Level {g.level}</div>
+    <h1 class="hero-name">{profile?.displayName || 'Student'}</h1>
+    <div class="hero-meta">Level {g.level} · {g.title}</div>
+    <div class="hero-xp">
+      <div class="hx-row"><span>LEVEL {g.level}</span><span>{p.into} / {p.span} XP</span></div>
+      <div class="hx-track"><div class="hx-fill" style="width:{p.pct}%"></div></div>
+    </div>
   </div>
-  <StreakFlame count={stats.streak} size="lg" />
+  <div class="hero-stats">
+    <div class="hs"><div class="hs-v accent">{stats.streak}</div><div class="hs-l">Day streak</div></div>
+    <div class="hs"><div class="hs-v">{stats.totalCompleted}</div><div class="hs-l">Tasks done</div></div>
+    <div class="hs"><div class="hs-v">{focusH}h</div><div class="hs-l">Focused</div></div>
+  </div>
 </div>
 
 {#if selectingDP}
@@ -90,17 +97,6 @@
     </div>
   </div>
 {/if}
-
-<div class="xp glass">
-  <div class="xp-row"><span>{p.into} / {p.span} XP</span><span class="muted text-xs">{p.next - p.xp} to level {g.level + 1}</span></div>
-  <ProgressBar value={p.pct} height={9} />
-</div>
-
-<div class="lifestats">
-  <div class="ls glass"><div class="v">{stats.totalCompleted}</div><div class="l text-xs muted">Tasks done</div></div>
-  <div class="ls glass"><div class="v">{focusH}h</div><div class="l text-xs muted">Focused</div></div>
-  <div class="ls glass"><div class="v">{Object.keys(unlocked).length}/{ACHIEVEMENTS.length}</div><div class="l text-xs muted">Badges</div></div>
-</div>
 
 <div class="goalset glass">
   <div><div class="gs-t">Daily goal</div><div class="text-xs muted">Tasks to close your ring</div></div>
@@ -124,19 +120,36 @@
   {/each}
 </div>
 
-<Button variant="glass" full icon="log-out" onclick={() => logOut()} class="signout">Sign out</Button>
+<Button variant="danger" full icon="log-out" onclick={() => logOut()} class="signout">Sign out</Button>
 
 <style>
-  .hero { display: flex; align-items: center; gap: 16px; padding: 18px; border-radius: var(--r-lg); margin-bottom: 12px; }
-  .ring-badge { width: 60px; height: 60px; flex-shrink: 0; display: grid; place-items: center; border-radius: var(--r-full); font-size: 24px; font-weight: 800; color: var(--text-on-accent); background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 8px 24px rgba(var(--accent-rgb), 0.45); }
-  .hero-info { flex: 1; }
-  .title { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
-  .xp { padding: 16px; border-radius: var(--r-lg); margin-bottom: 12px; }
-  .xp-row { display: flex; justify-content: space-between; font-size: var(--fs-sm); font-weight: 650; margin-bottom: 8px; }
-  .lifestats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
-  .ls { padding: 16px 12px; border-radius: var(--r-md); text-align: center; }
-  .ls .v { font-size: 22px; font-weight: 800; }
-  .ls .l { margin-top: 4px; }
+  .hero {
+    position: relative; overflow: hidden;
+    display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+    padding: 32px; border-radius: var(--r-hero); margin-bottom: 14px;
+    background: var(--grad-hero); border: 1px solid var(--track);
+  }
+  .hero-glow {
+    position: absolute; top: -80px; left: 30%; width: 260px; height: 260px; border-radius: 50%;
+    background: var(--accent-glow); filter: blur(80px); pointer-events: none;
+  }
+  .ring-badge {
+    width: 88px; height: 88px; flex-shrink: 0; display: grid; place-items: center; position: relative;
+    border-radius: 50%; font-size: 34px; font-weight: 900; color: var(--text-on-accent);
+    background: var(--accent); border: none; padding: 0; cursor: pointer; transition: transform var(--t-fast);
+  }
+  .hero-info { flex: 1; min-width: 200px; position: relative; }
+  .hero-name { margin: 0 0 4px; font-size: 32px; font-weight: 900; letter-spacing: -1px; }
+  .hero-meta { font-size: 13.5px; color: var(--text-2); font-weight: 600; margin-bottom: 14px; }
+  .hero-xp { max-width: 340px; }
+  .hx-row { display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 800; color: var(--text-2); margin-bottom: 6px; letter-spacing: 0.5px; }
+  .hx-track { height: 9px; border-radius: 99px; background: var(--track); overflow: hidden; }
+  .hx-fill { height: 100%; border-radius: 99px; background: var(--accent); transition: width 0.6s var(--ease); }
+  .hero-stats { display: flex; gap: 26px; position: relative; }
+  .hs { text-align: center; }
+  .hs-v { font-size: 28px; font-weight: 900; }
+  .hs-v.accent { color: var(--accent); }
+  .hs-l { font-size: 10.5px; font-weight: 800; letter-spacing: 0.8px; color: var(--text-2); text-transform: uppercase; }
   .goalset { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-radius: var(--r-lg); margin-bottom: 6px; }
   .gs-t { font-weight: 700; }
   .stepper { display: flex; align-items: center; gap: 6px; }
@@ -146,10 +159,9 @@
   .more-link { display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-radius: var(--r-md); text-align: left; font-weight: 600; font-size: var(--fs-sm); }
   .more-link > span { flex: 1; }
   .more-link :global(svg:last-child) { color: var(--text-3); }
-  .badges { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
   :global(.signout) { margin-top: 18px; }
   .avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--r-full); }
-  .ring-badge { width: 64px; height: 64px; flex-shrink: 0; display: grid; place-items: center; border-radius: var(--r-full); font-size: 24px; font-weight: 800; color: var(--text-on-accent); background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 8px 24px rgba(var(--accent-rgb), 0.45); cursor: pointer; border: none; padding: 0; outline: none; transition: transform var(--t-fast); }
   .ring-badge:active { transform: scale(0.95); }
   .dp-selector { padding: 16px; border-radius: var(--r-lg); margin-bottom: 12px; }
   .dp-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
@@ -158,5 +170,4 @@
   .dp-opt:active { transform: scale(0.9); }
   .dp-opt.active { border-color: var(--accent); }
   .dp-opt.remove { display: grid; place-items: center; color: var(--text-2); }
-  @media (min-width: 640px) { .badges { grid-template-columns: 1fr 1fr; } }
 </style>

@@ -81,9 +81,9 @@
   function openEdit(t) { editing = t; editorOpen = true; }
 </script>
 
-<header class="ph">
+<header class="ph fade-up">
   <h1>Tasks</h1>
-  <Button variant="primary" size="sm" icon="plus" onclick={openNew}>New</Button>
+  <Button variant="primary" size="sm" icon="plus" onclick={openNew}>NEW TASK</Button>
 </header>
 
 <div class="search">
@@ -122,13 +122,17 @@
 <TopicManager open={mgrOpen} {uid} {topics} onclose={() => (mgrOpen = false)} onchanged={load} />
 
 <style>
-  .ph { display: flex; align-items: center; justify-content: space-between; padding: 8px 2px 16px; }
-  .ph h1 { font-size: var(--fs-display); }
-  .search { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--r-md); margin-bottom: 16px; background: var(--fill-secondary); color: var(--text-2); }
-  .search input { flex: 1; background: none; border: none; outline: none; color: var(--text); }
+  .ph { display: flex; align-items: center; justify-content: space-between; padding: 8px 0 20px; }
+  .search {
+    display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-radius: var(--r-full);
+    margin-bottom: 16px; background: var(--bg-2); border: 1px solid var(--border-raised); color: var(--text-2);
+    transition: border-color var(--t-fast);
+  }
+  .search:focus-within { border-color: var(--border-hover); }
+  .search input { flex: 1; background: none; border: none; outline: none; color: var(--text); font-weight: 600; }
   .filters { display: flex; gap: 8px; margin: 16px 0; overflow-x: auto; padding-bottom: 4px; }
   .filters::-webkit-scrollbar { display: none; }
-  .filters .select { padding: 8px 12px; font-size: 13px; font-weight: 500; border-radius: var(--r-full); background: var(--fill-secondary); color: var(--text); border: none; outline: none; appearance: none; -webkit-appearance: none; }
-  .manage { flex-shrink: 0; width: 34px; height: 34px; border-radius: var(--r-full); background: var(--fill-secondary); border: none; color: var(--text); display: grid; place-items: center; }
-  .count { margin-bottom: 8px; }
+  .filters .select { width: auto; padding: 9px 32px 9px 15px; font-size: 13px; font-weight: 700; border-radius: var(--r-full); background-color: var(--bg-2); border: 1px solid var(--border-strong); color: var(--text-nav); outline: none; }
+  .manage { flex-shrink: 0; width: 36px; height: 36px; border-radius: var(--r-full); background: var(--bg-2); border: 1px solid var(--border-strong); color: var(--text-nav); display: grid; place-items: center; }
+  .count { margin-bottom: 8px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; font-size: 11px; }
 </style>
