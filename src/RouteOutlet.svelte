@@ -38,7 +38,3 @@
     {/if}
   </div>
 {/key}
-
-<style>
-  .route { will-change: transform, opacity; }
-</style>
