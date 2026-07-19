@@ -6,6 +6,7 @@
   import { parseFbDate, toDateKey } from '../../lib/utils/dates.js';
   import { cache } from '../../lib/utils/swrCache.js';
   import { toast } from '../../lib/stores/ui.svelte.js';
+  import { syncTaskEvent, deleteTaskEvent, getValidToken } from '../../lib/googleCalendar.js';
 
   let { open = false, task = null, uid, topics = [], onclose = () => {}, onsaved = () => {} } = $props();
 
@@ -13,6 +14,7 @@
   let description = $state('');
   let priority = $state('medium');
   let due = $state('');
+  let dueTime = $state('');
   let subjectId = $state('');
   let topicId = $state('');
   let subtopics = $state([]);
@@ -25,6 +27,7 @@
       priority = (task?.priority || 'medium').toLowerCase();
       const d = parseFbDate(task?.dueDate);
       due = d ? toDateKey(d) : (task ? '' : toDateKey(new Date()));
+      dueTime = task?.dueTime || '';
       subjectId = task?.subjectId || '';
       topicId = task?.topicId || '';
     }
@@ -39,19 +42,38 @@
   async function save() {
     if (!title.trim()) return toast('Give your task a title', 'warning');
     busy = true;
-    const payload = { title, description, priority, dueDate: due || null, subjectId: subjectId || null, topicId: topicId || null };
+    const payload = {
+      title, description, priority, dueDate: due || null, dueTime: due ? dueTime || null : null,
+      subjectId: subjectId || null, topicId: topicId || null,
+    };
     try {
+      const taskId = task ? task.id : (await createTask(uid, payload))?.id;
       if (task) await updateTask(task.id, payload);
-      else await createTask(uid, payload);
       cache.invalidatePrefix('tasks_');
+      if (taskId && due) await syncCalendar(taskId, payload, task?.gcalEventId);
       onsaved();
       onclose();
     } finally { busy = false; }
   }
+
+  async function syncCalendar(taskId, payload, existingEventId) {
+    try {
+      if (!(await getValidToken())) return; // not connected — skip silently
+      const eventId = await syncTaskEvent({
+        title: payload.title, description: payload.description,
+        dueDateStr: payload.dueDate, dueTime: payload.dueTime, gcalEventId: existingEventId,
+      });
+      if (eventId && eventId !== existingEventId) await updateTask(taskId, { gcalEventId: eventId });
+      else if (!eventId) toast('Task saved, but calendar sync failed', 'warning');
+    } catch { toast('Task saved, but calendar sync failed', 'warning'); }
+  }
+
   async function remove() {
     busy = true;
-    try { await deleteTask(task.id); cache.invalidatePrefix('tasks_'); onsaved(); onclose(); }
-    finally { busy = false; }
+    try {
+      if (task.gcalEventId) deleteTaskEvent(task.gcalEventId);
+      await deleteTask(task.id); cache.invalidatePrefix('tasks_'); onsaved(); onclose();
+    } finally { busy = false; }
   }
 </script>
 
@@ -70,13 +92,17 @@
 
   <div class="row">
     <div class="field" style="flex:1"><label for="t-due">Due date</label><input id="t-due" class="input" type="date" bind:value={due} /></div>
-    <div class="field" style="flex:1">
-      <label for="t-topic">Topic</label>
-      <select id="t-topic" class="select" bind:value={subjectId}>
-        <option value="">None</option>
-        {#each topics as t (t.id)}<option value={t.id}>{t.name}</option>{/each}
-      </select>
-    </div>
+    {#if due}
+      <div class="field" style="flex:1"><label for="t-due-time">Due time</label><input id="t-due-time" class="input" type="time" bind:value={dueTime} /></div>
+    {/if}
+  </div>
+
+  <div class="field">
+    <label for="t-topic">Topic</label>
+    <select id="t-topic" class="select" bind:value={subjectId}>
+      <option value="">None</option>
+      {#each topics as t (t.id)}<option value={t.id}>{t.name}</option>{/each}
+    </select>
   </div>
 
   {#if subtopics.length}

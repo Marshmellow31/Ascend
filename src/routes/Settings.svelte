@@ -1,8 +1,10 @@
 <script>
   import { authStore } from '../lib/stores/auth.svelte.js';
   import { theme, ACCENTS } from '../lib/stores/theme.svelte.js';
+  import { googleCalendarStore } from '../lib/stores/googleCalendar.svelte.js';
   import { updateUserProfile } from '../lib/db.js';
   import { logOut } from '../lib/auth.js';
+  import { connect as connectGoogleCalendar, disconnect as disconnectGoogleCalendar } from '../lib/googleCalendar.js';
   import { toast } from '../lib/stores/ui.svelte.js';
   import { haptic } from '../lib/utils/feedback.js';
 
@@ -12,6 +14,16 @@
 
   const uid = authStore.uid;
   const profile = $derived(authStore.profile);
+
+  let gcalBusy = $state(false);
+  async function toggleGoogleCalendar() {
+    gcalBusy = true;
+    try {
+      if (googleCalendarStore.connected) { disconnectGoogleCalendar(); toast('Google Calendar disconnected', 'success'); }
+      else await connectGoogleCalendar();
+    } catch { toast('Could not connect to Google Calendar', 'error'); }
+    finally { gcalBusy = false; }
+  }
 
   let name = $state(authStore.profile?.displayName || '');
   let weekStart = $state(authStore.profile?.weekStartDay || 'monday');
@@ -76,6 +88,21 @@
     <SegmentedControl size="sm" options={[{ value: 'monday', label: 'Monday' }, { value: 'sunday', label: 'Sunday' }]} value={weekStart} onchange={(v) => (weekStart = v)} />
   </div>
   <div class="field"><label for="s-study">Study goals / notes</label><textarea id="s-study" class="textarea" bind:value={studyGoals} rows="3" placeholder="What are you working towards?"></textarea></div>
+</section>
+
+<!-- Integrations -->
+<section class="card glass rows">
+  <div class="microlabel s-label">Integrations</div>
+  <label class="toggle" for="s-gcal">
+    <Icon name="calendar" size={19} />
+    <span class="t-text">
+      <span class="t-label">Google Calendar</span>
+      <span class="t-sub">{googleCalendarStore.connected ? 'Tasks with a due date sync as reminders' : 'Connect to get reminders for tasks'}</span>
+    </span>
+    <Button id="s-gcal" variant={googleCalendarStore.connected ? 'glass' : 'primary'} size="sm" loading={gcalBusy} onclick={toggleGoogleCalendar}>
+      {googleCalendarStore.connected ? 'Disconnect' : 'Connect'}
+    </Button>
+  </label>
 </section>
 
 <!-- Long-term focus -->

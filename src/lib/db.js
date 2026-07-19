@@ -128,6 +128,8 @@ export async function createTask(uid, t) {
       description: sanitizeString(t.description || '', 1000),
       priority: sanitizeEnum(t.priority?.toLowerCase(), ['high', 'medium', 'low'], 'medium'),
       dueDate: isValidDateStr(t.dueDate) ? Timestamp.fromDate(new Date(t.dueDate)) : null,
+      dueTime: /^\d{2}:\d{2}$/.test(t.dueTime || '') ? t.dueTime : null,
+      gcalEventId: t.gcalEventId || null,
       isCompleted: false, completedAt: null,
       createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
     });
@@ -151,6 +153,8 @@ export async function updateTask(id, data) {
     if (data.description !== undefined) u.description = sanitizeString(data.description, 1000);
     if (data.priority !== undefined) u.priority = sanitizeEnum(data.priority?.toLowerCase(), ['high', 'medium', 'low'], 'medium');
     if (data.dueDate !== undefined) u.dueDate = isValidDateStr(data.dueDate) ? Timestamp.fromDate(new Date(data.dueDate)) : null;
+    if (data.dueTime !== undefined) u.dueTime = /^\d{2}:\d{2}$/.test(data.dueTime || '') ? data.dueTime : null;
+    if (data.gcalEventId !== undefined) u.gcalEventId = data.gcalEventId || null;
     if (data.isCompleted !== undefined) u.isCompleted = !!data.isCompleted;
     if (data.subjectId !== undefined) u.subjectId = sanitizeString(data.subjectId, 100);
     if (data.topicId !== undefined) u.topicId = sanitizeString(data.topicId, 100);
